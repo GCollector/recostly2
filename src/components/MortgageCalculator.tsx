@@ -64,15 +64,20 @@ const MortgageCalculator: React.FC = () => {
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result) {
+      console.log('No result to save');
+      return;
+    }
     
     if (!user) {
+      console.log('No user, showing upgrade prompt');
       setShowUpgradePrompt(true);
       return;
     }
     
     setIsSaving(true);
     try {
+      console.log('Saving calculation...');
       const id = await saveCalculation({
         home_price: homePrice,
         down_payment: downPayment,
@@ -88,6 +93,7 @@ const MortgageCalculator: React.FC = () => {
         comments: null
       });
       
+      console.log('Calculation saved with ID:', id);
       setCalculationId(id);
       setShowShareModal(true);
     } catch (error) {
@@ -99,7 +105,10 @@ const MortgageCalculator: React.FC = () => {
   };
 
   const handleShare = async () => {
-    if (!calculationId) return;
+    if (!calculationId) {
+      console.log('No calculation ID to share');
+      return;
+    }
     
     const shareUrl = `${window.location.origin}/shared/${calculationId}`;
     try {
@@ -108,6 +117,8 @@ const MortgageCalculator: React.FC = () => {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
+      // Fallback: show the URL in an alert
+      alert(`Share this link: ${shareUrl}`);
     }
   };
 

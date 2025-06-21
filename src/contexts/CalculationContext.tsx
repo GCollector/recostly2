@@ -12,7 +12,7 @@ interface CalculationContextType {
   saveCalculation: (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<string>;
   saveInvestmentCalculation: (calculation: Omit<InvestmentCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<string>;
   deleteCalculation: (id: string) => Promise<void>;
-  getCalculation: (id: string) => MortgageCalculation | null;
+  getCalculation: (id: string) => Promise<MortgageCalculation | null>;
   updateCalculationNotes: (id: string, section: string, notes: string) => Promise<void>;
   updateCalculationComments: (id: string, comments: string) => Promise<void>;
   isLoading: boolean;
@@ -100,6 +100,9 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return tempId;
     }
 
+    console.log('Saving calculation for user:', user.id);
+    console.log('Calculation data:', calculation);
+
     const { data, error } = await supabase
       .from('mortgage_calculations')
       .insert({
@@ -109,9 +112,13 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error saving calculation:', error);
+      throw error;
+    }
 
     if (data) {
+      console.log('Calculation saved successfully:', data.id);
       setCalculations(prev => [data, ...prev]);
       return data.id;
     }
@@ -155,15 +162,37 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setCalculations(prev => prev.filter(calc => calc.id !== id));
   };
 
-  const getCalculation = (id: string): MortgageCalculation | null => {
+  const getCalculation = async (id: string): Promise<MortgageCalculation | null> => {
     // First check if it's a temp calculation
     if (id.startsWith('temp-')) {
       const tempCalculations = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
       return tempCalculations.find((calc: MortgageCalculation) => calc.id === id) || null;
     }
 
-    // Check in current calculations
-    return calculations.find(calc => calc.id === id) || null;
+    // Check in current calculations first
+    const existingCalc = calculations.find(calc => calc.id === id);
+    if (existingCalc) {
+      return existingCalc;
+    }
+
+    // If not found, fetch from database
+    try {
+      const { data, error } = await supabase
+        .from('mortgage_calculations')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching calculation:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching calculation:', error);
+      return null;
+    }
   };
 
   const updateCalculationNotes = async (id: string, section: string, notes: string) => {
