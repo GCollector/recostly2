@@ -18,13 +18,25 @@ const Login: React.FC = () => {
     // Prevent multiple submissions
     if (isLoading) return;
     
+    // Basic validation
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+    
     setError('');
     setIsLoading(true);
     
     try {
+      console.log('Starting login process...');
       await login(email, password);
-      // Only navigate if login was successful
-      navigate('/dashboard');
+      console.log('Login completed, navigating to dashboard...');
+      
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
+      
     } catch (err: any) {
       console.error('Login error:', err);
       
@@ -35,6 +47,8 @@ const Login: React.FC = () => {
         setError('Please check your email and click the confirmation link before signing in.');
       } else if (err.message?.includes('Too many requests')) {
         setError('Too many login attempts. Please wait a few minutes before trying again.');
+      } else if (err.message?.includes('Invalid email')) {
+        setError('Please enter a valid email address.');
       } else {
         setError('Unable to sign in. Please try again or contact support if the problem persists.');
       }
