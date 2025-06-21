@@ -44,7 +44,19 @@ const Signup: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Signup error:', err);
-      setError(err.message || 'Failed to create account');
+      
+      // Handle specific Supabase auth errors
+      if (err.message?.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else if (err.message?.includes('Password should be at least 6 characters')) {
+        setError('Password must be at least 6 characters long.');
+      } else if (err.message?.includes('Invalid email')) {
+        setError('Please enter a valid email address.');
+      } else if (err.message?.includes('Signup is disabled')) {
+        setError('Account creation is temporarily disabled. Please try again later.');
+      } else {
+        setError('Unable to create account. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +148,9 @@ const Signup: React.FC = () => {
                   )}
                 </button>
               </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Must be at least 6 characters long
+              </p>
             </div>
 
             <div>

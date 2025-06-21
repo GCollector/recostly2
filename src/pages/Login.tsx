@@ -22,7 +22,17 @@ const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Invalid email or password');
+      
+      // Handle specific Supabase auth errors
+      if (err.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('Please check your email and click the confirmation link before signing in.');
+      } else if (err.message?.includes('Too many requests')) {
+        setError('Too many login attempts. Please wait a few minutes before trying again.');
+      } else {
+        setError('Unable to sign in. Please try again or contact support if the problem persists.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +122,11 @@ const Login: React.FC = () => {
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Demo accounts: Use any email with "premium" for Premium tier, or any other email for Basic tier.
+              Don't have an account?{' '}
+              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                Sign up here
+              </Link>{' '}
+              to get started with your mortgage calculations.
             </p>
           </div>
         </form>
