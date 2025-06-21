@@ -24,6 +24,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (!loading && user && (location.pathname === '/login' || location.pathname === '/signup')) {
+      console.log('Redirecting authenticated user from auth page to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [user, loading, location.pathname, navigate]);
@@ -48,6 +49,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
+      console.log('Logging out user...');
       await signOut();
       setProfileDropdownOpen(false);
       navigate('/', { replace: true });

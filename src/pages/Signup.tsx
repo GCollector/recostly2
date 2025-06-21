@@ -52,8 +52,9 @@ const Signup: React.FC = () => {
     setError('');
 
     try {
+      console.log('Starting signup process for:', email);
       await signUp(email, password, name);
-      // Navigation will happen automatically when user state updates
+      console.log('Signup successful, navigating to dashboard');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Signup error:', err);

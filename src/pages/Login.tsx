@@ -39,8 +39,9 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      console.log('Starting login process for:', email);
       await signIn(email, password);
-      // Navigation will happen automatically when user state updates
+      console.log('Login successful, navigating to dashboard');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
