@@ -29,6 +29,9 @@ export const useAuth = () => {
   return context;
 };
 
+// Unique symbol to identify timeout
+const TIMEOUT_SYMBOL = Symbol('timeout');
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -38,18 +41,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Loading profile for user:', supabaseUser.email);
 
-      // Add timeout to prevent hanging - increased to 10 seconds
+      // Create timeout promise that resolves with timeout symbol
       const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      const timeoutPromise = new Promise((resolve) => 
+        setTimeout(() => resolve(TIMEOUT_SYMBOL), 10000)
       );
 
-      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+      const result = await Promise.race([profilePromise, timeoutPromise]);
+
+      // Check if timeout occurred
+      if (result === TIMEOUT_SYMBOL) {
+        console.warn('⏰ Profile fetch timeout - continuing without profile');
+        return null;
+      }
+
+      const { data: profile, error } = result as any;
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
@@ -73,27 +84,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .select()
             .single();
 
-          const createTimeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile creation timeout')), 10000)
+          const createTimeoutPromise = new Promise((resolve) => 
+            setTimeout(() => resolve(TIMEOUT_SYMBOL), 10000)
           );
 
-          const { data: createdProfile, error: createError } = await Promise.race([
+          const createResult = await Promise.race([
             createPromise, 
             createTimeoutPromise
-          ]) as any;
+          ]);
+
+          // Check if creation timeout occurred
+          if (createResult === TIMEOUT_SYMBOL) {
+            console.warn('⏰ Profile creation timeout - continuing without profile');
+            return null;
+          }
+
+          const { data: createdProfile, error: createError } = createResult as any;
 
           if (createError) {
             console.error('❌ Error creating profile:', createError);
-            throw new Error('Failed to create profile: ' + createError.message);
+            return null;
           }
 
           if (createdProfile) {
             console.log('✅ Profile created successfully');
             return { ...createdProfile, supabaseUser };
           }
-        } else {
-          throw new Error('Failed to fetch profile: ' + error.message);
         }
+        
         return null;
       } else if (profile) {
         console.log('✅ Profile loaded successfully');
@@ -103,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      throw error; // Re-throw to be handled by caller
+      return null; // Return null instead of throwing
     }
   };
 
@@ -129,17 +147,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (currentSession?.user) {
           console.log('✅ Found existing session for:', currentSession.user.email);
-          try {
-            const userProfile = await loadUserProfile(currentSession.user);
-            if (mounted) {
-              setUser(userProfile);
-            }
-          } catch (profileError) {
-            console.error('💥 Failed to load profile during init:', profileError);
-            if (mounted) {
-              setUser(null);
-              setSession(null);
-            }
+          const userProfile = await loadUserProfile(currentSession.user);
+          if (mounted) {
+            setUser(userProfile);
           }
         } else {
           console.log('ℹ️ No existing session found');
@@ -191,16 +201,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ User signed in:', newSession.user.email);
           setLoading(true);
           
-          try {
-            const userProfile = await loadUserProfile(newSession.user);
-            setUser(userProfile);
-          } catch (profileError) {
-            console.error('💥 Failed to load profile after sign in:', profileError);
-            setUser(null);
-            setSession(null);
-          } finally {
-            setLoading(false);
-          }
+          const userProfile = await loadUserProfile(newSession.user);
+          setUser(userProfile);
+          setLoading(false);
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 User signed out');
           setUser(null);
