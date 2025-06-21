@@ -10,9 +10,9 @@ export const stripe = stripePublishableKey ? loadStripe(stripePublishableKey) : 
 
 // These need to be replaced with your actual Stripe price IDs from your Stripe Dashboard
 export const STRIPE_PRICES = {
-  basic_monthly: 'price_1234567890', // Replace with actual Stripe price ID for Basic Monthly
-  premium_monthly: 'price_0987654321', // Replace with actual Stripe price ID for Premium Monthly
-  premium_yearly: 'price_1122334455', // Replace with actual Stripe price ID for Premium Yearly
+  basic_monthly: 'prod_SXY4I87Xnc7zg8', // Replace with actual Stripe price ID for Basic Monthly
+  premium_monthly: 'prod_SXEpTlnMRbHpRZ', // Replace with actual Stripe price ID for Premium Monthly
+  premium_yearly: 'prod_SXY51SrzMqJqNq', // Replace with actual Stripe price ID for Premium Yearly
 }
 
 export const PLAN_DETAILS = {
