@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calculator, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Calculator, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
@@ -12,7 +12,6 @@ const Signup: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +27,7 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting || loading) return;
+    if (isSubmitting) return;
     
     const { name, email, password, confirmPassword } = formData;
     
@@ -80,7 +79,7 @@ const Signup: React.FC = () => {
     }
   };
 
-  const isFormDisabled = isSubmitting || loading;
+  const isFormDisabled = isSubmitting;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -146,32 +145,18 @@ const Signup: React.FC = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isFormDisabled}
-                  className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isFormDisabled}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isFormDisabled}
+                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Create a password"
+              />
               <p className="mt-1 text-sm text-gray-500">
                 Must be at least 6 characters long
               </p>

@@ -58,7 +58,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Show simple loading spinner - auto logout will handle stuck states
+  // Show simple loading spinner only for a short time
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
