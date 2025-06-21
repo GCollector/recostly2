@@ -28,6 +28,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [user, loading, location.pathname, navigate]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setProfileDropdownOpen(false);
+    };
+
+    if (profileDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [profileDropdownOpen]);
+
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
@@ -93,7 +105,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {user ? (
                 <div className="relative">
                   <button
-                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProfileDropdownOpen(!profileDropdownOpen);
+                    }}
                     className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 p-2 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center space-x-2">
