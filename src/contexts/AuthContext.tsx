@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const mountedRef = useRef(true);
   const lastAuthEvent = useRef<string>('');
   const lastVisibilityCheck = useRef<number>(0);
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load user profile from database
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -159,10 +160,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('Initializing authentication...');
         
+        // Set a timeout to ensure loading doesn't hang indefinitely
+        initializationTimeoutRef.current = setTimeout(() => {
+          if (mountedRef.current && loading) {
+            console.warn('Auth initialization timeout, setting loading to false');
+            setLoading(false);
+            setInitialized(true);
+          }
+        }, 10000); // 10 second timeout
+        
         // Get current session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (!mountedRef.current) return;
+        
+        // Clear timeout since we got a response
+        if (initializationTimeoutRef.current) {
+          clearTimeout(initializationTimeoutRef.current);
+          initializationTimeoutRef.current = null;
+        }
         
         if (error) {
           console.error('Error getting session:', error);
@@ -193,6 +209,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (mountedRef.current) {
+          // Clear timeout on error
+          if (initializationTimeoutRef.current) {
+            clearTimeout(initializationTimeoutRef.current);
+            initializationTimeoutRef.current = null;
+          }
           setSession(null);
           setUser(null);
           setLoading(false);
@@ -308,6 +329,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mountedRef.current = false;
       if (authListenerRef.current) {
         authListenerRef.current.unsubscribe();
+      }
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
       }
     };
   }, []);
