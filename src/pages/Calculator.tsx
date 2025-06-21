@@ -162,7 +162,7 @@ const CalculatorPage: React.FC = () => {
                     className={getInputErrorClass(validationErrors, 'downPayment')}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Minimum: 5% for homes ≤$500K, 5%+10% for $500K-$1M, 20% for >$1M
+                    Minimum: 5% for homes ≤$500K, 5%+10% for $500K-$1M, 20% for &gt;$1M
                   </p>
                 </div>
 
