@@ -8,7 +8,7 @@ if (!stripePublishableKey) {
 
 export const stripe = stripePublishableKey ? loadStripe(stripePublishableKey) : null
 
-// These will be replaced with your actual Stripe price IDs
+// These need to be replaced with your actual Stripe price IDs from your Stripe Dashboard
 export const STRIPE_PRICES = {
   basic_monthly: 'price_1234567890', // Replace with actual Stripe price ID for Basic Monthly
   premium_monthly: 'price_0987654321', // Replace with actual Stripe price ID for Premium Monthly
@@ -39,4 +39,11 @@ export const PLAN_DETAILS = {
       'Priority support'
     ]
   }
+}
+
+// Check if Stripe is properly configured
+export const isStripeConfigured = () => {
+  return !!(stripePublishableKey && 
+    STRIPE_PRICES.basic_monthly !== 'price_1234567890' && 
+    STRIPE_PRICES.premium_monthly !== 'price_0987654321')
 }

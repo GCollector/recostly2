@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Crown, Check, Loader2, CreditCard, AlertCircle } from 'lucide-react';
+import { Crown, Check, Loader2, CreditCard, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { STRIPE_PRICES, PLAN_DETAILS } from '../lib/stripe';
+import { STRIPE_PRICES, PLAN_DETAILS, isStripeConfigured } from '../lib/stripe';
 
 const SubscriptionManager: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -11,6 +11,11 @@ const SubscriptionManager: React.FC = () => {
 
   const handleSubscribe = async (priceId: string) => {
     if (!user) return;
+
+    if (!isStripeConfigured()) {
+      setError('Payment system is not configured. Please contact support.');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
@@ -95,6 +100,7 @@ const SubscriptionManager: React.FC = () => {
   const isPremium = user.tier === 'premium';
   const isBasic = user.tier === 'basic';
   const hasActiveSubscription = user.subscription_status === 'active';
+  const stripeConfigured = isStripeConfigured();
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -102,6 +108,18 @@ const SubscriptionManager: React.FC = () => {
         <Crown className="h-6 w-6 text-amber-500 mr-3" />
         <h2 className="text-xl font-semibold text-gray-900">Subscription Management</h2>
       </div>
+
+      {!stripeConfigured && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 flex items-start">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Payment System Configuration Required</p>
+            <p className="text-sm mt-1">
+              Stripe integration needs to be configured. You can still use all calculator features for free.
+            </p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start">
@@ -134,7 +152,7 @@ const SubscriptionManager: React.FC = () => {
                 </span>
               )}
             </div>
-            {hasActiveSubscription && user.stripe_subscription_id && (
+            {hasActiveSubscription && user.stripe_subscription_id && stripeConfigured && (
               <button
                 onClick={handleManageSubscription}
                 disabled={isLoading}
@@ -167,7 +185,7 @@ const SubscriptionManager: React.FC = () => {
         )}
 
         {/* Upgrade Options */}
-        {!isPremium && (
+        {!isPremium && stripeConfigured && (
           <div className="space-y-4">
             <h3 className="font-medium text-gray-900">Available Plans</h3>
             

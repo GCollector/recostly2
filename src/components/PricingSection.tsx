@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Check, Crown, Loader2 } from 'lucide-react';
+import { Check, Crown, Loader2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { STRIPE_PRICES, PLAN_DETAILS } from '../lib/stripe';
+import { STRIPE_PRICES, PLAN_DETAILS, isStripeConfigured } from '../lib/stripe';
 
 interface PricingSectionProps {
   showTitle?: boolean;
@@ -18,6 +18,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
     if (!user) {
       // Redirect to signup if not logged in
       window.location.href = '/signup';
+      return;
+    }
+
+    // Check if Stripe is properly configured
+    if (!isStripeConfigured()) {
+      setError('Payment system is not configured. Please contact support.');
       return;
     }
 
@@ -68,6 +74,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
 
   const isPremium = user?.tier === 'premium';
   const isBasic = user?.tier === 'basic';
+  const stripeConfigured = isStripeConfigured();
 
   return (
     <div className={compact ? 'space-y-6' : 'space-y-8'}>
@@ -75,6 +82,19 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your Plan</h2>
           <p className="text-lg text-gray-600">Get started for free or unlock premium features</p>
+        </div>
+      )}
+
+      {!stripeConfigured && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-start">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Payment System Configuration Required</p>
+            <p className="text-sm mt-1">
+              Stripe integration needs to be configured with valid price IDs. 
+              Contact the administrator to set up payment processing.
+            </p>
+          </div>
         </div>
       )}
 
@@ -136,11 +156,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
           </ul>
           <button
             onClick={() => handleSubscribe(STRIPE_PRICES.basic_monthly)}
-            disabled={isLoading || isBasic || isPremium}
+            disabled={isLoading || isBasic || isPremium || !stripeConfigured}
             className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {isBasic ? 'Current Plan' : isPremium ? 'Downgrade' : 'Get Started'}
+            {!stripeConfigured ? 'Coming Soon' : 
+             isBasic ? 'Current Plan' : 
+             isPremium ? 'Downgrade' : 'Get Started'}
           </button>
         </div>
 
@@ -170,11 +192,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
           </ul>
           <button
             onClick={() => handleSubscribe(STRIPE_PRICES.premium_monthly)}
-            disabled={isLoading || isPremium}
+            disabled={isLoading || isPremium || !stripeConfigured}
             className="block w-full text-center bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {isPremium ? 'Current Plan' : 'Go Premium'}
+            {!stripeConfigured ? 'Coming Soon' : 
+             isPremium ? 'Current Plan' : 'Go Premium'}
           </button>
         </div>
       </div>
@@ -182,8 +205,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
       {/* Additional Info */}
       <div className="text-center text-sm text-gray-600 max-w-2xl mx-auto">
         <p>
-          All plans include a 14-day free trial. Cancel anytime. 
-          Need help choosing? <a href="mailto:support@mortgagecalc.ca" className="text-blue-600 hover:text-blue-700">Contact us</a>.
+          {stripeConfigured ? (
+            <>All plans include a 14-day free trial. Cancel anytime. 
+            Need help choosing? <a href="mailto:support@mortgagecalc.ca" className="text-blue-600 hover:text-blue-700">Contact us</a>.</>
+          ) : (
+            <>Payment processing is being configured. You can still use all calculator features for free. 
+            <a href="mailto:support@mortgagecalc.ca" className="text-blue-600 hover:text-blue-700">Contact us</a> for updates.</>
+          )}
         </p>
       </div>
     </div>
