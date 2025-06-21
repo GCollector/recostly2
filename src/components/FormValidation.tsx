@@ -199,7 +199,6 @@ export const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ errors, cl
   if (errors.length === 0) return null;
 
   const errorMessages = errors.filter(e => e.type === 'error');
-  const warningMessages = errors.filter(e => e.type === 'warning');
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -216,27 +215,6 @@ export const ValidationDisplay: React.FC<ValidationDisplayProps> = ({ errors, cl
                   <li key={index} className="flex items-start">
                     <span className="inline-block w-1 h-1 bg-red-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
                     {error.message}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {warningMessages.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <Info className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-amber-800 mb-2">
-                Important considerations:
-              </h3>
-              <ul className="text-sm text-amber-700 space-y-1">
-                {warningMessages.map((warning, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="inline-block w-1 h-1 bg-amber-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                    {warning.message}
                   </li>
                 ))}
               </ul>
