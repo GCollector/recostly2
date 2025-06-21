@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Share2, Copy, CheckCircle, Crown } from 'lucide-react';
+import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import NotesSection from './NotesSection';
@@ -30,6 +30,7 @@ const MortgageCalculator: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const calculateMortgage = () => {
     const loanAmount = homePrice - downPayment;
@@ -65,21 +66,18 @@ const MortgageCalculator: React.FC = () => {
 
   const handleSave = async () => {
     if (!result) {
-      console.log('No result to save');
-      alert('Please calculate a mortgage first');
+      console.log('❌ No result to save');
+      setSaveError('Please calculate a mortgage first');
       return;
     }
     
-    if (!user) {
-      console.log('No user, showing upgrade prompt');
-      setShowUpgradePrompt(true);
-      return;
-    }
-    
+    setSaveError('');
     setIsSaving(true);
+    
     try {
-      console.log('Saving calculation...');
-      const id = await saveCalculation({
+      console.log('💾 Saving calculation...', { user: user?.email, result });
+      
+      const calculationData = {
         home_price: homePrice,
         down_payment: downPayment,
         interest_rate: interestRate,
@@ -92,15 +90,25 @@ const MortgageCalculator: React.FC = () => {
         total_interest: result.totalInterest,
         notes: {},
         comments: null
-      });
+      };
       
-      console.log('Calculation saved with ID:', id);
+      const id = await saveCalculation(calculationData);
+      
+      console.log('✅ Calculation saved with ID:', id);
       setCalculationId(id);
-      alert('Calculation saved successfully!');
-      setShowShareModal(true);
+      
+      if (user) {
+        // For authenticated users, show success and share modal
+        setSaveError('');
+        setShowShareModal(true);
+      } else {
+        // For non-authenticated users, just show share modal
+        setSaveError('');
+        setShowShareModal(true);
+      }
     } catch (error) {
-      console.error('Error saving calculation:', error);
-      alert('Failed to save calculation. Please try again.');
+      console.error('💥 Error saving calculation:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -108,8 +116,8 @@ const MortgageCalculator: React.FC = () => {
 
   const handleShare = async () => {
     if (!calculationId) {
-      console.log('No calculation ID to share');
-      alert('Please save the calculation first');
+      console.log('❌ No calculation ID to share');
+      setSaveError('Please save the calculation first');
       return;
     }
     
@@ -118,8 +126,9 @@ const MortgageCalculator: React.FC = () => {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      console.log('✅ Share URL copied to clipboard:', shareUrl);
     } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
+      console.error('❌ Failed to copy to clipboard:', err);
       // Fallback: show the URL in an alert
       alert(`Share this link: ${shareUrl}`);
     }
@@ -127,43 +136,20 @@ const MortgageCalculator: React.FC = () => {
 
   const handleDirectShare = async () => {
     if (!result) {
-      alert('Please calculate a mortgage first');
+      setSaveError('Please calculate a mortgage first');
       return;
     }
 
-    // If not logged in, save temporarily and share
-    if (!user) {
-      try {
-        const tempId = await saveCalculation({
-          home_price: homePrice,
-          down_payment: downPayment,
-          interest_rate: interestRate,
-          amortization_years: amortizationYears,
-          payment_frequency: paymentFrequency,
-          province,
-          city,
-          is_first_time_buyer: isFirstTimeBuyer,
-          monthly_payment: result.monthlyPayment,
-          total_interest: result.totalInterest,
-          notes: {},
-          comments: null
-        });
-        
-        setCalculationId(tempId);
-        setShowShareModal(true);
-      } catch (error) {
-        console.error('Error creating shareable calculation:', error);
-        alert('Failed to create shareable link. Please try again.');
-      }
-      return;
-    }
+    setSaveError('');
 
-    // If logged in but not saved yet, save first
-    if (!calculationId) {
-      await handleSave();
-    } else {
+    // If already saved, just show share modal
+    if (calculationId) {
       setShowShareModal(true);
+      return;
     }
+
+    // Otherwise, save first then share
+    await handleSave();
   };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
@@ -339,19 +325,28 @@ const MortgageCalculator: React.FC = () => {
                 <div className="text-sm text-gray-600">Total Cost of Home</div>
               </div>
 
+              {/* Error Display */}
+              {saveError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
                 <button
                   onClick={handleDirectShare}
-                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                  disabled={isSaving}
+                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share

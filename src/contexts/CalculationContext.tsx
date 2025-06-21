@@ -50,16 +50,22 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     setIsLoading(true);
     try {
+      console.log('📊 Fetching calculations for user:', user.email);
       const { data, error } = await supabase
         .from('mortgage_calculations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching calculations:', error);
+        throw error;
+      }
+      
+      console.log('✅ Fetched calculations:', data?.length || 0);
       setCalculations(data || []);
     } catch (error) {
-      console.error('Error fetching calculations:', error);
+      console.error('💥 Error fetching calculations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -69,128 +75,169 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!user) return;
 
     try {
+      console.log('📈 Fetching investment calculations for user:', user.email);
       const { data, error } = await supabase
         .from('investment_calculations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching investment calculations:', error);
+        throw error;
+      }
+      
+      console.log('✅ Fetched investment calculations:', data?.length || 0);
       setInvestmentCalculations(data || []);
     } catch (error) {
-      console.error('Error fetching investment calculations:', error);
+      console.error('💥 Error fetching investment calculations:', error);
     }
   };
 
   const saveCalculation = async (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    console.log('💾 Saving calculation...', { user: user?.email, calculation });
+
     if (!user) {
-      // For non-authenticated users, save to localStorage temporarily
-      const tempId = 'temp-' + Date.now();
-      const tempCalculation = {
-        ...calculation,
-        id: tempId,
-        user_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      // For non-authenticated users, save to localStorage temporarily and create a shareable version
+      console.log('👤 No user - creating temporary shareable calculation');
       
-      const existing = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
-      existing.push(tempCalculation);
-      localStorage.setItem('tempCalculations', JSON.stringify(existing));
-      
-      return tempId;
+      try {
+        const { data, error } = await supabase
+          .from('mortgage_calculations')
+          .insert({
+            ...calculation,
+            user_id: null, // Allow null for public sharing
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('❌ Error creating shareable calculation:', error);
+          throw new Error('Failed to create shareable calculation: ' + error.message);
+        }
+
+        if (data) {
+          console.log('✅ Shareable calculation created:', data.id);
+          return data.id;
+        }
+
+        throw new Error('Failed to create shareable calculation');
+      } catch (error) {
+        console.error('💥 Error in saveCalculation for non-user:', error);
+        throw error;
+      }
     }
 
-    console.log('Saving calculation for user:', user.id);
-    console.log('Calculation data:', calculation);
+    // For authenticated users, save normally
+    try {
+      console.log('👤 Authenticated user - saving to database');
+      const { data, error } = await supabase
+        .from('mortgage_calculations')
+        .insert({
+          ...calculation,
+          user_id: user.id,
+        })
+        .select()
+        .single();
 
-    const { data, error } = await supabase
-      .from('mortgage_calculations')
-      .insert({
-        ...calculation,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+      if (error) {
+        console.error('❌ Error saving calculation:', error);
+        throw new Error('Failed to save calculation: ' + error.message);
+      }
 
-    if (error) {
-      console.error('Error saving calculation:', error);
+      if (data) {
+        console.log('✅ Calculation saved successfully:', data.id);
+        setCalculations(prev => [data, ...prev]);
+        return data.id;
+      }
+
+      throw new Error('Failed to save calculation - no data returned');
+    } catch (error) {
+      console.error('💥 Error in saveCalculation:', error);
       throw error;
     }
-
-    if (data) {
-      console.log('Calculation saved successfully:', data.id);
-      setCalculations(prev => [data, ...prev]);
-      return data.id;
-    }
-
-    throw new Error('Failed to save calculation');
   };
 
   const saveInvestmentCalculation = async (calculation: Omit<InvestmentCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) throw new Error('Must be logged in to save investment calculations');
 
-    const { data, error } = await supabase
-      .from('investment_calculations')
-      .insert({
-        ...calculation,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+    console.log('📈 Saving investment calculation for user:', user.email);
 
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('investment_calculations')
+        .insert({
+          ...calculation,
+          user_id: user.id,
+        })
+        .select()
+        .single();
 
-    if (data) {
-      setInvestmentCalculations(prev => [data, ...prev]);
-      return data.id;
+      if (error) {
+        console.error('❌ Error saving investment calculation:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('✅ Investment calculation saved:', data.id);
+        setInvestmentCalculations(prev => [data, ...prev]);
+        return data.id;
+      }
+
+      throw new Error('Failed to save investment calculation');
+    } catch (error) {
+      console.error('💥 Error saving investment calculation:', error);
+      throw error;
     }
-
-    throw new Error('Failed to save investment calculation');
   };
 
   const deleteCalculation = async (id: string) => {
     if (!user) throw new Error('Must be logged in to delete calculations');
 
-    const { error } = await supabase
-      .from('mortgage_calculations')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id);
+    console.log('🗑️ Deleting calculation:', id);
 
-    if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('mortgage_calculations')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-    setCalculations(prev => prev.filter(calc => calc.id !== id));
+      if (error) {
+        console.error('❌ Error deleting calculation:', error);
+        throw error;
+      }
+
+      console.log('✅ Calculation deleted successfully');
+      setCalculations(prev => prev.filter(calc => calc.id !== id));
+    } catch (error) {
+      console.error('💥 Error deleting calculation:', error);
+      throw error;
+    }
   };
 
   // Synchronous version for components that have the calculation in state
   const getCalculation = (id: string): MortgageCalculation | null => {
-    // First check if it's a temp calculation
-    if (id.startsWith('temp-')) {
-      const tempCalculations = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
-      return tempCalculations.find((calc: MortgageCalculation) => calc.id === id) || null;
-    }
-
     // Check in current calculations
-    return calculations.find(calc => calc.id === id) || null;
+    const found = calculations.find(calc => calc.id === id);
+    console.log('🔍 Getting calculation (sync):', id, found ? 'found' : 'not found');
+    return found || null;
   };
 
   // Async version for fetching from database
   const getCalculationAsync = async (id: string): Promise<MortgageCalculation | null> => {
-    // First check if it's a temp calculation
-    if (id.startsWith('temp-')) {
-      const tempCalculations = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
-      return tempCalculations.find((calc: MortgageCalculation) => calc.id === id) || null;
-    }
+    console.log('🔍 Getting calculation (async):', id);
 
     // Check in current calculations first
     const existingCalc = calculations.find(calc => calc.id === id);
     if (existingCalc) {
+      console.log('✅ Found calculation in cache');
       return existingCalc;
     }
 
     // If not found, fetch from database
     try {
+      console.log('🌐 Fetching calculation from database');
       const { data, error } = await supabase
         .from('mortgage_calculations')
         .select('*')
@@ -198,13 +245,14 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        console.error('Error fetching calculation:', error);
+        console.error('❌ Error fetching calculation:', error);
         return null;
       }
 
+      console.log('✅ Fetched calculation from database');
       return data;
     } catch (error) {
-      console.error('Error fetching calculation:', error);
+      console.error('💥 Error fetching calculation:', error);
       return null;
     }
   };
@@ -212,42 +260,64 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationNotes = async (id: string, section: string, notes: string) => {
     if (!user) throw new Error('Must be logged in to update notes');
 
-    const { data, error } = await supabase
-      .from('mortgage_calculations')
-      .update({
-        notes: { [section]: notes }
-      })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    console.log('📝 Updating calculation notes:', id, section);
 
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('mortgage_calculations')
+        .update({
+          notes: { [section]: notes }
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-    if (data) {
-      setCalculations(prev => 
-        prev.map(calc => calc.id === id ? data : calc)
-      );
+      if (error) {
+        console.error('❌ Error updating notes:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('✅ Notes updated successfully');
+        setCalculations(prev => 
+          prev.map(calc => calc.id === id ? data : calc)
+        );
+      }
+    } catch (error) {
+      console.error('💥 Error updating notes:', error);
+      throw error;
     }
   };
 
   const updateCalculationComments = async (id: string, comments: string) => {
     if (!user) throw new Error('Must be logged in to update comments');
 
-    const { data, error } = await supabase
-      .from('mortgage_calculations')
-      .update({ comments })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    console.log('💬 Updating calculation comments:', id);
 
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('mortgage_calculations')
+        .update({ comments })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-    if (data) {
-      setCalculations(prev => 
-        prev.map(calc => calc.id === id ? data : calc)
-      );
+      if (error) {
+        console.error('❌ Error updating comments:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('✅ Comments updated successfully');
+        setCalculations(prev => 
+          prev.map(calc => calc.id === id ? data : calc)
+        );
+      }
+    } catch (error) {
+      console.error('💥 Error updating comments:', error);
+      throw error;
     }
   };
 
