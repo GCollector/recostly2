@@ -4,7 +4,7 @@ import { Calculator, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
-  const { signup, isLoading } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -14,6 +14,7 @@ const Signup: React.FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -35,12 +36,17 @@ const Signup: React.FC = () => {
       setError('Password must be at least 6 characters long');
       return;
     }
+
+    setIsLoading(true);
     
     try {
       await signup(formData.email, formData.password, formData.name);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Failed to create account');
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err.message || 'Failed to create account');
+    } finally {
+      setIsLoading(false);
     }
   };
 
