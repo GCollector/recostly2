@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { Calculator, ArrowRight, TrendingUp, Home, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calculator, ArrowRight, TrendingUp, Home, DollarSign, AlertTriangle } from 'lucide-react';
 import CurrencyInput from '../components/CurrencyInput';
+import { 
+  validateMortgageInputs, 
+  ValidationDisplay, 
+  hasErrors, 
+  getInputErrorClass,
+  type ValidationError 
+} from '../components/FormValidation';
 
 interface CalculationInputs {
   // Property Details
@@ -27,6 +34,7 @@ interface CalculationInputs {
 
 const CalculatorPage: React.FC = () => {
   const [stage, setStage] = useState<'form' | 'results'>('form');
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [inputs, setInputs] = useState<CalculationInputs>({
     homePrice: 500000,
     downPayment: 100000,
@@ -66,7 +74,36 @@ const CalculatorPage: React.FC = () => {
     }));
   };
 
+  // Validate inputs whenever they change
+  useEffect(() => {
+    const errors = validateMortgageInputs({
+      homePrice: inputs.homePrice,
+      downPayment: inputs.downPayment,
+      interestRate: inputs.interestRate,
+      amortizationYears: inputs.amortizationYears,
+      isFirstTimeBuyer: inputs.isFirstTimeBuyer,
+      province: inputs.province
+    });
+    setValidationErrors(errors);
+  }, [inputs.homePrice, inputs.downPayment, inputs.interestRate, inputs.amortizationYears, inputs.isFirstTimeBuyer, inputs.province]);
+
   const handleCalculate = () => {
+    // Final validation before proceeding
+    const errors = validateMortgageInputs({
+      homePrice: inputs.homePrice,
+      downPayment: inputs.downPayment,
+      interestRate: inputs.interestRate,
+      amortizationYears: inputs.amortizationYears,
+      isFirstTimeBuyer: inputs.isFirstTimeBuyer,
+      province: inputs.province
+    });
+
+    if (hasErrors(errors)) {
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setStage('results');
   };
 
@@ -74,7 +111,8 @@ const CalculatorPage: React.FC = () => {
     setStage('form');
   };
 
-  const downPaymentPercent = Math.round((inputs.downPayment / inputs.homePrice) * 100);
+  const downPaymentPercent = inputs.homePrice > 0 ? Math.round((inputs.downPayment / inputs.homePrice) * 100) : 0;
+  const canCalculate = !hasErrors(validationErrors);
 
   if (stage === 'form') {
     return (
@@ -86,6 +124,9 @@ const CalculatorPage: React.FC = () => {
             Enter your property details to calculate mortgage payments and investment metrics
           </p>
         </div>
+
+        {/* Validation Messages */}
+        <ValidationDisplay errors={validationErrors} />
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="space-y-8">
@@ -99,57 +140,70 @@ const CalculatorPage: React.FC = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Home Purchase Price
+                    Home Purchase Price *
                   </label>
                   <CurrencyInput
                     value={inputs.homePrice}
                     onChange={(value) => updateInput('homePrice', value)}
                     placeholder="500,000"
+                    className={getInputErrorClass(validationErrors, 'homePrice')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Down Payment
+                    Down Payment *
                   </label>
                   <CurrencyInput
                     value={inputs.downPayment}
                     onChange={(value) => updateInput('downPayment', value)}
                     placeholder="100,000"
                     suffix={`${downPaymentPercent}%`}
+                    className={getInputErrorClass(validationErrors, 'downPayment')}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Minimum: 5% for homes ≤$500K, 5%+10% for $500K-$1M, 20% for >$1M
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interest Rate
+                    Interest Rate * (Annual)
                   </label>
                   <div className="relative">
                     <input
                       type="number"
                       step="0.01"
+                      min="0.01"
+                      max="20"
                       value={inputs.interestRate}
                       onChange={(e) => updateInput('interestRate', Number(e.target.value))}
-                      className="w-full pr-8 pl-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full pr-8 pl-3 py-3 border rounded-lg focus:ring-2 ${getInputErrorClass(validationErrors, 'interestRate')}`}
                       placeholder="5.25"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Current rates typically range from 3% to 7%
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Amortization Period
+                    Amortization Period *
                   </label>
                   <select
                     value={inputs.amortizationYears}
                     onChange={(e) => updateInput('amortizationYears', Number(e.target.value))}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-3 border rounded-lg focus:ring-2 ${getInputErrorClass(validationErrors, 'amortizationYears')}`}
                   >
                     {[15, 20, 25, 30].map(years => (
                       <option key={years} value={years}>{years} years</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maximum 25 years for down payments under 20%
+                  </p>
                 </div>
 
                 <div>
@@ -200,11 +254,22 @@ const CalculatorPage: React.FC = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="first-time-buyer" className="ml-2 block text-sm text-gray-700">
-                    First-time homebuyer (eligible for rebates)
+                    First-time homebuyer (eligible for rebates and incentives)
                   </label>
                 </div>
               </div>
             </div>
+
+            {/* Stress Test Information */}
+            {inputs.homePrice > 0 && inputs.downPayment > 0 && inputs.interestRate > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">Canadian Stress Test (B-20 Guidelines)</h3>
+                <p className="text-sm text-blue-800">
+                  Your mortgage will be qualified at {Math.max(inputs.interestRate + 2, 5.25).toFixed(2)}% 
+                  (your rate + 2% or 5.25%, whichever is higher) to ensure you can handle rate increases.
+                </p>
+              </div>
+            )}
 
             {/* Investment Analysis Toggle */}
             <div className="border-t border-gray-200 pt-8">
@@ -316,12 +381,24 @@ const CalculatorPage: React.FC = () => {
             <div className="border-t border-gray-200 pt-8">
               <button
                 onClick={handleCalculate}
-                className="w-full flex items-center justify-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-lg font-semibold transition-colors shadow-lg"
+                disabled={!canCalculate}
+                className={`w-full flex items-center justify-center px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg ${
+                  canCalculate
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
+                {!canCalculate && <AlertTriangle className="h-5 w-5 mr-3" />}
                 <Calculator className="h-5 w-5 mr-3" />
-                Calculate Mortgage & Investment
-                <ArrowRight className="h-5 w-5 ml-3" />
+                {canCalculate ? 'Calculate Mortgage & Investment' : 'Please Fix Errors Above'}
+                {canCalculate && <ArrowRight className="h-5 w-5 ml-3" />}
               </button>
+              
+              {!canCalculate && (
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  Please correct the validation errors above to proceed with the calculation.
+                </p>
+              )}
             </div>
           </div>
         </div>
