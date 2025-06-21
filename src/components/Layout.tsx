@@ -58,7 +58,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Show loading spinner during initial auth check
+  // Show loading spinner only during initial auth check
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

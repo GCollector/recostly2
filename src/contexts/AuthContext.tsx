@@ -33,9 +33,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   // Load user profile from database
-  const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<void> => {
+  const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       console.log('Loading profile for user:', supabaseUser.email);
 
@@ -69,24 +70,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (createError) {
             console.error('Error creating profile:', createError);
-            throw createError;
+            return null;
           }
 
           if (createdProfile) {
             console.log('Profile created successfully');
-            setUser({ ...createdProfile, supabaseUser });
+            return { ...createdProfile, supabaseUser };
           }
-        } else {
-          throw error;
         }
+        return null;
       } else if (profile) {
         console.log('Profile loaded successfully');
-        setUser({ ...profile, supabaseUser });
+        return { ...profile, supabaseUser };
       }
+      
+      return null;
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
-      setUser(null);
-      throw error;
+      return null;
     }
   };
 
@@ -107,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null);
             setUser(null);
             setLoading(false);
+            setInitialized(true);
           }
           return;
         }
@@ -116,13 +118,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (currentSession?.user) {
             console.log('Found existing session for:', currentSession.user.email);
-            await loadUserProfile(currentSession.user);
+            const userProfile = await loadUserProfile(currentSession.user);
+            if (mounted) {
+              setUser(userProfile);
+            }
           } else {
             console.log('No existing session found');
             setUser(null);
           }
           
           setLoading(false);
+          setInitialized(true);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -130,52 +136,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
           setLoading(false);
+          setInitialized(true);
         }
       }
     };
 
-    // Set up auth state listener
+    // Only initialize once
+    if (!initialized) {
+      initializeAuth();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [initialized]);
+
+  // Set up auth state listener after initialization
+  useEffect(() => {
+    if (!initialized) return;
+
+    console.log('Setting up auth state listener...');
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('Auth state changed:', event, newSession?.user?.email || 'No user');
         
-        if (!mounted) return;
-
         try {
           setSession(newSession);
 
           if (event === 'SIGNED_IN' && newSession?.user) {
             console.log('User signed in:', newSession.user.email);
-            await loadUserProfile(newSession.user);
+            setLoading(true);
+            const userProfile = await loadUserProfile(newSession.user);
+            setUser(userProfile);
+            setLoading(false);
           } else if (event === 'SIGNED_OUT') {
             console.log('User signed out');
             setUser(null);
+            setLoading(false);
           } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
             console.log('Token refreshed for:', newSession.user.email);
             // Only reload profile if we don't have user data
             if (!user) {
-              await loadUserProfile(newSession.user);
+              setLoading(true);
+              const userProfile = await loadUserProfile(newSession.user);
+              setUser(userProfile);
+              setLoading(false);
             }
           }
         } catch (error) {
           console.error('Error handling auth state change:', error);
           setUser(null);
-        } finally {
-          if (mounted) {
-            setLoading(false);
-          }
+          setLoading(false);
         }
       }
     );
 
-    // Initialize auth
-    initializeAuth();
-
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array is intentional
+  }, [initialized, user]);
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
@@ -189,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign in error:', error);
+        setLoading(false);
         throw error;
       }
 
@@ -219,6 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign up error:', error);
+        setLoading(false);
         throw error;
       }
 

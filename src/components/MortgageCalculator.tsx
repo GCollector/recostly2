@@ -29,6 +29,7 @@ const MortgageCalculator: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const calculateMortgage = () => {
     const loanAmount = homePrice - downPayment;
@@ -70,6 +71,7 @@ const MortgageCalculator: React.FC = () => {
       return;
     }
     
+    setIsSaving(true);
     try {
       const id = await saveCalculation({
         home_price: homePrice,
@@ -81,7 +83,9 @@ const MortgageCalculator: React.FC = () => {
         city,
         is_first_time_buyer: isFirstTimeBuyer,
         monthly_payment: result.monthlyPayment,
-        total_interest: result.totalInterest
+        total_interest: result.totalInterest,
+        notes: {},
+        comments: null
       });
       
       setCalculationId(id);
@@ -89,10 +93,14 @@ const MortgageCalculator: React.FC = () => {
     } catch (error) {
       console.error('Error saving calculation:', error);
       alert('Failed to save calculation. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleShare = async () => {
+    if (!calculationId) return;
+    
     const shareUrl = `${window.location.origin}/shared/${calculationId}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -280,17 +288,20 @@ const MortgageCalculator: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleSave}
-                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  disabled={isSaving}
+                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {user ? 'Save Calculation' : 'Save & Share'}
+                  {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
-                >
-                  <Share2 className="h-4 w-4" />
-                </button>
+                {calculationId && (
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -332,7 +343,7 @@ const MortgageCalculator: React.FC = () => {
       )}
 
       {/* Share Modal */}
-      {showShareModal && (
+      {showShareModal && calculationId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Share Calculation</h3>
