@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { Database } from '../lib/supabase';
@@ -17,7 +17,6 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
-  forceSignOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,66 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-  
-  const mountedRef = useRef(true);
-  const authListenerRef = useRef<any>(null);
-  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const autoLogoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxRetries = 2;
-  const retryCount = useRef(0);
 
-  // Force sign out function - clears everything aggressively
-  const forceSignOut = () => {
-    console.log('🔥 AUTO FORCE SIGN OUT - Clearing all auth state');
-    
-    // Clear all timeouts
-    if (initTimeoutRef.current) {
-      clearTimeout(initTimeoutRef.current);
-      initTimeoutRef.current = null;
-    }
-    if (autoLogoutTimeoutRef.current) {
-      clearTimeout(autoLogoutTimeoutRef.current);
-      autoLogoutTimeoutRef.current = null;
-    }
-    
-    // Clear all state immediately
-    setUser(null);
-    setSession(null);
-    setLoading(false);
-    setInitialized(true);
-    
-    // Clear any stored auth data
+  const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
-      sessionStorage.clear();
-    } catch (e) {
-      console.log('Error clearing storage:', e);
-    }
-    
-    // Force sign out from Supabase (don't wait for response)
-    supabase.auth.signOut().catch(() => {
-      console.log('Supabase signOut failed, but continuing with force logout');
-    });
-    
-    console.log('✅ Auto force sign out completed');
-  };
-
-  // Load user profile with retry logic
-  const loadUserProfile = async (supabaseUser: SupabaseUser, attempt = 1): Promise<User | null> => {
-    if (!mountedRef.current) return null;
-    
-    try {
-      console.log(`📝 Loading profile for user: ${supabaseUser.email} (attempt ${attempt})`);
+      console.log('📝 Loading profile for user:', supabaseUser.email);
 
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
-
-      if (!mountedRef.current) return null;
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
@@ -117,30 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .select()
             .single();
 
-          if (!mountedRef.current) return null;
-
           if (createError) {
             console.error('❌ Error creating profile:', createError);
-            if (attempt < maxRetries) {
-              console.log(`🔄 Retrying profile creation (${attempt + 1}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-              return loadUserProfile(supabaseUser, attempt + 1);
-            }
-            throw createError;
+            return null;
           }
 
           if (createdProfile) {
             console.log('✅ Profile created successfully');
             return { ...createdProfile, supabaseUser };
           }
-        } else {
-          // For other errors, retry if we haven't exceeded max attempts
-          if (attempt < maxRetries) {
-            console.log(`🔄 Retrying profile fetch (${attempt + 1}/${maxRetries})`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            return loadUserProfile(supabaseUser, attempt + 1);
-          }
-          throw error;
         }
         return null;
       } else if (profile) {
@@ -151,166 +85,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      
-      if (attempt < maxRetries) {
-        console.log(`🔄 Retrying after error (${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        return loadUserProfile(supabaseUser, attempt + 1);
-      }
-      
-      throw error;
+      return null;
     }
   };
 
   // Initialize authentication
   useEffect(() => {
+    let mounted = true;
+
     const initializeAuth = async () => {
-      if (!mountedRef.current) return;
-      
-      console.log('🚀 Initializing authentication...');
-      
       try {
+        console.log('🚀 Initializing authentication...');
+        
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
-        if (!mountedRef.current) return;
+        if (!mounted) return;
         
         if (error) {
           console.error('❌ Error getting session:', error);
-          throw error;
+          setLoading(false);
+          return;
         }
 
         setSession(currentSession);
         
         if (currentSession?.user) {
           console.log('✅ Found existing session for:', currentSession.user.email);
-          try {
-            const userProfile = await loadUserProfile(currentSession.user);
-            if (mountedRef.current) {
-              setUser(userProfile);
-            }
-          } catch (profileError) {
-            console.error('💥 Failed to load profile:', profileError);
-            // Don't throw here, just continue without user profile
-            setUser(null);
+          const userProfile = await loadUserProfile(currentSession.user);
+          if (mounted) {
+            setUser(userProfile);
           }
         } else {
           console.log('ℹ️ No existing session found');
           setUser(null);
         }
         
-        if (mountedRef.current) {
+        if (mounted) {
           setLoading(false);
-          setInitialized(true);
-          retryCount.current = 0; // Reset retry count on success
         }
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
-        if (mountedRef.current) {
-          retryCount.current++;
-          if (retryCount.current >= maxRetries) {
-            console.error('💥 Max initialization retries exceeded');
-            setLoading(false);
-            setInitialized(true);
-            setUser(null);
-            setSession(null);
-          } else {
-            console.log(`🔄 Retrying initialization (${retryCount.current}/${maxRetries})`);
-            // Schedule retry
-            setTimeout(() => {
-              if (mountedRef.current) {
-                setLoading(true);
-                initializeAuth();
-              }
-            }, 1500);
-          }
+        if (mounted) {
+          setLoading(false);
+          setUser(null);
+          setSession(null);
         }
       }
     };
 
+    // Set timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('⏰ Auth initialization timeout - setting loading to false');
+        setLoading(false);
+      }
+    }, 3000);
+
     initializeAuth();
-  }, []); // Empty dependency array - runs only once
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   // Set up auth state listener
   useEffect(() => {
-    if (!initialized || !mountedRef.current) return;
-
     console.log('👂 Setting up auth state listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        if (!mountedRef.current) return;
-        
         console.log('🔄 Auth state changed:', event, newSession?.user?.email || 'No user');
         
-        try {
-          setSession(newSession);
+        setSession(newSession);
 
-          if (event === 'SIGNED_IN' && newSession?.user) {
-            console.log('✅ User signed in:', newSession.user.email);
-            setLoading(true);
-            
-            try {
-              const userProfile = await loadUserProfile(newSession.user);
-              if (mountedRef.current) {
-                setUser(userProfile);
-                setLoading(false);
-              }
-            } catch (profileError) {
-              console.error('💥 Failed to load profile after sign in:', profileError);
-              if (mountedRef.current) {
-                setUser(null);
-                setLoading(false);
-              }
-            }
-          } else if (event === 'SIGNED_OUT') {
-            console.log('👋 User signed out');
-            if (mountedRef.current) {
-              setUser(null);
-              setLoading(false);
-            }
-          } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
-            console.log('🔄 Token refreshed for:', newSession.user.email);
-            // Don't change loading state or reload profile on token refresh
-          }
-        } catch (error) {
-          console.error('💥 Error handling auth state change:', error);
-          if (mountedRef.current) {
-            setUser(null);
-            setLoading(false);
-          }
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          console.log('✅ User signed in:', newSession.user.email);
+          setLoading(true);
+          
+          const userProfile = await loadUserProfile(newSession.user);
+          setUser(userProfile);
+          setLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('👋 User signed out');
+          setUser(null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
+          console.log('🔄 Token refreshed for:', newSession.user.email);
+          // Don't change loading state or reload profile on token refresh
         }
       }
     );
 
-    authListenerRef.current = subscription;
-
     return () => {
-      if (authListenerRef.current) {
-        authListenerRef.current.unsubscribe();
-        authListenerRef.current = null;
-      }
-    };
-  }, [initialized]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      if (authListenerRef.current) {
-        authListenerRef.current.unsubscribe();
-      }
-      if (initTimeoutRef.current) {
-        clearTimeout(initTimeoutRef.current);
-      }
-      if (autoLogoutTimeoutRef.current) {
-        clearTimeout(autoLogoutTimeoutRef.current);
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
-    if (!mountedRef.current) return;
-    
     try {
       console.log('🔐 Attempting sign in for:', email);
       setLoading(true);
@@ -337,8 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
-    if (!mountedRef.current) return;
-    
     try {
       console.log('📝 Attempting sign up for:', email);
       setLoading(true);
@@ -370,35 +240,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async (): Promise<void> => {
-    if (!mountedRef.current) return;
-    
     try {
       console.log('👋 Signing out...');
       
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('❌ Sign out error:', error);
-        // Even if signOut fails, force clear the local state
-        forceSignOut();
-        return;
       }
       
-      // Clear state immediately
+      // Clear state immediately regardless of error
       setUser(null);
       setSession(null);
       setLoading(false);
       
-      console.log('✅ Sign out successful');
+      console.log('✅ Sign out completed');
       
     } catch (error) {
       console.error('💥 Sign out error:', error);
-      // Force sign out even if there's an error
-      forceSignOut();
+      // Force clear state even on error
+      setUser(null);
+      setSession(null);
+      setLoading(false);
     }
   };
 
   const updateProfile = async (updates: Partial<Profile>): Promise<void> => {
-    if (!user || !mountedRef.current) {
+    if (!user) {
       throw new Error('No user logged in');
     }
 
@@ -414,7 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      if (data && mountedRef.current) {
+      if (data) {
         setUser({ ...data, supabaseUser: user.supabaseUser });
       }
     } catch (error) {
@@ -431,7 +298,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     updateProfile,
-    forceSignOut,
   };
 
   return (
