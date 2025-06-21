@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Calculator, Trash2, Share2, Eye, Calendar, TrendingUp, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
-import SubscriptionManager from '../components/SubscriptionManager';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -22,7 +21,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h1>
-        <p className="text-gray-600 mb-8">You need to be signed in to view your dashboard.</p>
+        <p className="text-gray-600 mb-8">You need to be signed in to view your calculations.</p>
         <Link
           to="/login"
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
@@ -57,9 +56,9 @@ const Dashboard: React.FC = () => {
 
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
+        <h1 className="text-3xl font-bold text-gray-900">My Calculations</h1>
         <p className="text-lg text-gray-600">
-          Manage your saved calculations and track your real estate analysis history.
+          View and manage all your saved mortgage calculations and investment analyses.
         </p>
       </div>
 
@@ -107,9 +106,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Subscription Management */}
-      <SubscriptionManager />
 
       {/* Saved Calculations */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

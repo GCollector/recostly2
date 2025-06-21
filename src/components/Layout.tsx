@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   CreditCard,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,16 +17,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
 
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
-    ...(user ? [{ name: 'Dashboard', href: '/dashboard', icon: User }] : []),
     { name: 'Pricing', href: '/pricing', icon: CreditCard },
-    ...(user?.tier === 'premium'
-      ? [{ name: 'Settings', href: '/settings', icon: Settings }]
-      : []),
   ];
+
+  const handleLogout = () => {
+    logout();
+    setProfileDropdownOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,27 +65,56 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
               {user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm">
-                    <span className="text-gray-700">Welcome, {user.name}</span>
-                    <span
-                      className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                        user.tier === 'premium'
-                          ? 'bg-amber-100 text-amber-800'
-                          : user.tier === 'basic'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {user.tier.charAt(0).toUpperCase() + user.tier.slice(1)}
-                    </span>
-                  </div>
+                <div className="relative">
                   <button
-                    onClick={logout}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 p-2 hover:bg-gray-50 transition-colors"
                   >
-                    <LogOut className="h-5 w-5" />
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-xs text-gray-500 capitalize">{user.tier}</div>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </div>
                   </button>
+
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                      <Link
+                        to="/dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <User className="h-4 w-4 inline mr-2" />
+                        My Calculations
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <Settings className="h-4 w-4 inline mr-2" />
+                        Account Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4 inline mr-2" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
@@ -147,6 +179,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </div>
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </div>
+                  <Link
+                    to="/dashboard"
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Calculations
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Account Settings
+                  </Link>
                   <button
                     onClick={() => {
                       logout();
