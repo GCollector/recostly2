@@ -375,7 +375,11 @@ const MortgageCalculator: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={handleSave}
+                  onClick={(e) => {
+                    console.log('🖱️ Save button clicked - event triggered');
+                    e.preventDefault();
+                    handleSave();
+                  }}
                   disabled={isSaving}
                   className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -383,7 +387,11 @@ const MortgageCalculator: React.FC = () => {
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
                 <button
-                  onClick={handleDirectShare}
+                  onClick={(e) => {
+                    console.log('🖱️ Share button clicked - event triggered');
+                    e.preventDefault();
+                    handleDirectShare();
+                  }}
                   disabled={isSaving}
                   className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
