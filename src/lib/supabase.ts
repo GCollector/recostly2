@@ -16,7 +16,7 @@ export type Database = {
         Row: {
           id: string
           email: string
-          name: string
+          name: string | null
           tier: 'public' | 'basic' | 'premium'
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -29,7 +29,7 @@ export type Database = {
         Insert: {
           id: string
           email: string
-          name: string
+          name?: string | null
           tier?: 'public' | 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -42,7 +42,7 @@ export type Database = {
         Update: {
           id?: string
           email?: string
-          name?: string
+          name?: string | null
           tier?: 'public' | 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
