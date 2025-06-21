@@ -66,6 +66,7 @@ const MortgageCalculator: React.FC = () => {
   const handleSave = async () => {
     if (!result) {
       console.log('No result to save');
+      alert('Please calculate a mortgage first');
       return;
     }
     
@@ -95,6 +96,7 @@ const MortgageCalculator: React.FC = () => {
       
       console.log('Calculation saved with ID:', id);
       setCalculationId(id);
+      alert('Calculation saved successfully!');
       setShowShareModal(true);
     } catch (error) {
       console.error('Error saving calculation:', error);
@@ -107,6 +109,7 @@ const MortgageCalculator: React.FC = () => {
   const handleShare = async () => {
     if (!calculationId) {
       console.log('No calculation ID to share');
+      alert('Please save the calculation first');
       return;
     }
     
@@ -119,6 +122,47 @@ const MortgageCalculator: React.FC = () => {
       console.error('Failed to copy to clipboard:', err);
       // Fallback: show the URL in an alert
       alert(`Share this link: ${shareUrl}`);
+    }
+  };
+
+  const handleDirectShare = async () => {
+    if (!result) {
+      alert('Please calculate a mortgage first');
+      return;
+    }
+
+    // If not logged in, save temporarily and share
+    if (!user) {
+      try {
+        const tempId = await saveCalculation({
+          home_price: homePrice,
+          down_payment: downPayment,
+          interest_rate: interestRate,
+          amortization_years: amortizationYears,
+          payment_frequency: paymentFrequency,
+          province,
+          city,
+          is_first_time_buyer: isFirstTimeBuyer,
+          monthly_payment: result.monthlyPayment,
+          total_interest: result.totalInterest,
+          notes: {},
+          comments: null
+        });
+        
+        setCalculationId(tempId);
+        setShowShareModal(true);
+      } catch (error) {
+        console.error('Error creating shareable calculation:', error);
+        alert('Failed to create shareable link. Please try again.');
+      }
+      return;
+    }
+
+    // If logged in but not saved yet, save first
+    if (!calculationId) {
+      await handleSave();
+    } else {
+      setShowShareModal(true);
     }
   };
 
@@ -305,14 +349,13 @@ const MortgageCalculator: React.FC = () => {
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
-                {calculationId && (
-                  <button
-                    onClick={() => setShowShareModal(true)}
-                    className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                )}
+                <button
+                  onClick={handleDirectShare}
+                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </button>
               </div>
             </div>
           )}
