@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { Database } from '../lib/supabase';
@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const authListenerRef = useRef<any>(null);
 
   // Load user profile from database
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initialize authentication state
+  // Initialize authentication state - runs only once
   useEffect(() => {
     let mounted = true;
 
@@ -141,17 +142,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Only initialize once
-    if (!initialized) {
-      initializeAuth();
-    }
+    initializeAuth();
 
     return () => {
       mounted = false;
     };
-  }, [initialized]);
+  }, []); // Empty dependency array - runs only once
 
-  // Set up auth state listener after initialization
+  // Set up auth state listener - runs only once after initialization
   useEffect(() => {
     if (!initialized) return;
 
@@ -176,13 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(false);
           } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
             console.log('Token refreshed for:', newSession.user.email);
-            // Only reload profile if we don't have user data
-            if (!user) {
-              setLoading(true);
-              const userProfile = await loadUserProfile(newSession.user);
-              setUser(userProfile);
-              setLoading(false);
-            }
+            // Don't reload profile on token refresh if we already have user data
           }
         } catch (error) {
           console.error('Error handling auth state change:', error);
@@ -192,10 +184,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    authListenerRef.current = subscription;
+
     return () => {
-      subscription.unsubscribe();
+      if (authListenerRef.current) {
+        authListenerRef.current.unsubscribe();
+      }
     };
-  }, [initialized, user]);
+  }, [initialized]); // Only depends on initialized
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
