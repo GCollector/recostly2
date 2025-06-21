@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calculator, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +13,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
       console.log('User already logged in, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
@@ -37,10 +37,14 @@ const Login: React.FC = () => {
     
     try {
       console.log('Starting login process...');
-      await login(email, password);
-      console.log('Login completed successfully');
       
-      // Navigation will be handled by the useEffect above when user state updates
+      // The login function now returns the user data directly
+      const userData = await login(email, password);
+      
+      console.log('Login completed successfully, user data:', userData.email);
+      
+      // Navigate immediately since we have the user data
+      navigate('/dashboard', { replace: true });
       
     } catch (err: any) {
       console.error('Login error:', err);

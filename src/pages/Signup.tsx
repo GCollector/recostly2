@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calculator, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
-  const { signup } = useAuth();
+  const { signup, user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -16,6 +16,14 @@ const Signup: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
@@ -25,6 +33,10 @@ const Signup: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoading) return;
+    
     setError('');
     
     if (formData.password !== formData.confirmPassword) {
@@ -40,8 +52,16 @@ const Signup: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await signup(formData.email, formData.password, formData.name);
-      navigate('/dashboard');
+      console.log('Starting signup process...');
+      
+      // The signup function now returns the user data directly
+      const userData = await signup(formData.email, formData.password, formData.name);
+      
+      console.log('Signup completed successfully, user data:', userData.email);
+      
+      // Navigate immediately since we have the user data
+      navigate('/dashboard', { replace: true });
+      
     } catch (err: any) {
       console.error('Signup error:', err);
       
@@ -98,7 +118,8 @@ const Signup: React.FC = () => {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your full name"
               />
             </div>
@@ -115,7 +136,8 @@ const Signup: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your email"
               />
             </div>
@@ -133,13 +155,15 @@ const Signup: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                  className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Create a password"
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -165,7 +189,8 @@ const Signup: React.FC = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Confirm your password"
               />
             </div>
@@ -174,10 +199,17 @@ const Signup: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating account...
+                </div>
+              ) : (
+                'Create account'
+              )}
             </button>
           </div>
 

@@ -11,8 +11,8 @@ interface User extends Profile {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  signup: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
   isLoading: boolean;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -53,18 +53,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('User signed out, clearing state');
         setUser(null);
         setIsLoading(false);
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // Don't fetch profile again on token refresh if we already have user data
-        if (!user) {
-          await fetchUserProfile(session.user);
-        }
+      } else if (event === 'TOKEN_REFRESHED' && session?.user && !user) {
+        // Only fetch profile on token refresh if we don't have user data
+        await fetchUserProfile(session.user);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [user]);
+  }, []);
 
-  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       console.log('Fetching profile for user:', supabaseUser.email);
       
@@ -95,26 +93,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (createError) {
             console.error('Error creating profile:', createError);
             setUser(null);
+            setIsLoading(false);
+            return null;
           } else if (newProfile) {
             console.log('Profile created successfully:', newProfile);
-            setUser({ ...newProfile, supabaseUser });
+            const userData = { ...newProfile, supabaseUser };
+            setUser(userData);
+            setIsLoading(false);
+            return userData;
           }
         } else {
           setUser(null);
+          setIsLoading(false);
+          return null;
         }
       } else if (profile) {
         console.log('Profile fetched successfully:', profile.email);
-        setUser({ ...profile, supabaseUser });
+        const userData = { ...profile, supabaseUser };
+        setUser(userData);
+        setIsLoading(false);
+        return userData;
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       setUser(null);
-    } finally {
       setIsLoading(false);
+      return null;
     }
+    
+    setIsLoading(false);
+    return null;
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     try {
       console.log('Attempting login for:', email);
       
@@ -128,10 +139,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      console.log('Login successful for:', data.user?.email);
+      if (!data.user) {
+        throw new Error('No user returned from login');
+      }
+
+      console.log('Login successful for:', data.user.email);
       
-      // The auth state change listener will handle the profile fetching and user state update
-      // We don't need to manually call fetchUserProfile here as it will be triggered by the auth state change
+      // Fetch the user profile immediately and return it
+      const userData = await fetchUserProfile(data.user);
+      
+      if (!userData) {
+        throw new Error('Failed to fetch user profile after login');
+      }
+      
+      return userData;
       
     } catch (error) {
       console.error('Login error:', error);
@@ -139,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (email: string, password: string, name: string): Promise<User> => {
     try {
       console.log('Attempting signup for:', email);
       
@@ -158,9 +179,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      console.log('Signup successful:', data.user?.email);
+      if (!data.user) {
+        throw new Error('No user returned from signup');
+      }
 
-      // The auth state change listener will handle the profile creation and user state update
+      console.log('Signup successful:', data.user.email);
+
+      // Fetch the user profile immediately and return it
+      const userData = await fetchUserProfile(data.user);
+      
+      if (!userData) {
+        throw new Error('Failed to fetch user profile after signup');
+      }
+      
+      return userData;
       
     } catch (error) {
       console.error('Signup error:', error);
@@ -174,7 +206,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // The auth state change listener will handle clearing the user state
+      // Clear user state immediately
+      setUser(null);
       
     } catch (error) {
       console.error('Logout error:', error);
