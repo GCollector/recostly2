@@ -34,9 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  
+  // Use refs to track state and prevent race conditions
   const authListenerRef = useRef<any>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingAuthChange = useRef(false);
+  const mountedRef = useRef(true);
 
   // Clear loading timeout helper
   const clearLoadingTimeout = () => {
@@ -46,21 +49,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Set loading with timeout fallback
-  const setLoadingWithTimeout = (isLoading: boolean, timeoutMs = 10000) => {
+  // Safe state setter that checks if component is mounted
+  const safeSetLoading = (isLoading: boolean) => {
+    if (!mountedRef.current) return;
+    
     clearLoadingTimeout();
     setLoading(isLoading);
     
+    // Set a maximum timeout for loading states
     if (isLoading) {
       loadingTimeoutRef.current = setTimeout(() => {
-        console.warn('Loading timeout reached, forcing loading to false');
-        setLoading(false);
-      }, timeoutMs);
+        if (mountedRef.current) {
+          console.warn('Loading timeout reached, forcing loading to false');
+          setLoading(false);
+        }
+      }, 8000); // 8 second timeout
     }
   };
 
   // Load user profile from database
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    if (!mountedRef.current) return null;
+    
     try {
       console.log('Loading profile for user:', supabaseUser.email);
 
@@ -69,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
+
+      if (!mountedRef.current) return null;
 
       if (error) {
         console.error('Profile fetch error:', error);
@@ -91,6 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .insert(newProfile)
             .select()
             .single();
+
+          if (!mountedRef.current) return null;
 
           if (createError) {
             console.error('Error creating profile:', createError);
@@ -117,74 +131,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize authentication state - runs only once
   useEffect(() => {
-    let mounted = true;
-
     const initializeAuth = async () => {
+      if (!mountedRef.current) return;
+      
       try {
         console.log('Initializing authentication...');
-        setLoadingWithTimeout(true);
+        safeSetLoading(true);
         
         // Get current session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
+        if (!mountedRef.current) return;
+        
         if (error) {
           console.error('Error getting session:', error);
-          if (mounted) {
-            setSession(null);
-            setUser(null);
-            clearLoadingTimeout();
-            setLoading(false);
-            setInitialized(true);
-          }
+          setSession(null);
+          setUser(null);
+          safeSetLoading(false);
+          setInitialized(true);
           return;
         }
 
-        if (mounted) {
-          setSession(currentSession);
-          
-          if (currentSession?.user) {
-            console.log('Found existing session for:', currentSession.user.email);
-            const userProfile = await loadUserProfile(currentSession.user);
-            if (mounted) {
-              setUser(userProfile);
-            }
-          } else {
-            console.log('No existing session found');
-            setUser(null);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          console.log('Found existing session for:', currentSession.user.email);
+          const userProfile = await loadUserProfile(currentSession.user);
+          if (mountedRef.current) {
+            setUser(userProfile);
           }
-          
-          clearLoadingTimeout();
-          setLoading(false);
+        } else {
+          console.log('No existing session found');
+          setUser(null);
+        }
+        
+        if (mountedRef.current) {
+          safeSetLoading(false);
           setInitialized(true);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        if (mounted) {
+        if (mountedRef.current) {
           setSession(null);
           setUser(null);
-          clearLoadingTimeout();
-          setLoading(false);
+          safeSetLoading(false);
           setInitialized(true);
         }
       }
     };
 
     initializeAuth();
-
-    return () => {
-      mounted = false;
-      clearLoadingTimeout();
-    };
   }, []); // Empty dependency array - runs only once
 
   // Set up auth state listener - runs only once after initialization
   useEffect(() => {
-    if (!initialized) return;
+    if (!initialized || !mountedRef.current) return;
 
     console.log('Setting up auth state listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (!mountedRef.current) return;
+        
         // Prevent concurrent auth state processing
         if (isProcessingAuthChange.current) {
           console.log('Already processing auth change, skipping...');
@@ -195,30 +203,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, newSession?.user?.email || 'No user');
         
         try {
+          if (!mountedRef.current) return;
+          
           setSession(newSession);
 
           if (event === 'SIGNED_IN' && newSession?.user) {
             console.log('User signed in:', newSession.user.email);
-            setLoadingWithTimeout(true);
+            safeSetLoading(true);
             const userProfile = await loadUserProfile(newSession.user);
-            setUser(userProfile);
-            clearLoadingTimeout();
-            setLoading(false);
+            if (mountedRef.current) {
+              setUser(userProfile);
+              safeSetLoading(false);
+            }
           } else if (event === 'SIGNED_OUT') {
             console.log('User signed out');
-            setUser(null);
-            clearLoadingTimeout();
-            setLoading(false);
+            if (mountedRef.current) {
+              setUser(null);
+              safeSetLoading(false);
+            }
           } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
             console.log('Token refreshed for:', newSession.user.email);
             // Don't change loading state or reload profile on token refresh
-            // Just update the session
+            // Just update the session - user profile should remain the same
           }
         } catch (error) {
           console.error('Error handling auth state change:', error);
-          setUser(null);
-          clearLoadingTimeout();
-          setLoading(false);
+          if (mountedRef.current) {
+            setUser(null);
+            safeSetLoading(false);
+          }
         } finally {
           isProcessingAuthChange.current = false;
         }
@@ -230,32 +243,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       if (authListenerRef.current) {
         authListenerRef.current.unsubscribe();
+        authListenerRef.current = null;
       }
-      clearLoadingTimeout();
     };
   }, [initialized]); // Only depends on initialized
 
-  // Handle browser visibility changes to prevent auth issues
+  // Handle browser visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('Browser became visible, checking auth state...');
-        // Don't trigger loading state changes on visibility change
-        // The auth listener will handle any necessary updates
+      if (document.visibilityState === 'visible' && mountedRef.current) {
+        console.log('Browser became visible');
+        // Don't trigger any loading states or auth checks
+        // The existing auth listener will handle any necessary updates
+      }
+    };
+
+    const handleFocus = () => {
+      if (mountedRef.current) {
+        console.log('Window focused');
+        // Don't trigger any loading states or auth checks
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      clearLoadingTimeout();
+      if (authListenerRef.current) {
+        authListenerRef.current.unsubscribe();
+      }
     };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
+    if (!mountedRef.current) return;
+    
     try {
       console.log('Attempting sign in for:', email);
-      setLoadingWithTimeout(true);
+      safeSetLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -264,26 +299,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign in error:', error);
-        clearLoadingTimeout();
-        setLoading(false);
+        safeSetLoading(false);
         throw error;
       }
 
       console.log('Sign in successful for:', data.user?.email);
-      // The auth state change listener will handle loading the profile
+      // The auth state change listener will handle loading the profile and setting loading to false
       
     } catch (error) {
       console.error('Sign in failed:', error);
-      clearLoadingTimeout();
-      setLoading(false);
+      safeSetLoading(false);
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
+    if (!mountedRef.current) return;
+    
     try {
       console.log('Attempting sign up for:', email);
-      setLoadingWithTimeout(true);
+      safeSetLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -297,23 +332,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign up error:', error);
-        clearLoadingTimeout();
-        setLoading(false);
+        safeSetLoading(false);
         throw error;
       }
 
       console.log('Sign up successful for:', data.user?.email);
-      // The auth state change listener will handle loading the profile
+      // The auth state change listener will handle loading the profile and setting loading to false
       
     } catch (error) {
       console.error('Sign up failed:', error);
-      clearLoadingTimeout();
-      setLoading(false);
+      safeSetLoading(false);
       throw error;
     }
   };
 
   const signOut = async (): Promise<void> => {
+    if (!mountedRef.current) return;
+    
     try {
       console.log('Signing out...');
       
@@ -325,8 +360,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear state immediately
       setUser(null);
       setSession(null);
-      clearLoadingTimeout();
-      setLoading(false);
+      safeSetLoading(false);
       
       console.log('Sign out successful');
       
@@ -337,7 +371,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (updates: Partial<Profile>): Promise<void> => {
-    if (!user) {
+    if (!user || !mountedRef.current) {
       throw new Error('No user logged in');
     }
 
@@ -353,7 +387,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      if (data) {
+      if (data && mountedRef.current) {
         setUser({ ...data, supabaseUser: user.supabaseUser });
       }
     } catch (error) {
