@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, ArrowRight, TrendingUp, Home, DollarSign } from 'lucide-react';
+import CurrencyInput from '../components/CurrencyInput';
 
 interface CalculationInputs {
   // Property Details
@@ -100,35 +101,23 @@ const CalculatorPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Home Purchase Price
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={inputs.homePrice}
-                      onChange={(e) => updateInput('homePrice', Number(e.target.value))}
-                      className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="500,000"
-                    />
-                  </div>
+                  <CurrencyInput
+                    value={inputs.homePrice}
+                    onChange={(value) => updateInput('homePrice', value)}
+                    placeholder="500,000"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Down Payment
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={inputs.downPayment}
-                      onChange={(e) => updateInput('downPayment', Number(e.target.value))}
-                      className="w-full pl-8 pr-16 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="100,000"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
-                      {downPaymentPercent}%
-                    </span>
-                  </div>
+                  <CurrencyInput
+                    value={inputs.downPayment}
+                    onChange={(value) => updateInput('downPayment', value)}
+                    placeholder="100,000"
+                    suffix={`${downPaymentPercent}%`}
+                  />
                 </div>
 
                 <div>
@@ -250,16 +239,12 @@ const CalculatorPage: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Monthly Rental Income
                       </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                        <input
-                          type="number"
-                          value={inputs.monthlyRent}
-                          onChange={(e) => updateInput('monthlyRent', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          placeholder="2,500"
-                        />
-                      </div>
+                      <CurrencyInput
+                        value={inputs.monthlyRent}
+                        onChange={(value) => updateInput('monthlyRent', value)}
+                        placeholder="2,500"
+                        className="focus:ring-emerald-500 focus:border-transparent"
+                      />
                     </div>
                   </div>
 
@@ -270,76 +255,56 @@ const CalculatorPage: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Property Taxes
                         </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={inputs.monthlyExpenses.taxes}
-                            onChange={(e) => updateExpense('taxes', Number(e.target.value))}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={inputs.monthlyExpenses.taxes}
+                          onChange={(value) => updateExpense('taxes', value)}
+                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Insurance
                         </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={inputs.monthlyExpenses.insurance}
-                            onChange={(e) => updateExpense('insurance', Number(e.target.value))}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={inputs.monthlyExpenses.insurance}
+                          onChange={(value) => updateExpense('insurance', value)}
+                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Condo Fees
                         </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={inputs.monthlyExpenses.condoFees}
-                            onChange={(e) => updateExpense('condoFees', Number(e.target.value))}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={inputs.monthlyExpenses.condoFees}
+                          onChange={(value) => updateExpense('condoFees', value)}
+                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Maintenance
                         </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={inputs.monthlyExpenses.maintenance}
-                            onChange={(e) => updateExpense('maintenance', Number(e.target.value))}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={inputs.monthlyExpenses.maintenance}
+                          onChange={(value) => updateExpense('maintenance', value)}
+                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Other Expenses
                         </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={inputs.monthlyExpenses.other}
-                            onChange={(e) => updateExpense('other', Number(e.target.value))}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                            placeholder="Property management, etc."
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={inputs.monthlyExpenses.other}
+                          onChange={(value) => updateExpense('other', value)}
+                          placeholder="Property management, etc."
+                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
                       </div>
                     </div>
                   </div>
