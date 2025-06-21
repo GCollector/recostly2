@@ -273,108 +273,120 @@ const CalculatorPage: React.FC = () => {
 
             {/* Investment Analysis Toggle */}
             <div className="border-t border-gray-200 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-emerald-600" />
-                    Investment Analysis
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Optional: Add rental income details for investment property analysis
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id="include-investment"
-                    type="checkbox"
-                    checked={inputs.includeInvestment}
-                    onChange={(e) => updateInput('includeInvestment', e.target.checked)}
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="include-investment" className="ml-2 block text-sm text-gray-700">
-                    Include investment analysis
-                  </label>
-                </div>
-              </div>
-
-              {inputs.includeInvestment && (
-                <div className="space-y-6 bg-emerald-50 p-6 rounded-lg border border-emerald-200">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Monthly Rental Income
-                      </label>
-                      <CurrencyInput
-                        value={inputs.monthlyRent}
-                        onChange={(value) => updateInput('monthlyRent', value)}
-                        placeholder="2,500"
-                        className="focus:ring-emerald-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Expenses</h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Property Taxes
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.taxes}
-                          onChange={(value) => updateExpense('taxes', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                      </div>
+                    <h2 className="text-xl font-semibold text-emerald-900 flex items-center">
+                      <TrendingUp className="h-5 w-5 mr-2 text-emerald-600" />
+                      Investment Analysis
+                    </h2>
+                    <p className="text-sm text-emerald-700 mt-1">
+                      Optional: Add rental income details for investment property analysis
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="include-investment"
+                      type="checkbox"
+                      checked={inputs.includeInvestment}
+                      onChange={(e) => updateInput('includeInvestment', e.target.checked)}
+                      className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="include-investment" className="ml-2 block text-sm text-emerald-800 font-medium">
+                      Include investment analysis
+                    </label>
+                  </div>
+                </div>
 
+                {inputs.includeInvestment && (
+                  <div className="space-y-6 bg-white/70 backdrop-blur-sm p-6 rounded-lg border border-emerald-200/50">
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Insurance
+                        <label className="block text-sm font-medium text-emerald-800 mb-2">
+                          Monthly Rental Income
                         </label>
                         <CurrencyInput
-                          value={inputs.monthlyExpenses.insurance}
-                          onChange={(value) => updateExpense('insurance', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Condo Fees
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.condoFees}
-                          onChange={(value) => updateExpense('condoFees', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Maintenance
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.maintenance}
-                          onChange={(value) => updateExpense('maintenance', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Other Expenses
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.other}
-                          onChange={(value) => updateExpense('other', value)}
-                          placeholder="Property management, etc."
-                          className="py-2 focus:ring-emerald-500 focus:border-transparent"
+                          value={inputs.monthlyRent}
+                          onChange={(value) => updateInput('monthlyRent', value)}
+                          placeholder="2,500"
+                          className="focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <h3 className="text-lg font-medium text-emerald-900 mb-4">Monthly Expenses</h3>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Property Taxes
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.taxes}
+                            onChange={(value) => updateExpense('taxes', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Insurance
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.insurance}
+                            onChange={(value) => updateExpense('insurance', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Condo Fees
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.condoFees}
+                            onChange={(value) => updateExpense('condoFees', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Maintenance
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.maintenance}
+                            onChange={(value) => updateExpense('maintenance', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Other Expenses
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.other}
+                            onChange={(value) => updateExpense('other', value)}
+                            placeholder="Property management, etc."
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-100/50 border border-emerald-200 rounded-lg p-4">
+                      <h4 className="font-medium text-emerald-900 mb-2">Investment Analysis Benefits</h4>
+                      <ul className="text-sm text-emerald-800 space-y-1">
+                        <li>• Calculate cap rate and return on investment (ROI)</li>
+                        <li>• Determine monthly cash flow and break-even rent</li>
+                        <li>• Analyze total investment performance</li>
+                        <li>• Compare different investment scenarios</li>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Calculate Button */}
@@ -602,33 +614,36 @@ const CalculationResults: React.FC<CalculationResultsProps> = ({ inputs, onEdit,
 
         {/* Investment Analysis */}
         {investmentResults && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Investment Analysis</h2>
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg shadow-sm border border-emerald-200 p-6">
+            <h2 className="text-xl font-semibold text-emerald-900 mb-6 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-emerald-600" />
+              Investment Analysis
+            </h2>
             
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-gray-600">Monthly Rental Income</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(inputs.monthlyRent)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-emerald-200">
+                <span className="text-emerald-700">Monthly Rental Income</span>
+                <span className="font-semibold text-emerald-900">{formatCurrency(inputs.monthlyRent)}</span>
               </div>
               
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-gray-600">Total Monthly Expenses</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(investmentResults.totalMonthlyExpenses)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-emerald-200">
+                <span className="text-emerald-700">Total Monthly Expenses</span>
+                <span className="font-semibold text-emerald-900">{formatCurrency(investmentResults.totalMonthlyExpenses)}</span>
               </div>
               
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-gray-600">Net Operating Income (Annual)</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(investmentResults.netOperatingIncome)}</span>
+              <div className="flex justify-between items-center py-3 border-b border-emerald-200">
+                <span className="text-emerald-700">Net Operating Income (Annual)</span>
+                <span className="font-semibold text-emerald-900">{formatCurrency(investmentResults.netOperatingIncome)}</span>
               </div>
               
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-gray-600">Return on Investment (ROI)</span>
-                <span className="font-semibold text-gray-900">{investmentResults.roi.toFixed(2)}%</span>
+              <div className="flex justify-between items-center py-3 border-b border-emerald-200">
+                <span className="text-emerald-700">Return on Investment (ROI)</span>
+                <span className="font-semibold text-emerald-900">{investmentResults.roi.toFixed(2)}%</span>
               </div>
               
               <div className="flex justify-between items-center py-3">
-                <span className="text-gray-600">Break-even Rent</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(investmentResults.breakEvenRent)}</span>
+                <span className="text-emerald-700">Break-even Rent</span>
+                <span className="font-semibold text-emerald-900">{formatCurrency(investmentResults.breakEvenRent)}</span>
               </div>
             </div>
 
