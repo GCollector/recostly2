@@ -37,35 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Use refs to track state and prevent race conditions
   const authListenerRef = useRef<any>(null);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingAuthChange = useRef(false);
   const mountedRef = useRef(true);
-
-  // Clear loading timeout helper
-  const clearLoadingTimeout = () => {
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = null;
-    }
-  };
-
-  // Safe state setter that checks if component is mounted
-  const safeSetLoading = (isLoading: boolean) => {
-    if (!mountedRef.current) return;
-    
-    clearLoadingTimeout();
-    setLoading(isLoading);
-    
-    // Set a maximum timeout for loading states
-    if (isLoading) {
-      loadingTimeoutRef.current = setTimeout(() => {
-        if (mountedRef.current) {
-          console.warn('Loading timeout reached, forcing loading to false');
-          setLoading(false);
-        }
-      }, 8000); // 8 second timeout
-    }
-  };
+  const lastAuthEvent = useRef<string>('');
 
   // Load user profile from database
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -136,7 +110,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       try {
         console.log('Initializing authentication...');
-        safeSetLoading(true);
         
         // Get current session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
@@ -147,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error getting session:', error);
           setSession(null);
           setUser(null);
-          safeSetLoading(false);
+          setLoading(false);
           setInitialized(true);
           return;
         }
@@ -166,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (mountedRef.current) {
-          safeSetLoading(false);
+          setLoading(false);
           setInitialized(true);
         }
       } catch (error) {
@@ -174,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mountedRef.current) {
           setSession(null);
           setUser(null);
-          safeSetLoading(false);
+          setLoading(false);
           setInitialized(true);
         }
       }
@@ -199,6 +172,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        // Skip redundant events
+        const eventKey = `${event}-${newSession?.user?.id || 'none'}`;
+        if (lastAuthEvent.current === eventKey) {
+          console.log('Skipping redundant auth event:', event);
+          return;
+        }
+        lastAuthEvent.current = eventKey;
+
         isProcessingAuthChange.current = true;
         console.log('Auth state changed:', event, newSession?.user?.email || 'No user');
         
@@ -209,17 +190,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (event === 'SIGNED_IN' && newSession?.user) {
             console.log('User signed in:', newSession.user.email);
-            safeSetLoading(true);
+            setLoading(true);
             const userProfile = await loadUserProfile(newSession.user);
             if (mountedRef.current) {
               setUser(userProfile);
-              safeSetLoading(false);
+              setLoading(false);
             }
           } else if (event === 'SIGNED_OUT') {
             console.log('User signed out');
             if (mountedRef.current) {
               setUser(null);
-              safeSetLoading(false);
+              setLoading(false);
             }
           } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
             console.log('Token refreshed for:', newSession.user.email);
@@ -230,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error handling auth state change:', error);
           if (mountedRef.current) {
             setUser(null);
-            safeSetLoading(false);
+            setLoading(false);
           }
         } finally {
           isProcessingAuthChange.current = false;
@@ -248,37 +229,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [initialized]); // Only depends on initialized
 
-  // Handle browser visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && mountedRef.current) {
-        console.log('Browser became visible');
-        // Don't trigger any loading states or auth checks
-        // The existing auth listener will handle any necessary updates
-      }
-    };
-
-    const handleFocus = () => {
-      if (mountedRef.current) {
-        console.log('Window focused');
-        // Don't trigger any loading states or auth checks
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
-      clearLoadingTimeout();
       if (authListenerRef.current) {
         authListenerRef.current.unsubscribe();
       }
@@ -290,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting sign in for:', email);
-      safeSetLoading(true);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -299,7 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign in error:', error);
-        safeSetLoading(false);
+        setLoading(false);
         throw error;
       }
 
@@ -308,7 +262,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Sign in failed:', error);
-      safeSetLoading(false);
+      setLoading(false);
       throw error;
     }
   };
@@ -318,7 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting sign up for:', email);
-      safeSetLoading(true);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -332,7 +286,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Sign up error:', error);
-        safeSetLoading(false);
+        setLoading(false);
         throw error;
       }
 
@@ -341,7 +295,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Sign up failed:', error);
-      safeSetLoading(false);
+      setLoading(false);
       throw error;
     }
   };
@@ -360,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear state immediately
       setUser(null);
       setSession(null);
-      safeSetLoading(false);
+      setLoading(false);
       
       console.log('Sign out successful');
       
