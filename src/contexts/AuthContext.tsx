@@ -40,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isProcessingAuthChange = useRef(false);
   const mountedRef = useRef(true);
   const lastAuthEvent = useRef<string>('');
+  const lastVisibilityCheck = useRef<number>(0);
 
   // Load user profile from database
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -100,6 +101,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
       return null;
+    }
+  };
+
+  // Check auth state without changing loading state
+  const checkAuthState = async (force = false) => {
+    if (!mountedRef.current || !initialized) return;
+    
+    const now = Date.now();
+    // Throttle checks to prevent excessive API calls
+    if (!force && now - lastVisibilityCheck.current < 2000) return;
+    lastVisibilityCheck.current = now;
+
+    try {
+      console.log('Checking auth state on visibility change...');
+      
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      
+      if (!mountedRef.current) return;
+      
+      if (error) {
+        console.error('Error checking session:', error);
+        return;
+      }
+
+      // Only update if there's a meaningful change
+      const hasSessionChanged = 
+        (!session && currentSession) || 
+        (session && !currentSession) ||
+        (session?.user?.id !== currentSession?.user?.id);
+
+      if (hasSessionChanged) {
+        console.log('Session state changed during visibility check');
+        setSession(currentSession);
+        
+        if (currentSession?.user && !user) {
+          console.log('Found new session, loading profile...');
+          const userProfile = await loadUserProfile(currentSession.user);
+          if (mountedRef.current) {
+            setUser(userProfile);
+          }
+        } else if (!currentSession?.user && user) {
+          console.log('Session lost, clearing user...');
+          setUser(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth state:', error);
     }
   };
 
@@ -228,6 +276,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
   }, [initialized]); // Only depends on initialized
+
+  // Set up visibility change listener - runs after initialization
+  useEffect(() => {
+    if (!initialized || !mountedRef.current) return;
+
+    const handleVisibilityChange = () => {
+      if (!mountedRef.current || !initialized) return;
+      
+      if (document.visibilityState === 'visible') {
+        console.log('Page became visible, checking auth state...');
+        // Small delay to ensure the page is fully visible
+        setTimeout(() => {
+          if (mountedRef.current && document.visibilityState === 'visible') {
+            checkAuthState();
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [initialized, session, user]); // Include session and user to have access to current state
 
   // Cleanup on unmount
   useEffect(() => {
