@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Calculator,
   Home,
@@ -10,14 +10,23 @@ import {
   X,
   CreditCard,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+
+  // Redirect authenticated users away from auth pages
+  useEffect(() => {
+    if (!loading && user && (location.pathname === '/login' || location.pathname === '/signup')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, location.pathname, navigate]);
 
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
@@ -25,10 +34,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { name: 'Pricing', href: '/pricing', icon: CreditCard },
   ];
 
-  const handleLogout = () => {
-    logout();
-    setProfileDropdownOpen(false);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setProfileDropdownOpen(false);
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
+
+  // Show loading spinner during initial auth check
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -195,7 +221,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </Link>
                   <button
                     onClick={() => {
-                      logout();
+                      handleLogout();
                       setMobileMenuOpen(false);
                     }}
                     className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"

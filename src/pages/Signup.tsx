@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calculator, Eye, EyeOff } from 'lucide-react';
+import { Calculator, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup: React.FC = () => {
-  const { signup, user } = useAuth();
+  const { signUp, loading } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -14,73 +14,72 @@ const Signup: React.FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      console.log('User already logged in, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple submissions
-    if (isLoading) return;
+    if (isSubmitting || loading) return;
     
-    setError('');
+    const { name, email, password, confirmPassword } = formData;
     
-    if (formData.password !== formData.confirmPassword) {
+    // Validation
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
 
-    setIsLoading(true);
-    
+    setIsSubmitting(true);
+    setError('');
+
     try {
-      console.log('Starting signup process...');
-      
-      // The signup function now returns the user data directly
-      const userData = await signup(formData.email, formData.password, formData.name);
-      
-      console.log('Signup completed successfully, user data:', userData.email);
-      
-      // Navigate immediately since we have the user data
+      await signUp(email, password, name);
+      // Navigation will happen automatically when user state updates
       navigate('/dashboard', { replace: true });
-      
     } catch (err: any) {
       console.error('Signup error:', err);
       
-      // Handle specific Supabase auth errors
+      // Handle specific error messages
+      let errorMessage = 'An error occurred during sign up';
+      
       if (err.message?.includes('User already registered')) {
-        setError('An account with this email already exists. Please sign in instead.');
+        errorMessage = 'An account with this email already exists';
       } else if (err.message?.includes('Password should be at least 6 characters')) {
-        setError('Password must be at least 6 characters long.');
+        errorMessage = 'Password must be at least 6 characters long';
       } else if (err.message?.includes('Invalid email')) {
-        setError('Please enter a valid email address.');
+        errorMessage = 'Please enter a valid email address';
       } else if (err.message?.includes('Signup is disabled')) {
-        setError('Account creation is temporarily disabled. Please try again later.');
-      } else {
-        setError('Unable to create account. Please try again or contact support if the problem persists.');
+        errorMessage = 'Account creation is temporarily disabled';
+      } else if (err.message) {
+        errorMessage = err.message;
       }
+      
+      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  const isFormDisabled = isSubmitting || loading;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -118,7 +117,7 @@ const Signup: React.FC = () => {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                disabled={isLoading}
+                disabled={isFormDisabled}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your full name"
               />
@@ -136,7 +135,7 @@ const Signup: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                disabled={isLoading}
+                disabled={isFormDisabled}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your email"
               />
@@ -155,7 +154,7 @@ const Signup: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  disabled={isLoading}
+                  disabled={isFormDisabled}
                   className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Create a password"
                 />
@@ -163,7 +162,7 @@ const Signup: React.FC = () => {
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  disabled={isFormDisabled}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -189,7 +188,7 @@ const Signup: React.FC = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                disabled={isLoading}
+                disabled={isFormDisabled}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Confirm your password"
               />
@@ -199,12 +198,12 @@ const Signup: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword}
+              disabled={isFormDisabled}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
                   Creating account...
                 </div>
               ) : (

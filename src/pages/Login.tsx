@@ -1,71 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calculator, Eye, EyeOff } from 'lucide-react';
+import { Calculator, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const { login, user } = useAuth();
+  const { signIn, loading } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      console.log('User already logged in, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple submissions
-    if (isLoading) return;
+    if (isSubmitting || loading) return;
     
-    // Basic validation
-    if (!email || !password) {
+    const { email, password } = formData;
+    
+    if (!email.trim() || !password) {
       setError('Please enter both email and password');
       return;
     }
-    
+
+    setIsSubmitting(true);
     setError('');
-    setIsLoading(true);
-    
+
     try {
-      console.log('Starting login process...');
-      
-      // The login function now returns the user data directly
-      const userData = await login(email, password);
-      
-      console.log('Login completed successfully, user data:', userData.email);
-      
-      // Navigate immediately since we have the user data
+      await signIn(email, password);
+      // Navigation will happen automatically when user state updates
       navigate('/dashboard', { replace: true });
-      
     } catch (err: any) {
       console.error('Login error:', err);
       
-      // Handle specific Supabase auth errors
+      // Handle specific error messages
+      let errorMessage = 'An error occurred during sign in';
+      
       if (err.message?.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please check your credentials and try again.');
+        errorMessage = 'Invalid email or password';
       } else if (err.message?.includes('Email not confirmed')) {
-        setError('Please check your email and click the confirmation link before signing in.');
+        errorMessage = 'Please check your email and confirm your account';
       } else if (err.message?.includes('Too many requests')) {
-        setError('Too many login attempts. Please wait a few minutes before trying again.');
-      } else if (err.message?.includes('Invalid email')) {
-        setError('Please enter a valid email address.');
-      } else {
-        setError('Unable to sign in. Please try again or contact support if the problem persists.');
+        errorMessage = 'Too many attempts. Please wait before trying again';
+      } else if (err.message) {
+        errorMessage = err.message;
       }
+      
+      setError(errorMessage);
     } finally {
-      // Always reset loading state
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  const isFormDisabled = isSubmitting || loading;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -101,9 +100,9 @@ const Login: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                value={formData.email}
+                onChange={handleChange}
+                disabled={isFormDisabled}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your email"
               />
@@ -120,9 +119,9 @@ const Login: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isFormDisabled}
                   className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Enter your password"
                 />
@@ -130,7 +129,7 @@ const Login: React.FC = () => {
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  disabled={isFormDisabled}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -145,12 +144,12 @@ const Login: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading || !email || !password}
+              disabled={isFormDisabled}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
                   Signing in...
                 </div>
               ) : (
@@ -164,8 +163,7 @@ const Login: React.FC = () => {
               Don't have an account?{' '}
               <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up here
-              </Link>{' '}
-              to get started with your mortgage calculations.
+              </Link>
             </p>
           </div>
         </form>
