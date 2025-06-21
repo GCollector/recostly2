@@ -39,12 +39,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const mountedRef = useRef(true);
   const authListenerRef = useRef<any>(null);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxRetries = 3;
+  const autoLogoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxRetries = 2;
   const retryCount = useRef(0);
 
   // Force sign out function - clears everything aggressively
   const forceSignOut = () => {
-    console.log('🔥 FORCE SIGN OUT - Clearing all auth state');
+    console.log('🔥 AUTO FORCE SIGN OUT - Clearing all auth state');
+    
+    // Clear all timeouts
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = null;
+    }
+    if (autoLogoutTimeoutRef.current) {
+      clearTimeout(autoLogoutTimeoutRef.current);
+      autoLogoutTimeoutRef.current = null;
+    }
     
     // Clear all state immediately
     setUser(null);
@@ -53,18 +64,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setInitialized(true);
     
     // Clear any stored auth data
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
-    
-    // Clear session storage
-    sessionStorage.clear();
+    try {
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
+      sessionStorage.clear();
+    } catch (e) {
+      console.log('Error clearing storage:', e);
+    }
     
     // Force sign out from Supabase (don't wait for response)
     supabase.auth.signOut().catch(() => {
       console.log('Supabase signOut failed, but continuing with force logout');
     });
     
-    console.log('✅ Force sign out completed');
+    console.log('✅ Auto force sign out completed');
+  };
+
+  // Auto logout after timeout - no user interaction needed
+  const scheduleAutoLogout = (timeoutMs: number) => {
+    if (autoLogoutTimeoutRef.current) {
+      clearTimeout(autoLogoutTimeoutRef.current);
+    }
+    
+    autoLogoutTimeoutRef.current = setTimeout(() => {
+      console.warn('⏰ AUTO LOGOUT TRIGGERED - Auth taking too long');
+      forceSignOut();
+    }, timeoutMs);
   };
 
   // Load user profile with retry logic
@@ -113,7 +138,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
               return loadUserProfile(supabaseUser, attempt + 1);
             }
-            throw new Error('Failed to create user profile after retries');
+            // Auto logout after max retries
+            console.error('💥 Max retries exceeded for profile creation - auto logout');
+            setTimeout(forceSignOut, 100);
+            return null;
           }
 
           if (createdProfile) {
@@ -127,7 +155,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
             return loadUserProfile(supabaseUser, attempt + 1);
           }
-          throw error;
+          // Auto logout after max retries
+          console.error('💥 Max retries exceeded for profile fetch - auto logout');
+          setTimeout(forceSignOut, 100);
+          return null;
         }
         return null;
       } else if (profile) {
@@ -145,41 +176,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return loadUserProfile(supabaseUser, attempt + 1);
       }
       
-      // After max retries, force sign out to prevent infinite loading
-      console.error('💥 Max retries exceeded, forcing sign out');
-      forceSignOut();
+      // Auto logout after max retries
+      console.error('💥 Max retries exceeded in loadUserProfile - auto logout');
+      setTimeout(forceSignOut, 100);
       return null;
     }
   };
 
-  // Initialize authentication with aggressive timeout
+  // Initialize authentication with aggressive auto-logout
   useEffect(() => {
     const initializeAuth = async () => {
       if (!mountedRef.current) return;
       
       console.log('🚀 Initializing authentication...');
       
-      // Set aggressive timeout to prevent infinite loading
-      initTimeoutRef.current = setTimeout(() => {
-        if (mountedRef.current && loading) {
-          console.warn('⏰ Auth initialization timeout - forcing completion');
-          retryCount.current++;
-          
-          if (retryCount.current >= maxRetries) {
-            console.error('💥 Max initialization retries exceeded - forcing sign out');
-            forceSignOut();
-          } else {
-            setLoading(false);
-            setInitialized(true);
-          }
-        }
-      }, 5000); // 5 second timeout
+      // Schedule auto logout if initialization takes too long
+      scheduleAutoLogout(4000); // 4 second auto logout
       
       try {
         // Get current session with timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session fetch timeout')), 3000)
+          setTimeout(() => reject(new Error('Session fetch timeout')), 2500)
         );
         
         const { data: { session: currentSession }, error } = await Promise.race([
@@ -189,15 +207,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!mountedRef.current) return;
         
-        // Clear timeout since we got a response
-        if (initTimeoutRef.current) {
-          clearTimeout(initTimeoutRef.current);
-          initTimeoutRef.current = null;
+        // Clear auto logout timeout since we got a response
+        if (autoLogoutTimeoutRef.current) {
+          clearTimeout(autoLogoutTimeoutRef.current);
+          autoLogoutTimeoutRef.current = null;
         }
         
         if (error) {
           console.error('❌ Error getting session:', error);
-          forceSignOut();
+          setTimeout(forceSignOut, 100);
           return;
         }
 
@@ -211,8 +229,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(userProfile);
             }
           } catch (profileError) {
-            console.error('💥 Failed to load profile, forcing sign out:', profileError);
-            forceSignOut();
+            console.error('💥 Failed to load profile, auto logout:', profileError);
+            setTimeout(forceSignOut, 100);
             return;
           }
         } else {
@@ -228,24 +246,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
         if (mountedRef.current) {
-          if (initTimeoutRef.current) {
-            clearTimeout(initTimeoutRef.current);
-            initTimeoutRef.current = null;
-          }
-          
           retryCount.current++;
           if (retryCount.current >= maxRetries) {
-            console.error('💥 Max initialization retries exceeded');
-            forceSignOut();
+            console.error('💥 Max initialization retries exceeded - auto logout');
+            setTimeout(forceSignOut, 100);
           } else {
             console.log(`🔄 Retrying initialization (${retryCount.current}/${maxRetries})`);
+            // Schedule retry with auto logout
             setTimeout(() => {
               if (mountedRef.current) {
                 setLoading(true);
-                // Retry initialization
                 initializeAuth();
               }
-            }, 2000);
+            }, 1500);
           }
         }
       }
@@ -272,15 +285,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (event === 'SIGNED_IN' && newSession?.user) {
             console.log('✅ User signed in:', newSession.user.email);
             setLoading(true);
+            
+            // Schedule auto logout for profile loading
+            scheduleAutoLogout(3000);
+            
             try {
               const userProfile = await loadUserProfile(newSession.user);
               if (mountedRef.current) {
+                // Clear auto logout timeout on success
+                if (autoLogoutTimeoutRef.current) {
+                  clearTimeout(autoLogoutTimeoutRef.current);
+                  autoLogoutTimeoutRef.current = null;
+                }
                 setUser(userProfile);
                 setLoading(false);
               }
             } catch (profileError) {
-              console.error('💥 Failed to load profile after sign in:', profileError);
-              forceSignOut();
+              console.error('💥 Failed to load profile after sign in - auto logout:', profileError);
+              setTimeout(forceSignOut, 100);
             }
           } else if (event === 'SIGNED_OUT') {
             console.log('👋 User signed out');
@@ -293,9 +315,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Don't change loading state or reload profile on token refresh
           }
         } catch (error) {
-          console.error('💥 Error handling auth state change:', error);
+          console.error('💥 Error handling auth state change - auto logout:', error);
           if (mountedRef.current) {
-            forceSignOut();
+            setTimeout(forceSignOut, 100);
           }
         }
       }
@@ -321,6 +343,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (initTimeoutRef.current) {
         clearTimeout(initTimeoutRef.current);
       }
+      if (autoLogoutTimeoutRef.current) {
+        clearTimeout(autoLogoutTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -331,6 +356,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔐 Attempting sign in for:', email);
       setLoading(true);
       
+      // Schedule auto logout for sign in
+      scheduleAutoLogout(5000);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -338,15 +366,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign in error:', error);
+        if (autoLogoutTimeoutRef.current) {
+          clearTimeout(autoLogoutTimeoutRef.current);
+          autoLogoutTimeoutRef.current = null;
+        }
         setLoading(false);
         throw error;
       }
 
       console.log('✅ Sign in successful for:', data.user?.email);
-      // The auth state change listener will handle loading the profile
+      // The auth state change listener will handle loading the profile and clearing timeout
       
     } catch (error) {
       console.error('💥 Sign in failed:', error);
+      if (autoLogoutTimeoutRef.current) {
+        clearTimeout(autoLogoutTimeoutRef.current);
+        autoLogoutTimeoutRef.current = null;
+      }
       setLoading(false);
       throw error;
     }
@@ -358,6 +394,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Attempting sign up for:', email);
       setLoading(true);
+      
+      // Schedule auto logout for sign up
+      scheduleAutoLogout(5000);
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -371,15 +410,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign up error:', error);
+        if (autoLogoutTimeoutRef.current) {
+          clearTimeout(autoLogoutTimeoutRef.current);
+          autoLogoutTimeoutRef.current = null;
+        }
         setLoading(false);
         throw error;
       }
 
       console.log('✅ Sign up successful for:', data.user?.email);
-      // The auth state change listener will handle loading the profile
+      // The auth state change listener will handle loading the profile and clearing timeout
       
     } catch (error) {
       console.error('💥 Sign up failed:', error);
+      if (autoLogoutTimeoutRef.current) {
+        clearTimeout(autoLogoutTimeoutRef.current);
+        autoLogoutTimeoutRef.current = null;
+      }
       setLoading(false);
       throw error;
     }
@@ -390,6 +437,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('👋 Signing out...');
+      
+      // Clear any pending auto logout
+      if (autoLogoutTimeoutRef.current) {
+        clearTimeout(autoLogoutTimeoutRef.current);
+        autoLogoutTimeoutRef.current = null;
+      }
       
       const { error } = await supabase.auth.signOut();
       if (error) {
