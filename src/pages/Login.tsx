@@ -4,13 +4,21 @@ import { Calculator, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +38,9 @@ const Login: React.FC = () => {
     try {
       console.log('Starting login process...');
       await login(email, password);
-      console.log('Login completed, navigating to dashboard...');
+      console.log('Login completed successfully');
       
-      // Small delay to ensure auth state is updated
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
+      // Navigation will be handled by the useEffect above when user state updates
       
     } catch (err: any) {
       console.error('Login error:', err);

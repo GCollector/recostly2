@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email || 'No session');
       if (session?.user) {
         fetchUserProfile(session.user);
       } else {
@@ -44,18 +45,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email);
+      console.log('Auth state change:', event, session?.user?.email || 'No user');
       
-      if (session?.user) {
+      if (event === 'SIGNED_IN' && session?.user) {
         await fetchUserProfile(session.user);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing state');
         setUser(null);
         setIsLoading(false);
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        // Don't fetch profile again on token refresh if we already have user data
+        if (!user) {
+          await fetchUserProfile(session.user);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [user]);
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
@@ -96,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } else if (profile) {
-        console.log('Profile fetched successfully:', profile);
+        console.log('Profile fetched successfully:', profile.email);
         setUser({ ...profile, supabaseUser });
       }
     } catch (error) {
@@ -121,13 +128,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      console.log('Login successful:', data.user?.email);
-
-      if (data.user) {
-        // The auth state change listener will handle profile fetching
-        // But we can also fetch it directly to ensure immediate update
-        await fetchUserProfile(data.user);
-      }
+      console.log('Login successful for:', data.user?.email);
+      
+      // The auth state change listener will handle the profile fetching and user state update
+      // We don't need to manually call fetchUserProfile here as it will be triggered by the auth state change
+      
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -155,10 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Signup successful:', data.user?.email);
 
-      if (data.user) {
-        // Profile will be created automatically via trigger or manually above
-        await fetchUserProfile(data.user);
-      }
+      // The auth state change listener will handle the profile creation and user state update
+      
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -170,7 +173,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Logging out user');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      setUser(null);
+      
+      // The auth state change listener will handle clearing the user state
+      
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
