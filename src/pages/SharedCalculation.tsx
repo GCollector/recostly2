@@ -8,7 +8,7 @@ type MortgageCalculation = Database['public']['Tables']['mortgage_calculations']
 
 const SharedCalculation: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getCalculation } = useCalculations();
+  const { getCalculationAsync } = useCalculations();
   const [calculation, setCalculation] = useState<MortgageCalculation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,7 +18,7 @@ const SharedCalculation: React.FC = () => {
       
       setIsLoading(true);
       try {
-        const calc = await getCalculation(id);
+        const calc = await getCalculationAsync(id);
         setCalculation(calc);
       } catch (error) {
         console.error('Error fetching calculation:', error);
@@ -28,7 +28,7 @@ const SharedCalculation: React.FC = () => {
     };
 
     fetchCalculation();
-  }, [id, getCalculation]);
+  }, [id, getCalculationAsync]);
 
   if (isLoading) {
     return (

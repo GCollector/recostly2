@@ -12,7 +12,8 @@ interface CalculationContextType {
   saveCalculation: (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<string>;
   saveInvestmentCalculation: (calculation: Omit<InvestmentCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<string>;
   deleteCalculation: (id: string) => Promise<void>;
-  getCalculation: (id: string) => Promise<MortgageCalculation | null>;
+  getCalculation: (id: string) => MortgageCalculation | null;
+  getCalculationAsync: (id: string) => Promise<MortgageCalculation | null>;
   updateCalculationNotes: (id: string, section: string, notes: string) => Promise<void>;
   updateCalculationComments: (id: string, comments: string) => Promise<void>;
   isLoading: boolean;
@@ -162,7 +163,20 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setCalculations(prev => prev.filter(calc => calc.id !== id));
   };
 
-  const getCalculation = async (id: string): Promise<MortgageCalculation | null> => {
+  // Synchronous version for components that have the calculation in state
+  const getCalculation = (id: string): MortgageCalculation | null => {
+    // First check if it's a temp calculation
+    if (id.startsWith('temp-')) {
+      const tempCalculations = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
+      return tempCalculations.find((calc: MortgageCalculation) => calc.id === id) || null;
+    }
+
+    // Check in current calculations
+    return calculations.find(calc => calc.id === id) || null;
+  };
+
+  // Async version for fetching from database
+  const getCalculationAsync = async (id: string): Promise<MortgageCalculation | null> => {
     // First check if it's a temp calculation
     if (id.startsWith('temp-')) {
       const tempCalculations = JSON.parse(localStorage.getItem('tempCalculations') || '[]');
@@ -245,6 +259,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       saveInvestmentCalculation,
       deleteCalculation,
       getCalculation,
+      getCalculationAsync,
       updateCalculationNotes,
       updateCalculationComments,
       isLoading
