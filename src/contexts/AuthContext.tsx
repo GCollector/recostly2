@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Loading profile for user:', supabaseUser.email);
 
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased to 10 seconds
       const profilePromise = supabase
         .from('profiles')
         .select('*')
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
       );
 
       const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           const createTimeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile creation timeout')), 5000)
+            setTimeout(() => reject(new Error('Profile creation timeout')), 10000)
           );
 
           const { data: createdProfile, error: createError } = await Promise.race([
