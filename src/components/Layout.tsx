@@ -11,15 +11,17 @@ import {
   CreditCard,
   ChevronDown,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, forceSignOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false);
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
@@ -28,6 +30,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       navigate('/dashboard', { replace: true });
     }
   }, [user, loading, location.pathname, navigate]);
+
+  // Set up loading timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.warn('⏰ Layout loading timeout - showing force logout option');
+        setLoadingTimeout(true);
+      }, 8000); // 8 second timeout
+
+      return () => {
+        clearTimeout(timeout);
+        setLoadingTimeout(false);
+      };
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -58,13 +77,42 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Show loading spinner only during initial auth check
+  const handleForceLogout = () => {
+    console.log('Force logout triggered from UI');
+    forceSignOut();
+    setProfileDropdownOpen(false);
+    navigate('/', { replace: true });
+  };
+
+  // Show loading spinner with timeout option
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center space-y-6">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
+          
+          {loadingTimeout && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-md">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="text-left">
+                  <h3 className="text-sm font-medium text-amber-800 mb-2">
+                    Taking longer than expected?
+                  </h3>
+                  <p className="text-sm text-amber-700 mb-3">
+                    If the app seems stuck, you can force refresh the authentication state.
+                  </p>
+                  <button
+                    onClick={handleForceLogout}
+                    className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Reset & Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
