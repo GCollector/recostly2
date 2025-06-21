@@ -33,6 +33,18 @@ const MortgageCalculator: React.FC = () => {
   const [saveError, setSaveError] = useState('');
 
   const calculateMortgage = () => {
+    console.log('🧮 Starting mortgage calculation...');
+    console.log('📊 Calculation inputs:', {
+      homePrice,
+      downPayment,
+      interestRate,
+      amortizationYears,
+      paymentFrequency,
+      province,
+      city,
+      isFirstTimeBuyer
+    });
+
     const loanAmount = homePrice - downPayment;
     const monthlyRate = interestRate / 100 / 12;
     const totalPayments = amortizationYears * 12;
@@ -52,12 +64,15 @@ const MortgageCalculator: React.FC = () => {
       monthlyPayment = monthlyPayment / 2;
     }
     
-    setResult({
+    const calculatedResult = {
       monthlyPayment: Math.round(monthlyPayment * 100) / 100,
       totalInterest: Math.round(totalInterest * 100) / 100,
       totalCost: Math.round(totalCost * 100) / 100,
       loanAmount: Math.round(loanAmount * 100) / 100
-    });
+    };
+
+    console.log('✅ Calculation completed:', calculatedResult);
+    setResult(calculatedResult);
   };
 
   useEffect(() => {
@@ -65,6 +80,10 @@ const MortgageCalculator: React.FC = () => {
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
 
   const handleSave = async () => {
+    console.log('💾 Save button clicked');
+    console.log('👤 Current user:', user ? { email: user.email, tier: user.tier } : 'No user');
+    console.log('📊 Current result:', result);
+
     if (!result) {
       console.log('❌ No result to save');
       setSaveError('Please calculate a mortgage first');
@@ -75,7 +94,7 @@ const MortgageCalculator: React.FC = () => {
     setIsSaving(true);
     
     try {
-      console.log('💾 Saving calculation...', { user: user?.email, result });
+      console.log('💾 Preparing calculation data for save...');
       
       const calculationData = {
         home_price: homePrice,
@@ -92,29 +111,40 @@ const MortgageCalculator: React.FC = () => {
         comments: null
       };
       
+      console.log('📝 Calculation data prepared:', calculationData);
+      console.log('🚀 Calling saveCalculation...');
+      
       const id = await saveCalculation(calculationData);
       
       console.log('✅ Calculation saved with ID:', id);
       setCalculationId(id);
       
       if (user) {
-        // For authenticated users, show success and share modal
+        console.log('👤 Authenticated user - showing success and share modal');
         setSaveError('');
         setShowShareModal(true);
       } else {
-        // For non-authenticated users, just show share modal
+        console.log('👤 Non-authenticated user - showing share modal');
         setSaveError('');
         setShowShareModal(true);
       }
     } catch (error) {
       console.error('💥 Error saving calculation:', error);
+      console.error('💥 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
+      console.log('🏁 Save process completed, setting isSaving to false');
       setIsSaving(false);
     }
   };
 
   const handleShare = async () => {
+    console.log('🔗 Share button clicked');
+    console.log('🆔 Current calculation ID:', calculationId);
+
     if (!calculationId) {
       console.log('❌ No calculation ID to share');
       setSaveError('Please save the calculation first');
@@ -122,6 +152,8 @@ const MortgageCalculator: React.FC = () => {
     }
     
     const shareUrl = `${window.location.origin}/shared/${calculationId}`;
+    console.log('🔗 Generated share URL:', shareUrl);
+    
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -135,7 +167,12 @@ const MortgageCalculator: React.FC = () => {
   };
 
   const handleDirectShare = async () => {
+    console.log('🔗 Direct share button clicked');
+    console.log('📊 Current result:', result);
+    console.log('🆔 Current calculation ID:', calculationId);
+
     if (!result) {
+      console.log('❌ No result for direct share');
       setSaveError('Please calculate a mortgage first');
       return;
     }
@@ -144,11 +181,13 @@ const MortgageCalculator: React.FC = () => {
 
     // If already saved, just show share modal
     if (calculationId) {
+      console.log('✅ Calculation already saved, showing share modal');
       setShowShareModal(true);
       return;
     }
 
     // Otherwise, save first then share
+    console.log('💾 Calculation not saved yet, saving first...');
     await handleSave();
   };
 
