@@ -18,12 +18,18 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
   suffix = ''
 }) => {
   const [displayValue, setDisplayValue] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
 
-  // Format number with commas
-  const formatNumber = (num: number): string => {
-    if (num === 0) return '';
-    return num.toLocaleString('en-US');
+  // Format number with commas while preserving cursor position
+  const formatWithCommas = (str: string): string => {
+    // Remove all non-digits
+    const digits = str.replace(/\D/g, '');
+    
+    // Add commas
+    if (digits === '') return '';
+    
+    // Convert to number and back to get proper formatting
+    const number = parseInt(digits, 10);
+    return number.toLocaleString('en-US');
   };
 
   // Remove commas and convert to number
@@ -34,54 +40,68 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
 
   // Update display value when value prop changes
   useEffect(() => {
-    if (!isFocused) {
-      setDisplayValue(formatNumber(value));
-    }
-  }, [value, isFocused]);
+    const formatted = value === 0 ? '' : value.toLocaleString('en-US');
+    setDisplayValue(formatted);
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
+    const cursorPosition = e.target.selectionStart || 0;
+    
+    // Get the numeric value
     const numericValue = parseNumber(inputValue);
     
-    // Update the display value immediately for better UX
-    setDisplayValue(inputValue.replace(/[^\d,]/g, ''));
+    // Format with commas
+    const formattedValue = formatWithCommas(inputValue);
+    
+    // Update display value
+    setDisplayValue(formattedValue);
     
     // Call onChange with the numeric value
     onChange(numericValue);
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    // Show raw number without commas when focused for easier editing
-    setDisplayValue(value === 0 ? '' : value.toString());
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-    // Format with commas when not focused
-    setDisplayValue(formatNumber(value));
+    
+    // Restore cursor position after formatting
+    setTimeout(() => {
+      const input = e.target;
+      const oldLength = inputValue.length;
+      const newLength = formattedValue.length;
+      const lengthDiff = newLength - oldLength;
+      
+      // Adjust cursor position based on added/removed commas
+      let newCursorPosition = cursorPosition + lengthDiff;
+      
+      // Make sure cursor position is valid
+      newCursorPosition = Math.max(0, Math.min(newCursorPosition, formattedValue.length));
+      
+      input.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Allow: backspace, delete, tab, escape, enter
-    if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
-        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-        (e.keyCode === 65 && e.ctrlKey === true) ||
-        (e.keyCode === 67 && e.ctrlKey === true) ||
-        (e.keyCode === 86 && e.ctrlKey === true) ||
-        (e.keyCode === 88 && e.ctrlKey === true)) {
+    // Allow: backspace, delete, tab, escape, enter, home, end, left, right
+    if ([8, 9, 27, 13, 46, 35, 36, 37, 39].indexOf(e.keyCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+        (e.ctrlKey && [65, 67, 86, 88, 90].indexOf(e.keyCode) !== -1)) {
       return;
     }
+    
     // Ensure that it is a number and stop the keypress
     if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
       e.preventDefault();
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const numericValue = parseNumber(pastedText);
+    onChange(numericValue);
+  };
+
   return (
     <div className="relative">
       {prefix && (
-        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10">
           {prefix}
         </span>
       )}
@@ -89,14 +109,13 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
         type="text"
         value={displayValue}
         onChange={handleChange}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         placeholder={placeholder}
         className={`w-full ${prefix ? 'pl-8' : 'pl-3'} ${suffix ? 'pr-16' : 'pr-3'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 z-10">
           {suffix}
         </span>
       )}
