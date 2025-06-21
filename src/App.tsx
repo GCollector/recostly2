@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Calculator from './pages/Calculator';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Pricing from './pages/Pricing';
 import SharedCalculation from './pages/SharedCalculation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -22,6 +23,7 @@ function App() {
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/shared/:id" element={<SharedCalculation />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />

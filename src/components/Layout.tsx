@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   X,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,6 +21,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
     ...(user ? [{ name: 'Dashboard', href: '/dashboard', icon: User }] : []),
+    { name: 'Pricing', href: '/pricing', icon: CreditCard },
     ...(user?.tier === 'premium'
       ? [{ name: 'Settings', href: '/settings', icon: Settings }]
       : []),
