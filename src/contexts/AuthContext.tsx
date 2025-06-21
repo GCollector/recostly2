@@ -38,11 +38,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Loading profile for user:', supabaseUser.email);
 
-      const { data: profile, error } = await supabase
+      // Add timeout to prevent hanging
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+
+      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
@@ -60,21 +67,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tier: 'public' as const
           };
 
-          const { data: createdProfile, error: createError } = await supabase
+          const createPromise = supabase
             .from('profiles')
             .insert(newProfile)
             .select()
             .single();
 
+          const createTimeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile creation timeout')), 5000)
+          );
+
+          const { data: createdProfile, error: createError } = await Promise.race([
+            createPromise, 
+            createTimeoutPromise
+          ]) as any;
+
           if (createError) {
             console.error('❌ Error creating profile:', createError);
-            return null;
+            throw new Error('Failed to create profile: ' + createError.message);
           }
 
           if (createdProfile) {
             console.log('✅ Profile created successfully');
             return { ...createdProfile, supabaseUser };
           }
+        } else {
+          throw new Error('Failed to fetch profile: ' + error.message);
         }
         return null;
       } else if (profile) {
@@ -85,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      return null;
+      throw error; // Re-throw to be handled by caller
     }
   };
 
@@ -111,9 +129,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (currentSession?.user) {
           console.log('✅ Found existing session for:', currentSession.user.email);
-          const userProfile = await loadUserProfile(currentSession.user);
-          if (mounted) {
-            setUser(userProfile);
+          try {
+            const userProfile = await loadUserProfile(currentSession.user);
+            if (mounted) {
+              setUser(userProfile);
+            }
+          } catch (profileError) {
+            console.error('💥 Failed to load profile during init:', profileError);
+            if (mounted) {
+              setUser(null);
+              setSession(null);
+            }
           }
         } else {
           console.log('ℹ️ No existing session found');
@@ -136,10 +162,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('⏰ Auth initialization timeout - setting loading to false');
+        console.warn('⏰ Auth initialization timeout - forcing loading to false');
         setLoading(false);
+        setUser(null);
+        setSession(null);
       }
-    }, 3000);
+    }, 8000); // 8 second timeout
 
     initializeAuth();
 
@@ -163,9 +191,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ User signed in:', newSession.user.email);
           setLoading(true);
           
-          const userProfile = await loadUserProfile(newSession.user);
-          setUser(userProfile);
-          setLoading(false);
+          try {
+            const userProfile = await loadUserProfile(newSession.user);
+            setUser(userProfile);
+          } catch (profileError) {
+            console.error('💥 Failed to load profile after sign in:', profileError);
+            setUser(null);
+            setSession(null);
+          } finally {
+            setLoading(false);
+          }
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 User signed out');
           setUser(null);
@@ -185,7 +220,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       console.log('🔐 Attempting sign in for:', email);
-      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -194,7 +228,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign in error:', error);
-        setLoading(false);
         throw error;
       }
 
@@ -203,7 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('💥 Sign in failed:', error);
-      setLoading(false);
       throw error;
     }
   };
@@ -211,7 +243,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
     try {
       console.log('📝 Attempting sign up for:', email);
-      setLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -225,7 +256,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign up error:', error);
-        setLoading(false);
         throw error;
       }
 
@@ -234,7 +264,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('💥 Sign up failed:', error);
-      setLoading(false);
       throw error;
     }
   };
