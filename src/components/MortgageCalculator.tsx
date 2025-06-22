@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCalculations } from '../contexts/CalculationContext';
+import NotesSection from './NotesSection';
 
 interface CalculationResult {
   monthlyPayment: number;
@@ -10,6 +13,7 @@ interface CalculationResult {
 
 const MortgageCalculator: React.FC = () => {
   const { user } = useAuth();
+  const { saveCalculation, saveToLocalStorage, hasLocalCalculation } = useCalculations();
   
   const [homePrice, setHomePrice] = useState(500000);
   const [downPayment, setDownPayment] = useState(100000);
@@ -21,20 +25,16 @@ const MortgageCalculator: React.FC = () => {
   const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState(false);
   
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [calculationId, setCalculationId] = useState<string>('');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const calculateMortgage = () => {
     console.log('🧮 Starting mortgage calculation...');
-    console.log('📊 Calculation inputs:', {
-      homePrice,
-      downPayment,
-      interestRate,
-      amortizationYears,
-      paymentFrequency,
-      province,
-      city,
-      isFirstTimeBuyer
-    });
-
+    
     const loanAmount = homePrice - downPayment;
     const monthlyRate = interestRate / 100 / 12;
     const totalPayments = amortizationYears * 12;
@@ -68,6 +68,97 @@ const MortgageCalculator: React.FC = () => {
   useEffect(() => {
     calculateMortgage();
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
+
+  const handleSave = async () => {
+    if (!result) {
+      console.log('❌ No result to save');
+      setSaveError('Please calculate a mortgage first');
+      return;
+    }
+    
+    setSaveError('');
+    setIsSaving(true);
+    
+    try {
+      console.log('💾 Saving calculation...', { user: user?.email, result });
+      
+      const calculationData = {
+        home_price: homePrice,
+        down_payment: downPayment,
+        interest_rate: interestRate,
+        amortization_years: amortizationYears,
+        payment_frequency: paymentFrequency,
+        province,
+        city,
+        is_first_time_buyer: isFirstTimeBuyer,
+        monthly_payment: result.monthlyPayment,
+        total_interest: result.totalInterest,
+        notes: {},
+        comments: null
+      };
+      
+      const id = await saveCalculation(calculationData);
+      
+      console.log('✅ Calculation saved with ID:', id);
+      setCalculationId(id);
+      
+      if (user) {
+        // For authenticated users, show success and share modal
+        setSaveError('');
+        setShowShareModal(true);
+      } else {
+        // For non-authenticated users, show login prompt after first save
+        setSaveError('');
+        setShowShareModal(true);
+        if (!hasLocalCalculation) {
+          setTimeout(() => setShowLoginPrompt(true), 2000);
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error saving calculation:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!calculationId) {
+      console.log('❌ No calculation ID to share');
+      setSaveError('Please save the calculation first');
+      return;
+    }
+    
+    const shareUrl = `${window.location.origin}/shared/${calculationId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      console.log('✅ Share URL copied to clipboard:', shareUrl);
+    } catch (err) {
+      console.error('❌ Failed to copy to clipboard:', err);
+      // Fallback: show the URL in an alert
+      alert(`Share this link: ${shareUrl}`);
+    }
+  };
+
+  const handleDirectShare = async () => {
+    if (!result) {
+      setSaveError('Please calculate a mortgage first');
+      return;
+    }
+
+    setSaveError('');
+
+    // If already saved, just show share modal
+    if (calculationId) {
+      setShowShareModal(true);
+      return;
+    }
+
+    // Otherwise, save first then share
+    await handleSave();
+  };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
 
@@ -241,10 +332,130 @@ const MortgageCalculator: React.FC = () => {
                 </div>
                 <div className="text-sm text-gray-600">Total Cost of Home</div>
               </div>
+
+              {/* Error Display */}
+              {saveError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
+                </button>
+                <button
+                  onClick={handleDirectShare}
+                  disabled={isSaving}
+                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Notes Section for Premium Users */}
+      {user?.tier === 'premium' && calculationId && (
+        <NotesSection calculationId={calculationId} section="mortgage" />
+      )}
+
+      {/* Login Prompt Modal for Public Users */}
+      {showLoginPrompt && !user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="text-center mb-6">
+              <LogIn className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Save Multiple Calculations</h3>
+              <p className="text-gray-600">
+                You've saved one calculation! Create an account to save unlimited calculations, 
+                access them from any device, and unlock premium features.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
+              >
+                Maybe Later
+              </button>
+              <button
+                onClick={() => window.location.href = '/signup'}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                Sign Up Free
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && calculationId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Share Calculation</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shareable Link
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={`${window.location.origin}/shared/${calculationId}`}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-sm"
+                  />
+                  <button
+                    onClick={handleShare}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors"
+                  >
+                    {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
+                {copied && (
+                  <p className="text-sm text-green-600 mt-1">Copied to clipboard!</p>
+                )}
+              </div>
+              
+              {!user && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-800 mb-2">Want to save more calculations?</h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Create a free account to save unlimited calculations and access them from anywhere.
+                  </p>
+                  <button
+                    onClick={() => window.location.href = '/signup'}
+                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
+                  >
+                    Sign Up Free
+                  </button>
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
