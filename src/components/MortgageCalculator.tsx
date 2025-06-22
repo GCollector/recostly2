@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
-import { supabase } from '../lib/supabase';
 import NotesSection from './NotesSection';
 
 interface CalculationResult {
@@ -10,20 +9,11 @@ interface CalculationResult {
   totalInterest: number;
   totalCost: number;
   loanAmount: number;
-  biWeeklyPayment?: number;
-  paymentSchedule?: {
-    year: number;
-    principalPayment: number;
-    interestPayment: number;
-    balance: number;
-    totalPayment: number;
-    cumulativeInterest: number;
-  }[];
 }
 
 const MortgageCalculator: React.FC = () => {
   const { user } = useAuth();
-  const { saveCalculation, saveToLocalStorage, hasLocalCalculation } = useCalculations();
+  const { saveCalculation } = useCalculations();
   
   const [homePrice, setHomePrice] = useState(500000);
   const [downPayment, setDownPayment] = useState(100000);
@@ -40,133 +30,146 @@ const MortgageCalculator: React.FC = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [calculationError, setCalculationError] = useState('');
 
   // IMMEDIATE TEST - This should run when component mounts
   useEffect(() => {
     console.log('🚀 MortgageCalculator component mounted');
     console.log('🔍 Initial state:', {
       user: user ? `${user.email} (${user.tier})` : 'No user',
-      saveCalculation: typeof saveCalculation,
-      hasLocalCalculation
+      saveCalculation: typeof saveCalculation
     });
-    
-    // Test if console.log works at all
-    console.log('✅ Console logging is working');
-    
-    // Test if we can access window
-    console.log('🌐 Window object:', typeof window);
-    
-    // Test if React events work
-    console.log('⚛️ React is working');
   }, []);
 
-  const calculateMortgage = async () => {
-    console.log('🧮 Starting server-side mortgage calculation...');
+  // Simple client-side calculation (no server dependency)
+  const calculateMortgage = () => {
+    console.log('🧮 Starting client-side mortgage calculation...');
     
-    setIsCalculating(true);
-    setCalculationError('');
+    const loanAmount = homePrice - downPayment;
+    const monthlyRate = interestRate / 100 / 12;
+    const totalPayments = amortizationYears * 12;
     
-    try {
-      const { data, error } = await supabase.functions.invoke('calculate-mortgage', {
-        body: {
-          homePrice,
-          downPayment,
-          interestRate,
-          amortizationYears,
-          paymentFrequency,
-          province,
-          city,
-          isFirstTimeBuyer
-        }
-      });
-
-      if (error) {
-        console.error('❌ Calculation error:', error);
-        setCalculationError(error.message || 'Failed to calculate mortgage');
-        setResult(null);
-        return;
-      }
-
-      if (data) {
-        console.log('✅ Calculation completed:', data);
-        setResult(data);
-      }
-    } catch (error) {
-      console.error('💥 Error calling calculation function:', error);
-      setCalculationError('Failed to calculate mortgage. Please try again.');
-      setResult(null);
-    } finally {
-      setIsCalculating(false);
+    let monthlyPayment = 0;
+    if (monthlyRate > 0) {
+      monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
+                      (Math.pow(1 + monthlyRate, totalPayments) - 1);
+    } else {
+      monthlyPayment = loanAmount / totalPayments;
     }
+    
+    const totalCost = monthlyPayment * totalPayments + downPayment;
+    const totalInterest = totalCost - homePrice;
+    
+    if (paymentFrequency === 'bi-weekly') {
+      monthlyPayment = monthlyPayment / 2;
+    }
+    
+    const calculationResult = {
+      monthlyPayment: Math.round(monthlyPayment * 100) / 100,
+      totalInterest: Math.round(totalInterest * 100) / 100,
+      totalCost: Math.round(totalCost * 100) / 100,
+      loanAmount: Math.round(loanAmount * 100) / 100
+    };
+
+    console.log('✅ Calculation completed:', calculationResult);
+    setResult(calculationResult);
   };
 
-  // Auto-calculate when inputs change (with debounce)
+  // Auto-calculate when inputs change
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      calculateMortgage();
-    }, 500); // 500ms debounce
+    calculateMortgage();
+  }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
 
-    return () => clearTimeout(timeoutId);
-  }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
-
-  // ULTRA SIMPLE BUTTON HANDLERS - NO COMPLEX LOGIC
-  const testButtonClick = () => {
-    console.log('🔥🔥🔥 TEST BUTTON CLICKED - THIS SHOULD ALWAYS WORK');
-    alert('Test button clicked! Console logging is working.');
-  };
-
-  const simpleSaveClick = () => {
-    console.log('💾💾💾 SIMPLE SAVE CLICKED');
-    console.log('Current state:', { result: !!result, user: !!user, isSaving });
+  // FIXED SAVE HANDLER
+  const handleSave = async () => {
+    console.log('💾💾💾 SAVE BUTTON CLICKED - HANDLER CALLED');
     
     if (!result) {
-      alert('No calculation result available');
+      console.log('❌ No result to save');
+      setSaveError('Please calculate a mortgage first');
       return;
     }
     
-    alert('Save button clicked! Check console for details.');
+    setSaveError('');
+    setIsSaving(true);
+    
+    try {
+      console.log('💾 Saving calculation...', { user: user?.email, result });
+      
+      const calculationData = {
+        home_price: homePrice,
+        down_payment: downPayment,
+        interest_rate: interestRate,
+        amortization_years: amortizationYears,
+        payment_frequency: paymentFrequency,
+        province,
+        city,
+        is_first_time_buyer: isFirstTimeBuyer,
+        monthly_payment: result.monthlyPayment,
+        total_interest: result.totalInterest,
+        notes: {},
+        comments: null
+      };
+      
+      console.log('📊 Calculation data prepared:', calculationData);
+      
+      const id = await saveCalculation(calculationData);
+      
+      console.log('✅ Calculation saved with ID:', id);
+      setCalculationId(id);
+      setSaveError('');
+      setShowShareModal(true);
+      
+    } catch (error) {
+      console.error('💥 Error saving calculation:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const simpleShareClick = () => {
-    console.log('🔗🔗🔗 SIMPLE SHARE CLICKED');
-    alert('Share button clicked! Check console for details.');
+  // FIXED SHARE HANDLER
+  const handleShare = async () => {
+    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - HANDLER CALLED');
+    
+    if (!result) {
+      setSaveError('Please calculate a mortgage first');
+      return;
+    }
+
+    setSaveError('');
+
+    // If already saved, just show share modal
+    if (calculationId) {
+      console.log('📤 Already saved, showing share modal');
+      setShowShareModal(true);
+      return;
+    }
+
+    // Otherwise, save first then share
+    console.log('💾 Need to save first, then share');
+    await handleSave();
+  };
+
+  const handleCopyLink = async () => {
+    if (!calculationId) return;
+    
+    const shareUrl = `${window.location.origin}/shared/${calculationId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      console.log('✅ Share URL copied to clipboard:', shareUrl);
+    } catch (err) {
+      console.error('❌ Failed to copy to clipboard:', err);
+      alert(`Share this link: ${shareUrl}`);
+    }
   };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
 
   return (
     <div className="p-6 space-y-8">
-      {/* EMERGENCY TEST SECTION */}
-      <div className="bg-red-100 border-2 border-red-500 p-4 rounded-lg">
-        <h3 className="text-red-800 font-bold mb-2">🚨 EMERGENCY BUTTON TEST</h3>
-        <p className="text-red-700 text-sm mb-3">
-          If these buttons don't work, there's a fundamental JavaScript issue:
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={testButtonClick}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            TEST CLICK
-          </button>
-          <button
-            onClick={() => console.log('🔥 Inline arrow function works')}
-            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
-          >
-            TEST INLINE
-          </button>
-          <button
-            onClick={function() { console.log('🔥 Inline regular function works'); }}
-            className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-          >
-            TEST FUNCTION
-          </button>
-        </div>
-      </div>
-
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Section */}
         <div className="space-y-6">
@@ -306,25 +309,7 @@ const MortgageCalculator: React.FC = () => {
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900">Payment Breakdown</h2>
           
-          {/* Calculation Status */}
-          {isCalculating && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
-                <span className="text-blue-700">Calculating mortgage...</span>
-              </div>
-            </div>
-          )}
-
-          {/* Calculation Error */}
-          {calculationError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-              <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{calculationError}</span>
-            </div>
-          )}
-          
-          {result && !isCalculating && (
+          {result && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-6 rounded-lg">
                 <div className="text-center">
@@ -334,11 +319,6 @@ const MortgageCalculator: React.FC = () => {
                   <div className="text-sm text-blue-700">
                     {paymentFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
                   </div>
-                  {result.biWeeklyPayment && paymentFrequency === 'bi-weekly' && (
-                    <div className="text-xs text-blue-600 mt-1">
-                      (${result.biWeeklyPayment.toLocaleString()} bi-weekly)
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -383,45 +363,10 @@ const MortgageCalculator: React.FC = () => {
                 </div>
               )}
 
-              {/* SIMPLE TEST BUTTONS SECTION */}
-              <div className="bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
-                <h4 className="font-bold text-yellow-800 mb-2">🧪 SIMPLE BUTTON TESTS</h4>
-                <div className="flex gap-2 mb-2">
-                  <button
-                    onClick={simpleSaveClick}
-                    className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-                  >
-                    Simple Save Test
-                  </button>
-                  <button
-                    onClick={simpleShareClick}
-                    className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700"
-                  >
-                    Simple Share Test
-                  </button>
-                </div>
-                <p className="text-xs text-yellow-700">
-                  These buttons should work and show alerts. If they don't, there's a JavaScript error.
-                </p>
-              </div>
-
-              {/* DEBUG INFO */}
-              <div className="bg-gray-100 border p-3 rounded-lg text-xs font-mono">
-                <strong>Debug Info:</strong><br/>
-                User: {user ? `${user.email} (${user.tier})` : 'No user'}<br/>
-                Result: {result ? 'Available' : 'None'}<br/>
-                SaveFunction: {typeof saveCalculation}<br/>
-                IsSaving: {isSaving ? 'Yes' : 'No'}<br/>
-                HasLocalCalc: {hasLocalCalculation ? 'Yes' : 'No'}
-              </div>
-
-              {/* ORIGINAL ACTION BUTTONS - SIMPLIFIED */}
+              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => {
-                    console.log('🔥 SAVE BUTTON CLICKED - DIRECT ONCLICK');
-                    alert('Save button clicked! Check console.');
-                  }}
+                  onClick={handleSave}
                   disabled={!result || isSaving}
                   className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
                     (!result || isSaving)
@@ -434,10 +379,7 @@ const MortgageCalculator: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={() => {
-                    console.log('🔗 SHARE BUTTON CLICKED - DIRECT ONCLICK');
-                    alert('Share button clicked! Check console.');
-                  }}
+                  onClick={handleShare}
                   disabled={!result || isSaving}
                   className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
                     (!result || isSaving)
@@ -495,15 +437,7 @@ const MortgageCalculator: React.FC = () => {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-sm"
                   />
                   <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(`${window.location.origin}/shared/${calculationId}`);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      } catch (err) {
-                        alert(`Share this link: ${window.location.origin}/shared/${calculationId}`);
-                      }
-                    }}
+                    onClick={handleCopyLink}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors"
                   >
                     {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
