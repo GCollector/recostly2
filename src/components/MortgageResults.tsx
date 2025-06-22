@@ -202,11 +202,27 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
   const investmentMetrics = calculateInvestmentMetrics();
 
-  // Chart data
+  // Chart data with proper percentages for pie chart
+  const totalValue = data.downPayment + loanAmount + totalInterest;
   const pieChartData = [
-    { name: 'Down Payment', value: data.downPayment, color: '#10B981' },
-    { name: 'Principal', value: loanAmount, color: '#3B82F6' },
-    { name: 'Interest', value: totalInterest, color: '#EF4444' }
+    { 
+      name: 'Down Payment', 
+      value: data.downPayment, 
+      color: '#10B981',
+      percent: Math.round((data.downPayment / totalValue) * 100)
+    },
+    { 
+      name: 'Principal', 
+      value: loanAmount, 
+      color: '#3B82F6',
+      percent: Math.round((loanAmount / totalValue) * 100)
+    },
+    { 
+      name: 'Interest', 
+      value: totalInterest, 
+      color: '#EF4444',
+      percent: Math.round((totalInterest / totalValue) * 100)
+    }
   ];
 
   const interestVsPrincipalData = [
@@ -228,6 +244,28 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     year: year.year,
     balance: year.balance
   }));
+
+  // Custom label function for pie chart
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="600"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -389,9 +427,11 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                       data={pieChartData}
                       cx="50%"
                       cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
                       outerRadius={80}
+                      fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
                       {pieChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -400,6 +440,26 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                     <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
                   </PieChart>
                 </ResponsiveContainer>
+                
+                {/* Legend below chart */}
+                <div className="flex justify-center items-center space-x-6 mt-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                    <span className="text-sm text-slate-600">Down Payment</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-slate-600">Principal</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-sm text-slate-600">Interest</span>
+                  </div>
+                </div>
+                
+                <div className="text-center mt-4 text-sm text-slate-600">
+                  Interest represents {Math.round((totalInterest / (totalInterest + loanAmount)) * 100)}% of your total payments
+                </div>
               </div>
 
               {/* Interest vs Principal */}
@@ -418,9 +478,6 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                     <Bar dataKey="interest" fill="#EF4444" name="Interest" />
                   </BarChart>
                 </ResponsiveContainer>
-                <div className="text-center mt-4 text-sm text-slate-600">
-                  Interest represents {Math.round((totalInterest / (totalInterest + loanAmount)) * 100)}% of your total payments
-                </div>
               </div>
             </div>
           </div>
