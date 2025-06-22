@@ -93,11 +93,7 @@ const MortgageCalculator: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
-  const handleSaveButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    // Prevent any default behavior and stop propagation
-    event.preventDefault();
-    event.stopPropagation();
-    
+  const handleSaveButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {    
     console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
     console.log('📊 Current state:', {
       user: user?.email || 'No user',
