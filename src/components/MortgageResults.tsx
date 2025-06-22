@@ -473,10 +473,6 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                     <span className="text-sm text-slate-600">Interest</span>
                   </div>
                 </div>
-                
-                <div className="text-center mt-4 text-sm text-slate-600">
-                  Interest represents {Math.round((totalInterest / (totalInterest + loanAmount)) * 100)}% of your total payments
-                </div>
               </div>
 
               {/* Interest vs Principal */}
