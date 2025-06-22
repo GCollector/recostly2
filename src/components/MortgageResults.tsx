@@ -494,93 +494,134 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
       case 'closing':
         return closingCosts ? (
-          <div className="space-y-6">
-            <div className="max-w-3xl mx-auto space-y-6">
-              <div className="bg-emerald-50 p-6 rounded-lg">
+          <div className="space-y-8">
+            {/* Highlighted Top Section - Two Key Totals */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Total Estimated Closing Costs */}
+              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 p-8 rounded-xl shadow-lg">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-600 mb-2">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Home className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-4xl font-bold text-emerald-700 mb-2">
                     ${closingCosts.total.toLocaleString()}
                   </div>
-                  <div className="text-sm text-emerald-700">
+                  <div className="text-lg font-semibold text-emerald-800">
                     Total Estimated Closing Costs
                   </div>
+                  <div className="text-sm text-emerald-600 mt-2">
+                    Fees and expenses at closing
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">
-                      {data.city === 'toronto' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
-                    </span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.landTransferTax.toLocaleString()}
-                    </span>
+              {/* Cash Required at Closing */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 p-8 rounded-xl shadow-lg">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <DollarSign className="h-6 w-6 text-white" />
                   </div>
+                  <div className="text-4xl font-bold text-blue-700 mb-2">
+                    ${(data.downPayment + closingCosts.total).toLocaleString()}
+                  </div>
+                  <div className="text-lg font-semibold text-blue-800">
+                    Cash Required at Closing
+                  </div>
+                  <div className="text-sm text-blue-600 mt-2">
+                    Down payment + closing costs
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  {data.city === 'toronto' && (
-                    <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                      <span className="text-slate-700">Toronto Municipal Land Transfer Tax</span>
-                      <span className="font-semibold text-slate-900">
-                        ${closingCosts.additionalTax.toLocaleString()}
+            {/* Detailed Breakdown */}
+            <div className="max-w-4xl mx-auto">
+              <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">Closing Cost Breakdown</h3>
+              
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">
+                        {data.city === 'toronto' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
+                      </span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.landTransferTax.toLocaleString()}
                       </span>
                     </div>
-                  )}
 
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">Legal Fees & Disbursements</span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.legalFees.toLocaleString()}
-                    </span>
-                  </div>
+                    {data.city === 'toronto' && (
+                      <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                        <span className="text-slate-700 font-medium">Toronto Municipal Land Transfer Tax</span>
+                        <span className="font-semibold text-slate-900 text-lg">
+                          ${closingCosts.additionalTax.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
 
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">Title Insurance</span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.titleInsurance.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">Home Inspection</span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.homeInspection.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">Property Appraisal</span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.appraisal.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                    <span className="text-slate-700">Survey Fee</span>
-                    <span className="font-semibold text-slate-900">
-                      ${closingCosts.surveyFee.toLocaleString()}
-                    </span>
-                  </div>
-
-                  {closingCosts.firstTimeBuyerRebate > 0 && (
-                    <div className="flex justify-between items-center py-2 border-b border-slate-200">
-                      <span className="text-green-700">First-Time Buyer Rebate</span>
-                      <span className="font-semibold text-green-600">
-                        -${closingCosts.firstTimeBuyerRebate.toLocaleString()}
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">Legal Fees & Disbursements</span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.legalFees.toLocaleString()}
                       </span>
                     </div>
-                  )}
+
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">Title Insurance</span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.titleInsurance.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">Home Inspection</span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.homeInspection.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">Property Appraisal</span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.appraisal.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                      <span className="text-slate-700 font-medium">Survey Fee</span>
+                      <span className="font-semibold text-slate-900 text-lg">
+                        ${closingCosts.surveyFee.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {closingCosts.firstTimeBuyerRebate > 0 && (
+                      <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                        <span className="text-green-700 font-medium">First-Time Buyer Rebate</span>
+                        <span className="font-semibold text-green-600 text-lg">
+                          -${closingCosts.firstTimeBuyerRebate.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Total Row */}
+                    <div className="flex justify-between items-center py-4 bg-slate-50 rounded-lg px-4 border-2 border-slate-300">
+                      <span className="text-slate-900 font-bold text-lg">Total Closing Costs</span>
+                      <span className="font-bold text-slate-900 text-2xl">
+                        ${closingCosts.total.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <div className="text-sm text-slate-600">
-                  <p className="mb-2">
-                    <strong>Cash required at closing:</strong> Down payment + closing costs = 
-                    <span className="font-semibold text-slate-900">
-                      {' '}${(data.downPayment + closingCosts.total).toLocaleString()}
-                    </span>
-                  </p>
+              {/* Additional Information */}
+              <div className="mt-8 bg-slate-50 p-6 rounded-xl">
+                <h4 className="font-semibold text-slate-900 mb-3">Additional Costs to Consider</h4>
+                <div className="text-sm text-slate-600 space-y-2">
+                  <p>• Moving expenses and utility connections</p>
+                  <p>• Property taxes (prorated) and home insurance</p>
+                  <p>• Condo fees (if applicable) and immediate repairs</p>
+                  <p>• Emergency fund for unexpected expenses</p>
                 </div>
               </div>
             </div>
