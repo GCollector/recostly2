@@ -289,7 +289,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Main content */}
-      <main className="container-modern py-12 space-modern">
+      <main className="container-modern pt-16 pb-12 space-modern">
         {children}
       </main>
     </div>
