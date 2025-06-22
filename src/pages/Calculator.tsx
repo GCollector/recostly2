@@ -77,6 +77,8 @@ const Calculator: React.FC = () => {
                     ? 'bg-blue-100 text-blue-700 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
+                aria-label={`Switch to ${tab.name}`}
+                data-testid={`tab-${tab.id}`}
               >
                 <Icon className="h-6 w-6 mb-2" />
                 <span className="text-sm font-medium font-sans">{tab.name}</span>
@@ -90,7 +92,7 @@ const Calculator: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="tab-content">
         {renderTabContent()}
       </div>
     </div>
