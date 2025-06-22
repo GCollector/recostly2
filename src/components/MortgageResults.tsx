@@ -374,24 +374,28 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     {
       id: 'mortgage' as const,
       name: 'Mortgage Summary',
+      shortName: 'Summary',
       icon: Calculator,
       description: 'Payment details and breakdown'
     },
     {
       id: 'closing' as const,
       name: 'Closing Costs',
+      shortName: 'Closing',
       icon: Home,
       description: 'Fees and closing expenses'
     },
     {
       id: 'amortization' as const,
       name: 'Amortization',
+      shortName: 'Schedule',
       icon: BarChart3,
       description: 'Payment schedule and charts'
     },
     ...(data.enableInvestmentAnalysis ? [{
       id: 'investment' as const,
       name: 'Investment Analysis',
+      shortName: 'Investment',
       icon: TrendingUp,
       description: 'ROI and cash flow analysis'
     }] : [])
@@ -829,7 +833,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header with Back Button */}
       <div className="flex items-center justify-between">
         <button
@@ -837,31 +841,47 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
           className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
-          <span>Back to Form</span>
+          <span className="hidden sm:inline">Back to Form</span>
+          <span className="sm:hidden">Back</span>
         </button>
-        <h2 className="text-2xl font-bold text-slate-900">Calculation Results</h2>
-        <div className="w-24"></div> {/* Spacer for centering */}
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 text-center">Results</h2>
+        <div className="w-16 sm:w-24"></div> {/* Spacer for centering */}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-slate-50 rounded-xl p-2">
-        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-2" aria-label="Results tabs">
+      {/* Perfect Responsive Tab Navigation */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+        <nav 
+          className={`grid gap-1 ${
+            tabs.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'
+          }`} 
+          aria-label="Results tabs"
+        >
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center p-4 rounded-lg text-center transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-lg text-center transition-all duration-200 min-h-[80px] sm:min-h-[100px] ${
+                  isActive
+                    ? 'bg-blue-100 text-blue-700 shadow-sm scale-[1.02]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
                 aria-label={`Switch to ${tab.name}`}
               >
-                <Icon className="h-6 w-6 mb-2" />
-                <span className="text-sm font-medium font-sans">{tab.name}</span>
-                <span className="text-xs font-sans text-slate-500 mt-1 hidden sm:block">
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6 mb-1 sm:mb-2 flex-shrink-0" />
+                
+                {/* Show full name on larger screens, short name on mobile */}
+                <span className="text-xs sm:text-sm font-medium font-sans leading-tight hidden sm:block">
+                  {tab.name}
+                </span>
+                <span className="text-xs font-medium font-sans leading-tight sm:hidden">
+                  {tab.shortName}
+                </span>
+                
+                {/* Description only on larger screens */}
+                <span className="text-xs font-sans text-slate-500 mt-1 hidden lg:block leading-tight">
                   {tab.description}
                 </span>
               </button>
@@ -870,8 +890,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className="min-h-[400px]">
+      {/* Tab Content - Full Height */}
+      <div className="min-h-[400px] sm:min-h-[500px]">
         {renderTabContent()}
       </div>
 
@@ -879,7 +899,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       {saveError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
           <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <span>{saveError}</span>
+          <span className="text-sm">{saveError}</span>
         </div>
       )}
 
@@ -888,13 +908,13 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           <div className="flex items-center">
             <CheckCircle className="h-5 w-5 mr-2" />
-            <span>Calculation saved successfully! You can now share it with others.</span>
+            <span className="text-sm">Calculation saved successfully! You can now share it with others.</span>
           </div>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-4">
+      {/* Action Buttons - Responsive */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-4">
         <button
           onClick={handleSave}
           disabled={!result || isSaving}
@@ -905,20 +925,22 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
           }`}
         >
           <Save className="h-4 w-4 mr-2" />
-          {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
+          <span className="text-sm sm:text-base">
+            {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
+          </span>
         </button>
         
         <button
           onClick={handleShare}
           disabled={!result || isSaving}
-          className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
+          className={`flex-1 sm:flex-none flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
             (!result || isSaving)
               ? 'bg-slate-100 border border-slate-300 text-slate-400 cursor-not-allowed'
               : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700'
           }`}
         >
           <Share2 className="h-4 w-4 mr-2" />
-          Share
+          <span className="text-sm sm:text-base">Share</span>
         </button>
       </div>
 
