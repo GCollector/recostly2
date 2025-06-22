@@ -245,8 +245,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     balance: year.balance
   }));
 
-  // Custom label function for pie chart
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+  // Custom label function for pie chart - FIXED: Don't multiply by 100
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -262,7 +262,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         fontSize="12"
         fontWeight="600"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${Math.round(percent * 100)}%`}
       </text>
     );
   };
