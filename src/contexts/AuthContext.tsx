@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { Database } from '../lib/supabase';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = Database['public']['Tables']['profile']['Row'];
 
 interface User extends Profile {
   supabaseUser: SupabaseUser;
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Race between profile loading and timeout
       const profilePromise = supabase
-        .from('profiles')
+        .from('profile')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // Race between profile creation and timeout
           const createPromise = supabase
-            .from('profiles')
+            .from('profile')
             .insert(newProfile)
             .select()
             .single();
@@ -392,7 +392,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Race between profile update and timeout
       const updatePromise = supabase
-        .from('profiles')
+        .from('profile')
         .update(updates)
         .eq('id', user.id)
         .select()

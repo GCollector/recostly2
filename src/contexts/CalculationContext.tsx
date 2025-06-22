@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import type { Database } from '../lib/supabase';
 
-type MortgageCalculation = Database['public']['Tables']['mortgage_calculations']['Row'];
+type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
 
 interface CalculationContextType {
   calculations: MortgageCalculation[];
@@ -59,7 +59,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       console.log('📊 Fetching calculations for user:', user.email);
       const { data, error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -87,7 +87,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       
       try {
         const { data, error } = await supabase
-          .from('mortgage_calculations')
+          .from('mortgage_calculation')
           .insert({
             ...calculation,
             user_id: null, // Allow null for public sharing
@@ -118,7 +118,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       console.log('👤 Authenticated user - saving to database');
       const { data, error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .insert({
           ...calculation,
           user_id: user.id,
@@ -151,7 +151,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     try {
       const { error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
@@ -191,7 +191,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       console.log('🌐 Fetching calculation from database');
       const { data, error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .select('*')
         .eq('id', id)
         .single();
@@ -226,7 +226,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
 
       const { data, error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .update({
           notes: updatedNotes
         })
@@ -260,7 +260,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     try {
       const { data, error } = await supabase
-        .from('mortgage_calculations')
+        .from('mortgage_calculation')
         .update({ comments })
         .eq('id', id)
         .eq('user_id', user.id)

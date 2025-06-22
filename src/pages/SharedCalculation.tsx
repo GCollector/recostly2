@@ -5,8 +5,8 @@ import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/supabase';
 
-type MortgageCalculation = Database['public']['Tables']['mortgage_calculations']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
+type Profile = Database['public']['Tables']['profile']['Row'];
 
 const SharedCalculation: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +27,7 @@ const SharedCalculation: React.FC = () => {
         // If calculation has an owner, fetch their profile for marketing content
         if (calc?.user_id) {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('profile')
             .select('*')
             .eq('id', calc.user_id)
             .single();

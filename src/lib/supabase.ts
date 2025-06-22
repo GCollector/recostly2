@@ -12,12 +12,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Database = {
   public: {
     Tables: {
-      profiles: {
+      profile: {
         Row: {
           id: string
           email: string
           name: string
-          tier: 'public' | 'basic' | 'premium'
+          tier: 'basic' | 'premium'
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string | null
@@ -30,7 +30,7 @@ export type Database = {
           id: string
           email: string
           name: string
-          tier?: 'public' | 'basic' | 'premium'
+          tier?: 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
@@ -43,7 +43,7 @@ export type Database = {
           id?: string
           email?: string
           name?: string
-          tier?: 'public' | 'basic' | 'premium'
+          tier?: 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
@@ -53,7 +53,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      mortgage_calculations: {
+      mortgage_calculation: {
         Row: {
           id: string
           user_id: string | null
@@ -105,47 +105,6 @@ export type Database = {
           total_interest?: number
           notes?: Record<string, string>
           comments?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      investment_calculations: {
-        Row: {
-          id: string
-          user_id: string | null
-          purchase_price: number
-          down_payment: number
-          monthly_rent: number
-          monthly_expenses: Record<string, number>
-          cap_rate: number
-          cash_flow: number
-          roi: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          purchase_price: number
-          down_payment: number
-          monthly_rent: number
-          monthly_expenses: Record<string, number>
-          cap_rate: number
-          cash_flow: number
-          roi: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          purchase_price?: number
-          down_payment?: number
-          monthly_rent?: number
-          monthly_expenses?: Record<string, number>
-          cap_rate?: number
-          cash_flow?: number
-          roi?: number
           created_at?: string
           updated_at?: string
         }
