@@ -98,6 +98,7 @@ export default {
         },
       },
       fontFamily: {
+        heading: ['Space Grotesk', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
