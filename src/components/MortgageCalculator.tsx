@@ -44,6 +44,28 @@ const MortgageCalculator: React.FC = () => {
   const [saveError, setSaveError] = useState('');
   const [calculationError, setCalculationError] = useState('');
 
+  // Add window error handler to catch any JavaScript errors
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 JavaScript Error:', event.error);
+      console.error('🚨 Error message:', event.message);
+      console.error('🚨 Error filename:', event.filename);
+      console.error('🚨 Error line:', event.lineno);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 Unhandled Promise Rejection:', event.reason);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   const calculateMortgage = async () => {
     console.log('🧮 Starting server-side mortgage calculation...');
     
@@ -93,38 +115,65 @@ const MortgageCalculator: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
-  const handleSaveButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {    
-    event.preventDefault();
-    event.stopPropagation();
-    
-    console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
-    console.log('📊 Current state:', {
-      user: user?.email || 'No user',
-      result: result ? 'Has result' : 'No result',
-      isSaving,
-      calculationId,
-      isCalculating
-    });
-    
-    // Check if we have a result to save
-    if (!result) {
-      console.log('❌ No result to save - calculation may still be running');
-      setSaveError('Please wait for the calculation to complete before saving');
-      return;
-    }
-    
-    // Check if already saving
-    if (isSaving) {
-      console.log('⏳ Already saving, ignoring duplicate click');
-      return;
-    }
-    
-    // Clear any previous errors
-    setSaveError('');
-    setIsSaving(true);
+  // SIMPLIFIED SAVE BUTTON HANDLER WITH EXTENSIVE LOGGING
+  const handleSaveButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // FIRST LOG - This should ALWAYS appear if the button is clicked
+    console.log('🔥🔥🔥 SAVE BUTTON CLICKED - ENTRY POINT');
+    console.log('🔥🔥🔥 Event object:', event);
+    console.log('🔥🔥🔥 Event type:', event.type);
+    console.log('🔥🔥🔥 Event target:', event.target);
     
     try {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      console.log('🔥 Event prevented and stopped');
+      console.log('📊 Current state check:', {
+        user: user ? `${user.email} (${user.tier})` : 'No user',
+        result: result ? 'Has result' : 'No result',
+        isSaving,
+        calculationId,
+        isCalculating,
+        saveCalculation: typeof saveCalculation
+      });
+      
+      // Check if we have a result to save
+      if (!result) {
+        console.log('❌ No result to save - calculation may still be running');
+        setSaveError('Please wait for the calculation to complete before saving');
+        return;
+      }
+      
+      // Check if already saving
+      if (isSaving) {
+        console.log('⏳ Already saving, ignoring duplicate click');
+        return;
+      }
+      
+      console.log('🚀 Starting save process...');
+      
+      // Clear any previous errors
+      setSaveError('');
+      setIsSaving(true);
+      
+      // Call the actual save function
+      performSave();
+      
+    } catch (error) {
+      console.error('💥 Error in handleSaveButtonClick:', error);
+      setSaveError('An error occurred while saving. Please try again.');
+      setIsSaving(false);
+    }
+  };
+
+  // SEPARATE ASYNC FUNCTION FOR THE ACTUAL SAVE LOGIC
+  const performSave = async () => {
+    try {
       console.log('💾 Preparing calculation data for save...');
+      
+      if (!result) {
+        throw new Error('No calculation result available');
+      }
       
       const calculationData = {
         home_price: homePrice,
@@ -142,6 +191,11 @@ const MortgageCalculator: React.FC = () => {
       };
       
       console.log('📤 Calling saveCalculation with data:', calculationData);
+      console.log('📤 saveCalculation function type:', typeof saveCalculation);
+      
+      if (typeof saveCalculation !== 'function') {
+        throw new Error('saveCalculation is not a function');
+      }
       
       const id = await saveCalculation(calculationData);
       
@@ -161,7 +215,7 @@ const MortgageCalculator: React.FC = () => {
       }
       
     } catch (error) {
-      console.error('💥 Error saving calculation:', error);
+      console.error('💥 Error in performSave:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
       setIsSaving(false);
@@ -169,38 +223,47 @@ const MortgageCalculator: React.FC = () => {
     }
   };
 
-  const handleShareButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+  // SIMPLIFIED SHARE BUTTON HANDLER
+  const handleShareButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - ENTRY POINT');
+    console.log('🔗🔗🔗 Event object:', event);
     
-    console.log('🔗 SHARE BUTTON CLICKED');
-    console.log('📊 Share button state:', {
-      result: result ? 'Has result' : 'No result',
-      calculationId: calculationId || 'No ID',
-      isSaving,
-      isCalculating
-    });
-    
-    // Check if we have a result to share
-    if (!result) {
-      console.log('❌ No result to share - calculation may still be running');
-      setSaveError('Please wait for the calculation to complete before sharing');
-      return;
+    try {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      console.log('📊 Share button state:', {
+        result: result ? 'Has result' : 'No result',
+        calculationId: calculationId || 'No ID',
+        isSaving,
+        isCalculating
+      });
+      
+      // Check if we have a result to share
+      if (!result) {
+        console.log('❌ No result to share - calculation may still be running');
+        setSaveError('Please wait for the calculation to complete before sharing');
+        return;
+      }
+
+      // Clear any previous errors
+      setSaveError('');
+
+      // If already saved, just show share modal
+      if (calculationId) {
+        console.log('📤 Already saved, showing share modal');
+        setShowShareModal(true);
+        return;
+      }
+
+      // Otherwise, save first then share
+      console.log('💾 Not saved yet, saving first...');
+      handleSaveButtonClick(event);
+      
+    } catch (error) {
+      console.error('💥 Error in handleShareButtonClick:', error);
+      setSaveError('An error occurred while sharing. Please try again.');
     }
-
-    // Clear any previous errors
-    setSaveError('');
-
-    // If already saved, just show share modal
-    if (calculationId) {
-      console.log('📤 Already saved, showing share modal');
-      setShowShareModal(true);
-      return;
-    }
-
-    // Otherwise, save first then share
-    console.log('💾 Not saved yet, saving first...');
-    await handleSaveButtonClick(event);
   };
 
   const handleCopyButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -248,6 +311,16 @@ const MortgageCalculator: React.FC = () => {
 
   // Check if buttons should be disabled
   const buttonsDisabled = !result || isSaving;
+
+  // Add debugging for context values
+  console.log('🔍 Component render state:', {
+    user: user ? `${user.email} (${user.tier})` : 'No user',
+    result: result ? 'Has result' : 'No result',
+    saveCalculation: typeof saveCalculation,
+    buttonsDisabled,
+    isSaving,
+    isCalculating
+  });
 
   return (
     <div className="p-6 space-y-8">
@@ -461,11 +534,24 @@ const MortgageCalculator: React.FC = () => {
                 </div>
               )}
 
-              {/* Action Buttons - PROPER BUTTON ONCLICK HANDLERS */}
+              {/* DEBUG INFO */}
+              <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
+                <strong>Debug Info:</strong><br/>
+                User: {user ? `${user.email} (${user.tier})` : 'No user'}<br/>
+                Result: {result ? 'Available' : 'None'}<br/>
+                SaveFunction: {typeof saveCalculation}<br/>
+                ButtonsDisabled: {buttonsDisabled ? 'Yes' : 'No'}<br/>
+                IsSaving: {isSaving ? 'Yes' : 'No'}
+              </div>
+
+              {/* Action Buttons - WITH EXTENSIVE LOGGING */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={handleSaveButtonClick}
+                  onClick={(e) => {
+                    console.log('🔥🔥🔥 BUTTON CLICKED - IMMEDIATE LOG');
+                    handleSaveButtonClick(e);
+                  }}
                   disabled={buttonsDisabled}
                   className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
                     buttonsDisabled
@@ -480,7 +566,10 @@ const MortgageCalculator: React.FC = () => {
                 
                 <button
                   type="button"
-                  onClick={handleShareButtonClick}
+                  onClick={(e) => {
+                    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - IMMEDIATE LOG');
+                    handleShareButtonClick(e);
+                  }}
                   disabled={buttonsDisabled}
                   className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
                     buttonsDisabled
