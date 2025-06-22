@@ -429,27 +429,52 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
   const COLORS = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6'];
 
+  // Custom label function for mobile-friendly pie chart
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+    // Only show labels for segments larger than 5%
+    if (percent < 0.05) return null;
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'mortgage':
         return (
-          <div className="space-y-8">
+          <div className="space-y-6 lg:space-y-8">
             {/* Top Summary Cards */}
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
               {/* Main Payment Card */}
               <div className="lg:col-span-1">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 shadow-lg">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl border-2 border-blue-200 shadow-lg">
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Calculator className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
-                    <div className="text-4xl font-bold text-blue-700 mb-2">
+                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-700 mb-2">
                       ${result.monthlyPayment.toLocaleString()}
                     </div>
-                    <div className="text-lg font-semibold text-blue-800">
+                    <div className="text-sm sm:text-base lg:text-lg font-semibold text-blue-800">
                       {data.paymentFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
                     </div>
-                    <div className="text-sm text-blue-600 mt-2">
+                    <div className="text-xs sm:text-sm text-blue-600 mt-2">
                       {data.interestRate}% • {data.amortizationYears} years
                     </div>
                   </div>
@@ -457,42 +482,42 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
               </div>
 
               {/* Key Metrics */}
-              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="text-2xl font-bold text-slate-900">
+              <div className="lg:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border border-slate-200">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                     ${result.loanAmount.toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-600">Loan Amount</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Loan Amount</div>
                   <div className="text-xs text-slate-500 mt-1">
                     {Math.round((result.loanAmount / data.homePrice) * 100)}% of home price
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="text-2xl font-bold text-slate-900">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border border-slate-200">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                     ${result.totalInterest.toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-600">Total Interest</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Total Interest</div>
                   <div className="text-xs text-slate-500 mt-1">
                     Over {data.amortizationYears} years
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="text-2xl font-bold text-slate-900">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border border-slate-200">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                     ${data.downPayment.toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-600">Down Payment</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Down Payment</div>
                   <div className="text-xs text-slate-500 mt-1">
                     {Math.round((data.downPayment / data.homePrice) * 100)}% down
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="text-2xl font-bold text-slate-900">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border border-slate-200">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                     ${result.totalCost.toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-600">Total Cost</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Total Cost</div>
                   <div className="text-xs text-slate-500 mt-1">
                     Including all interest
                   </div>
@@ -500,22 +525,22 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
               </div>
             </div>
 
-            {/* Beautiful Charts Section */}
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Total Cost Breakdown Pie Chart */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                  <PieChart className="h-5 w-5 mr-2 text-blue-600" />
+            {/* Beautiful Charts Section - MOBILE OPTIMIZED */}
+            <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
+              {/* Total Cost Breakdown Pie Chart - MOBILE FRIENDLY */}
+              <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4 flex items-center">
+                  <PieChart className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
                   Total Cost Breakdown
                 </h4>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <RechartsPieChart>
                     <Pie
                       data={costBreakdownData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={renderCustomizedLabel}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
@@ -524,10 +549,13 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, '']} />
+                    <Tooltip 
+                      formatter={(value) => [`$${Number(value).toLocaleString()}`, '']} 
+                      contentStyle={{ fontSize: '12px' }}
+                    />
                   </RechartsPieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 text-xs">
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>
                     <span>Down Payment</span>
@@ -541,30 +569,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                     <span>Interest</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Interest vs Principal Comparison - FIXED */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-                  Interest vs Principal
-                </h4>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={interestVsPrincipalData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value, name) => [
-                      `$${Number(value).toLocaleString()}`, 
-                      name === 'interest' ? 'Total Interest' : 'Principal Amount'
-                    ]} />
-                    <Legend />
-                    <Bar dataKey="principal" fill="#3B82F6" name="Principal Amount" />
-                    <Bar dataKey="interest" fill="#EF4444" name="Total Interest" />
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="mt-4 text-center">
-                  <div className="text-sm text-slate-600">
+                <div className="mt-3 sm:mt-4 text-center">
+                  <div className="text-xs sm:text-sm text-slate-600">
                     Interest represents <span className="font-semibold text-red-600">
                       {Math.round((result.totalInterest / result.totalCost) * 100)}%
                     </span> of your total payments
@@ -572,9 +578,43 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 </div>
               </div>
 
-              {/* Payment Progression Over Time - Only show if data exists */}
+              {/* Interest vs Principal Comparison - MOBILE OPTIMIZED */}
+              <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4 flex items-center">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
+                  Interest vs Principal
+                </h4>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={interestVsPrincipalData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      fontSize={12}
+                      interval={0}
+                      angle={0}
+                      textAnchor="middle"
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      fontSize={12}
+                    />
+                    <Tooltip 
+                      formatter={(value, name) => [
+                        `$${Number(value).toLocaleString()}`, 
+                        name === 'interest' ? 'Total Interest' : 'Principal Amount'
+                      ]}
+                      contentStyle={{ fontSize: '12px' }}
+                    />
+                    <Legend fontSize={12} />
+                    <Bar dataKey="principal" fill="#3B82F6" name="Principal Amount" />
+                    <Bar dataKey="interest" fill="#EF4444" name="Total Interest" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Payment Progression Over Time - Only show if data exists and on larger screens */}
               {paymentOverTimeData.length > 0 && (
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm hidden lg:block">
                   <h4 className="text-lg font-semibold text-slate-900 mb-4">
                     Payment Breakdown Over Time (First 10 Years)
                   </h4>
@@ -612,9 +652,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 </div>
               )}
 
-              {/* Mortgage Balance Decline - Only show if data exists */}
+              {/* Mortgage Balance Decline - Only show if data exists and on larger screens */}
               {paymentOverTimeData.length > 0 && (
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm hidden lg:block">
                   <h4 className="text-lg font-semibold text-slate-900 mb-4">
                     Remaining Balance Over Time
                   </h4>
@@ -642,32 +682,32 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
             </div>
 
             {/* Property Details Summary */}
-            <div className="bg-gradient-to-r from-slate-50 to-blue-50 p-6 rounded-xl border border-slate-200">
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">Property Summary</h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 p-4 sm:p-6 rounded-xl border border-slate-200">
+              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-3 sm:mb-4">Property Summary</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">${data.homePrice.toLocaleString()}</div>
-                  <div className="text-sm text-slate-600">Purchase Price</div>
+                  <div className="text-sm sm:text-base lg:text-lg font-bold text-slate-900">${data.homePrice.toLocaleString()}</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Purchase Price</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{data.interestRate}%</div>
-                  <div className="text-sm text-slate-600">Interest Rate</div>
+                  <div className="text-sm sm:text-base lg:text-lg font-bold text-slate-900">{data.interestRate}%</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Interest Rate</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{data.amortizationYears} years</div>
-                  <div className="text-sm text-slate-600">Amortization</div>
+                  <div className="text-sm sm:text-base lg:text-lg font-bold text-slate-900">{data.amortizationYears} years</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Amortization</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">
+                  <div className="text-sm sm:text-base lg:text-lg font-bold text-slate-900">
                     {data.city === 'toronto' ? 'Toronto, ON' : 'Vancouver, BC'}
                   </div>
-                  <div className="text-sm text-slate-600">Location</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Location</div>
                 </div>
               </div>
               
               {data.isFirstTimeBuyer && (
-                <div className="mt-4 text-center">
-                  <div className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="mt-3 sm:mt-4 text-center">
+                  <div className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                     ✓ First-Time Homebuyer Benefits Applied
                   </div>
                 </div>
@@ -678,40 +718,40 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
       case 'closing':
         return closingCosts ? (
-          <div className="space-y-8">
+          <div className="space-y-6 lg:space-y-8">
             {/* Highlighted Top Section - Two Key Totals */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               {/* Total Estimated Closing Costs */}
-              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 p-8 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-2 border-emerald-300 p-6 sm:p-8 rounded-xl shadow-lg">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Home className="h-6 w-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <Home className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-4xl font-bold text-emerald-700 mb-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-emerald-700 mb-2">
                     ${closingCosts.total.toLocaleString()}
                   </div>
-                  <div className="text-lg font-semibold text-emerald-800">
+                  <div className="text-sm sm:text-base lg:text-lg font-semibold text-emerald-800">
                     Total Estimated Closing Costs
                   </div>
-                  <div className="text-sm text-emerald-600 mt-2">
+                  <div className="text-xs sm:text-sm text-emerald-600 mt-2">
                     Fees and expenses at closing
                   </div>
                 </div>
               </div>
 
               {/* Cash Required at Closing */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 p-8 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 p-6 sm:p-8 rounded-xl shadow-lg">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="h-6 w-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="text-4xl font-bold text-blue-700 mb-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-700 mb-2">
                     ${(data.downPayment + closingCosts.total).toLocaleString()}
                   </div>
-                  <div className="text-lg font-semibold text-blue-800">
+                  <div className="text-sm sm:text-base lg:text-lg font-semibold text-blue-800">
                     Cash Required at Closing
                   </div>
-                  <div className="text-sm text-blue-600 mt-2">
+                  <div className="text-xs sm:text-sm text-blue-600 mt-2">
                     Down payment + closing costs
                   </div>
                 </div>
@@ -720,77 +760,77 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
             {/* Detailed Breakdown */}
             <div className="max-w-4xl mx-auto">
-              <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">Closing Cost Breakdown</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6 text-center">Closing Cost Breakdown</h3>
               
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">
+                <div className="p-4 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">
                         {data.city === 'toronto' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
                       </span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.landTransferTax.toLocaleString()}
                       </span>
                     </div>
 
                     {data.city === 'toronto' && (
-                      <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                        <span className="text-slate-700 font-medium">Toronto Municipal Land Transfer Tax</span>
-                        <span className="font-semibold text-slate-900 text-lg">
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                        <span className="text-sm sm:text-base text-slate-700 font-medium">Toronto Municipal Land Transfer Tax</span>
+                        <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                           ${closingCosts.additionalTax.toLocaleString()}
                         </span>
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">Legal Fees & Disbursements</span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">Legal Fees & Disbursements</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.legalFees.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">Title Insurance</span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">Title Insurance</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.titleInsurance.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">Home Inspection</span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">Home Inspection</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.homeInspection.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">Property Appraisal</span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">Property Appraisal</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.appraisal.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                      <span className="text-slate-700 font-medium">Survey Fee</span>
-                      <span className="font-semibold text-slate-900 text-lg">
+                    <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                      <span className="text-sm sm:text-base text-slate-700 font-medium">Survey Fee</span>
+                      <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900">
                         ${closingCosts.surveyFee.toLocaleString()}
                       </span>
                     </div>
 
                     {closingCosts.firstTimeBuyerRebate > 0 && (
-                      <div className="flex justify-between items-center py-3 border-b border-slate-200">
-                        <span className="text-green-700 font-medium">First-Time Buyer Rebate</span>
-                        <span className="font-semibold text-green-600 text-lg">
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-slate-200">
+                        <span className="text-sm sm:text-base text-green-700 font-medium">First-Time Buyer Rebate</span>
+                        <span className="text-sm sm:text-base lg:text-lg font-semibold text-green-600">
                           -${closingCosts.firstTimeBuyerRebate.toLocaleString()}
                         </span>
                       </div>
                     )}
 
                     {/* Total Row */}
-                    <div className="flex justify-between items-center py-4 bg-slate-50 rounded-lg px-4 border-2 border-slate-300">
-                      <span className="text-slate-900 font-bold text-lg">Total Closing Costs</span>
-                      <span className="font-bold text-slate-900 text-2xl">
+                    <div className="flex justify-between items-center py-3 sm:py-4 bg-slate-50 rounded-lg px-3 sm:px-4 border-2 border-slate-300">
+                      <span className="text-base sm:text-lg font-bold text-slate-900">Total Closing Costs</span>
+                      <span className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">
                         ${closingCosts.total.toLocaleString()}
                       </span>
                     </div>
@@ -799,7 +839,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
               </div>
 
               {/* Additional Information */}
-              <div className="mt-8 bg-slate-50 p-6 rounded-xl">
+              <div className="mt-6 sm:mt-8 bg-slate-50 p-4 sm:p-6 rounded-xl">
                 <h4 className="font-semibold text-slate-900 mb-3">Additional Costs to Consider</h4>
                 <div className="text-sm text-slate-600 space-y-2">
                   <p>• Moving expenses and utility connections</p>
@@ -815,7 +855,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       case 'amortization':
         return (
           <div className="space-y-6">
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
               {/* Summary Cards */}
               <div className="space-y-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -838,17 +878,17 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 {amortizationSchedule.length > 0 && (
                   <>
                     <div className="bg-white p-4 rounded-lg border border-slate-200">
-                      <h4 className="text-lg font-medium text-slate-900 mb-4">Principal vs Interest Over Time</h4>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <h4 className="text-base sm:text-lg font-medium text-slate-900 mb-4">Principal vs Interest Over Time</h4>
+                      <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={amortizationSchedule.slice(0, 10)}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="year" />
-                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                          <XAxis dataKey="year" fontSize={12} />
+                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} fontSize={12} />
                           <Tooltip formatter={(value, name) => [
                             `$${Number(value).toLocaleString()}`, 
                             name === 'principalPayment' ? 'Principal' : 'Interest'
                           ]} />
-                          <Legend />
+                          <Legend fontSize={12} />
                           <Bar dataKey="principalPayment" stackId="a" fill="#10B981" name="Principal" />
                           <Bar dataKey="interestPayment" stackId="a" fill="#EF4444" name="Interest" />
                         </BarChart>
@@ -856,12 +896,12 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                     </div>
 
                     <div className="bg-white p-4 rounded-lg border border-slate-200">
-                      <h4 className="text-lg font-medium text-slate-900 mb-4">Remaining Balance</h4>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <h4 className="text-base sm:text-lg font-medium text-slate-900 mb-4">Remaining Balance</h4>
+                      <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={amortizationSchedule}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="year" />
-                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                          <XAxis dataKey="year" fontSize={12} />
+                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} fontSize={12} />
                           <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
                           <Line 
                             type="monotone" 
@@ -909,43 +949,43 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
             )}
 
             {/* Key Metrics */}
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className={`p-6 rounded-lg ${investmentResult.cashFlow >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+              <div className={`p-4 sm:p-6 rounded-lg ${investmentResult.cashFlow >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
                 <div className="flex items-center mb-2">
-                  <DollarSign className={`h-6 w-6 mr-3 ${investmentResult.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-                  <span className="text-lg font-medium text-slate-700">Monthly Cash Flow</span>
+                  <DollarSign className={`h-5 w-5 sm:h-6 sm:w-6 mr-3 ${investmentResult.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                  <span className="text-sm sm:text-base lg:text-lg font-medium text-slate-700">Monthly Cash Flow</span>
                 </div>
-                <div className={`text-3xl font-bold ${investmentResult.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`text-2xl sm:text-3xl font-bold ${investmentResult.cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   ${investmentResult.cashFlow.toLocaleString()}
                 </div>
               </div>
 
-              <div className={`p-6 rounded-lg ${investmentResult.capRate >= 6 ? 'bg-green-50' : 'bg-yellow-50'}`}>
+              <div className={`p-4 sm:p-6 rounded-lg ${investmentResult.capRate >= 6 ? 'bg-green-50' : 'bg-yellow-50'}`}>
                 <div className="flex items-center mb-2">
-                  <TrendingUp className={`h-6 w-6 mr-3 ${investmentResult.capRate >= 6 ? 'text-green-600' : 'text-yellow-600'}`} />
-                  <span className="text-lg font-medium text-slate-700">Cap Rate</span>
+                  <TrendingUp className={`h-5 w-5 sm:h-6 sm:w-6 mr-3 ${investmentResult.capRate >= 6 ? 'text-green-600' : 'text-yellow-600'}`} />
+                  <span className="text-sm sm:text-base lg:text-lg font-medium text-slate-700">Cap Rate</span>
                 </div>
-                <div className={`text-3xl font-bold ${investmentResult.capRate >= 6 ? 'text-green-600' : 'text-yellow-600'}`}>
+                <div className={`text-2xl sm:text-3xl font-bold ${investmentResult.capRate >= 6 ? 'text-green-600' : 'text-yellow-600'}`}>
                   {investmentResult.capRate}%
                 </div>
               </div>
 
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <div className="text-lg font-medium text-blue-700 mb-2">ROI</div>
-                <div className="text-3xl font-bold text-blue-600">
+              <div className="bg-blue-50 p-4 sm:p-6 rounded-lg">
+                <div className="text-sm sm:text-base lg:text-lg font-medium text-blue-700 mb-2">ROI</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600">
                   {investmentResult.roi}%
                 </div>
-                <div className="text-sm text-blue-600 mt-1">
+                <div className="text-xs sm:text-sm text-blue-600 mt-1">
                   Annual: ${(investmentResult.cashFlow * 12).toLocaleString()}
                 </div>
               </div>
             </div>
 
             {/* Detailed Breakdown */}
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="text-lg font-medium text-slate-900 mb-4">Financial Breakdown</h3>
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-lg">
+              <h3 className="text-base sm:text-lg font-medium text-slate-900 mb-3 sm:mb-4">Financial Breakdown</h3>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Monthly Rental Income</span>
@@ -997,8 +1037,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
             </div>
 
             {/* Investment Tips */}
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-lg font-medium text-blue-900 mb-3">Investment Tips</h3>
+            <div className="bg-blue-50 p-4 sm:p-6 rounded-lg">
+              <h3 className="text-base sm:text-lg font-medium text-blue-900 mb-3">Investment Tips</h3>
               <ul className="text-sm text-blue-800 space-y-2">
                 <li>• Consider vacancy rates (typically 5-10% of annual rent)</li>
                 <li>• Factor in potential rent increases over time</li>

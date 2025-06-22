@@ -26,18 +26,18 @@ const MortgageForm: React.FC<MortgageFormProps> = ({ data, onChange, onNext }) =
   const downPaymentPercent = Math.round((data.downPayment / data.homePrice) * 100);
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold font-heading text-slate-900">Mortgage Details</h2>
-        <p className="text-slate-600 font-sans">Enter your property and financing information</p>
+        <h2 className="text-xl sm:text-2xl font-bold font-heading text-slate-900">Mortgage Details</h2>
+        <p className="text-sm sm:text-base text-slate-600 font-sans">Enter your property and financing information</p>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8">
         {/* Basic Mortgage Information */}
-        <div className="bg-slate-50 rounded-xl p-6 space-y-6">
-          <h3 className="text-lg font-semibold text-slate-900 font-heading">Property & Financing</h3>
+        <div className="bg-slate-50 rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-900 font-heading">Property & Financing</h3>
           
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Home Price
@@ -157,36 +157,42 @@ const MortgageForm: React.FC<MortgageFormProps> = ({ data, onChange, onNext }) =
           </div>
         </div>
 
-        {/* Investment Analysis Toggle */}
-        <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center">
+        {/* Investment Analysis Toggle - FIXED FOR MOBILE */}
+        <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4 sm:p-6 border border-emerald-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex items-start sm:items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 font-heading">Investment Property Analysis</h3>
-                <p className="text-sm text-slate-600">Turn your home purchase into a profitable investment opportunity</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 font-heading leading-tight">
+                  Investment Property Analysis
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                  Turn your home purchase into a profitable investment opportunity
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => handleChange('enableInvestmentAnalysis', !data.enableInvestmentAnalysis)}
-              className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              {data.enableInvestmentAnalysis ? (
-                <ToggleRight className="h-8 w-8" />
-              ) : (
-                <ToggleLeft className="h-8 w-8" />
-              )}
-              <span className="text-sm font-medium">
-                {data.enableInvestmentAnalysis ? 'Enabled' : 'Enable'}
-              </span>
-            </button>
+            <div className="flex items-center justify-center sm:justify-end">
+              <button
+                onClick={() => handleChange('enableInvestmentAnalysis', !data.enableInvestmentAnalysis)}
+                className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors bg-white/50 rounded-lg px-3 py-2"
+              >
+                {data.enableInvestmentAnalysis ? (
+                  <ToggleRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                ) : (
+                  <ToggleLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                )}
+                <span className="text-sm font-medium">
+                  {data.enableInvestmentAnalysis ? 'Enabled' : 'Enable'}
+                </span>
+              </button>
+            </div>
           </div>
 
           {data.enableInvestmentAnalysis && (
-            <div className="space-y-6 pt-4 border-t border-emerald-200">
-              <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4 sm:space-y-6 pt-4 border-t border-emerald-200">
+              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Expected Monthly Rent
@@ -205,8 +211,8 @@ const MortgageForm: React.FC<MortgageFormProps> = ({ data, onChange, onNext }) =
               </div>
 
               <div>
-                <h4 className="text-md font-medium text-slate-900 mb-4">Monthly Operating Expenses</h4>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h4 className="text-sm sm:text-base font-medium text-slate-900 mb-3 sm:mb-4">Monthly Operating Expenses</h4>
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Property Taxes
@@ -271,7 +277,7 @@ const MortgageForm: React.FC<MortgageFormProps> = ({ data, onChange, onNext }) =
                     </div>
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2 lg:col-span-1">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Other Expenses
                     </label>
@@ -293,13 +299,13 @@ const MortgageForm: React.FC<MortgageFormProps> = ({ data, onChange, onNext }) =
         </div>
 
         {/* Next Button */}
-        <div className="flex justify-center pt-6">
+        <div className="flex justify-center pt-4 sm:pt-6">
           <button
             onClick={onNext}
-            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto justify-center"
           >
-            <span>Calculate Results</span>
-            <ArrowRight className="h-5 w-5" />
+            <span className="text-sm sm:text-base">Calculate Results</span>
+            <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
       </div>
