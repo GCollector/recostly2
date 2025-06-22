@@ -73,7 +73,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gradient-neutral">
       {/* Navigation */}
-      <nav className="card border-0 rounded-none shadow-lg backdrop-blur-lg bg-white/95 fixed top-0 left-0 right-0 z-50">
+      <nav className="bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -81,7 +81,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
                   <Calculator className="h-5 w-5 text-white" />
                 </div>
-                <span className="ml-3 text-xl font-bold text-gradient">
+                <span className="ml-3 text-xl font-bold font-heading text-gradient">
                   Recostly
                 </span>
               </div>
@@ -288,8 +288,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
       </nav>
 
-      {/* Main content */}
-      <main className="container-modern pt-24 pb-12 space-modern">
+      {/* Main content with proper spacing */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>
