@@ -7,7 +7,7 @@
 /* Base Styles with Modern Design System */
 @layer base {
   * {
-    @apply border-border;
+    @apply border-neutral-200;
   }
   
   body {
