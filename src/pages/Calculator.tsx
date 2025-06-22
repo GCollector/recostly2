@@ -4,12 +4,9 @@ import MortgageCalculator from '../components/MortgageCalculator';
 import ClosingCosts from '../components/ClosingCosts';
 import AmortizationSchedule from '../components/AmortizationSchedule';
 import InvestmentCalculator from '../components/InvestmentCalculator';
-import SimpleTest from '../components/SimpleTest';
 
 const Calculator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
-
-  console.log('🚀 Calculator page rendered');
 
   const tabs = [
     { id: 'mortgage', name: 'Mortgage Calculator', icon: CalculatorIcon },
@@ -20,9 +17,6 @@ const Calculator: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* EMERGENCY TEST COMPONENT */}
-      <SimpleTest />
-
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-gray-900">Mortgage & Real Estate Calculators</h1>
@@ -39,10 +33,7 @@ const Calculator: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => {
-                  console.log('🔥 TAB CLICKED:', tab.id);
-                  setActiveTab(tab.id);
-                }}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-100 text-blue-700'

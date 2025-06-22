@@ -14,7 +14,6 @@ interface CalculationContextType {
   updateCalculationNotes: (id: string, section: string, notes: string) => Promise<void>;
   updateCalculationComments: (id: string, comments: string) => Promise<void>;
   isLoading: boolean;
-  // Local storage for public users
   saveToLocalStorage: (calculation: any) => void;
   getFromLocalStorage: () => any | null;
   hasLocalCalculation: boolean;
@@ -38,7 +37,6 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isLoading, setIsLoading] = useState(false);
   const [hasLocalCalculation, setHasLocalCalculation] = useState(false);
 
-  // Check for local storage calculation on mount
   useEffect(() => {
     const localCalc = localStorage.getItem(LOCAL_STORAGE_KEY);
     setHasLocalCalculation(!!localCalc);
@@ -57,7 +55,6 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     setIsLoading(true);
     try {
-      console.log('📊 Fetching calculations for user:', user.email);
       const { data, error } = await supabase
         .from('mortgage_calculation')
         .select('*')
@@ -65,75 +62,49 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching calculations:', error);
         throw error;
       }
       
-      console.log('✅ Fetched calculations:', data?.length || 0);
       setCalculations(data || []);
     } catch (error) {
-      console.error('💥 Error fetching calculations:', error);
+      console.error('Error fetching calculations:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const saveCalculation = async (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    console.log('🚀 SAVE CALCULATION CALLED');
-    console.log('📊 Input data:', calculation);
-    console.log('👤 User:', user?.email || 'No user');
-
     if (!user) {
-      // For non-authenticated users, save to localStorage and create a shareable version
-      console.log('👤 No user - creating temporary shareable calculation');
-      
       try {
-        console.log('📤 Inserting into database for sharing...');
         const { data, error } = await supabase
           .from('mortgage_calculation')
           .insert({
             ...calculation,
-            user_id: null, // Allow null for public sharing
+            user_id: null,
           })
           .select()
           .single();
 
         if (error) {
-          console.error('❌ Database insert error:', error);
-          console.error('❌ Error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
           throw new Error('Failed to create shareable calculation: ' + error.message);
         }
 
         if (data) {
-          console.log('✅ Shareable calculation created successfully:', data.id);
-          // Also save to localStorage for the user
           saveToLocalStorage(calculation);
           return data.id;
         }
 
-        throw new Error('Failed to create shareable calculation - no data returned');
+        throw new Error('Failed to create shareable calculation');
       } catch (error) {
-        console.error('💥 Error in saveCalculation for non-user:', error);
         throw error;
       }
     }
 
-    // For authenticated users, save normally
     try {
-      console.log('👤 Authenticated user - saving to database');
-      console.log('📤 Inserting calculation for user:', user.id);
-      
       const insertData = {
         ...calculation,
         user_id: user.id,
       };
-      
-      console.log('📋 Final insert data:', insertData);
       
       const { data, error } = await supabase
         .from('mortgage_calculation')
@@ -142,34 +113,22 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        console.error('❌ Database insert error for authenticated user:', error);
-        console.error('❌ Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
         throw new Error('Failed to save calculation: ' + error.message);
       }
 
       if (data) {
-        console.log('✅ Calculation saved successfully for authenticated user:', data.id);
-        console.log('📊 Saved data:', data);
         setCalculations(prev => [data, ...prev]);
         return data.id;
       }
 
       throw new Error('Failed to save calculation - no data returned');
     } catch (error) {
-      console.error('💥 Error in saveCalculation for authenticated user:', error);
       throw error;
     }
   };
 
   const deleteCalculation = async (id: string) => {
     if (!user) throw new Error('Must be logged in to delete calculations');
-
-    console.log('🗑️ Deleting calculation:', id);
 
     try {
       const { error } = await supabase
@@ -179,39 +138,27 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ Error deleting calculation:', error);
         throw error;
       }
 
-      console.log('✅ Calculation deleted successfully');
       setCalculations(prev => prev.filter(calc => calc.id !== id));
     } catch (error) {
-      console.error('💥 Error deleting calculation:', error);
       throw error;
     }
   };
 
-  // Synchronous version for components that have the calculation in state
   const getCalculation = (id: string): MortgageCalculation | null => {
     const found = calculations.find(calc => calc.id === id);
-    console.log('🔍 Getting calculation (sync):', id, found ? 'found' : 'not found');
     return found || null;
   };
 
-  // Async version for fetching from database
   const getCalculationAsync = async (id: string): Promise<MortgageCalculation | null> => {
-    console.log('🔍 Getting calculation (async):', id);
-
-    // Check in current calculations first
     const existingCalc = calculations.find(calc => calc.id === id);
     if (existingCalc) {
-      console.log('✅ Found calculation in cache');
       return existingCalc;
     }
 
-    // If not found, fetch from database
     try {
-      console.log('🌐 Fetching calculation from database');
       const { data, error } = await supabase
         .from('mortgage_calculation')
         .select('*')
@@ -219,14 +166,11 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        console.error('❌ Error fetching calculation:', error);
         return null;
       }
 
-      console.log('✅ Fetched calculation from database');
       return data;
     } catch (error) {
-      console.error('💥 Error fetching calculation:', error);
       return null;
     }
   };
@@ -235,10 +179,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!user) throw new Error('Must be logged in to update notes');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for notes');
 
-    console.log('📝 Updating calculation notes:', id, section);
-
     try {
-      // Get current notes
       const currentCalc = calculations.find(calc => calc.id === id);
       const currentNotes = currentCalc?.notes || {};
       
@@ -258,18 +199,15 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        console.error('❌ Error updating notes:', error);
         throw error;
       }
 
       if (data) {
-        console.log('✅ Notes updated successfully');
         setCalculations(prev => 
           prev.map(calc => calc.id === id ? data : calc)
         );
       }
     } catch (error) {
-      console.error('💥 Error updating notes:', error);
       throw error;
     }
   };
@@ -277,8 +215,6 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationComments = async (id: string, comments: string) => {
     if (!user) throw new Error('Must be logged in to update comments');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for comments');
-
-    console.log('💬 Updating calculation comments:', id);
 
     try {
       const { data, error } = await supabase
@@ -290,30 +226,25 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        console.error('❌ Error updating comments:', error);
         throw error;
       }
 
       if (data) {
-        console.log('✅ Comments updated successfully');
         setCalculations(prev => 
           prev.map(calc => calc.id === id ? data : calc)
         );
       }
     } catch (error) {
-      console.error('💥 Error updating comments:', error);
       throw error;
     }
   };
 
-  // Local storage functions for public users
   const saveToLocalStorage = (calculation: any) => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(calculation));
       setHasLocalCalculation(true);
-      console.log('💾 Calculation saved to localStorage');
     } catch (error) {
-      console.error('❌ Error saving to localStorage:', error);
+      console.error('Error saving to localStorage:', error);
     }
   };
 
@@ -322,7 +253,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       return stored ? JSON.parse(stored) : null;
     } catch (error) {
-      console.error('❌ Error reading from localStorage:', error);
+      console.error('Error reading from localStorage:', error);
       return null;
     }
   };

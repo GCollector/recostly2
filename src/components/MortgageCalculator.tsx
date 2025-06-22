@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, LogIn } from 'lucide-react';
+import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import NotesSection from './NotesSection';
@@ -27,24 +27,11 @@ const MortgageCalculator: React.FC = () => {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [calculationId, setCalculationId] = useState<string>('');
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  // IMMEDIATE TEST - This should run when component mounts
-  useEffect(() => {
-    console.log('🚀 MortgageCalculator component mounted');
-    console.log('🔍 Initial state:', {
-      user: user ? `${user.email} (${user.tier})` : 'No user',
-      saveCalculation: typeof saveCalculation
-    });
-  }, []);
-
-  // Simple client-side calculation (no server dependency)
   const calculateMortgage = () => {
-    console.log('🧮 Starting client-side mortgage calculation...');
-    
     const loanAmount = homePrice - downPayment;
     const monthlyRate = interestRate / 100 / 12;
     const totalPayments = amortizationYears * 12;
@@ -71,21 +58,15 @@ const MortgageCalculator: React.FC = () => {
       loanAmount: Math.round(loanAmount * 100) / 100
     };
 
-    console.log('✅ Calculation completed:', calculationResult);
     setResult(calculationResult);
   };
 
-  // Auto-calculate when inputs change
   useEffect(() => {
     calculateMortgage();
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
 
-  // FIXED SAVE HANDLER
   const handleSave = async () => {
-    console.log('💾💾💾 SAVE BUTTON CLICKED - HANDLER CALLED');
-    
     if (!result) {
-      console.log('❌ No result to save');
       setSaveError('Please calculate a mortgage first');
       return;
     }
@@ -94,8 +75,6 @@ const MortgageCalculator: React.FC = () => {
     setIsSaving(true);
     
     try {
-      console.log('💾 Saving calculation...', { user: user?.email, result });
-      
       const calculationData = {
         home_price: homePrice,
         down_payment: downPayment,
@@ -111,27 +90,20 @@ const MortgageCalculator: React.FC = () => {
         comments: null
       };
       
-      console.log('📊 Calculation data prepared:', calculationData);
-      
       const id = await saveCalculation(calculationData);
       
-      console.log('✅ Calculation saved with ID:', id);
       setCalculationId(id);
       setSaveError('');
       setShowShareModal(true);
       
     } catch (error) {
-      console.error('💥 Error saving calculation:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // FIXED SHARE HANDLER
   const handleShare = async () => {
-    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - HANDLER CALLED');
-    
     if (!result) {
       setSaveError('Please calculate a mortgage first');
       return;
@@ -139,15 +111,11 @@ const MortgageCalculator: React.FC = () => {
 
     setSaveError('');
 
-    // If already saved, just show share modal
     if (calculationId) {
-      console.log('📤 Already saved, showing share modal');
       setShowShareModal(true);
       return;
     }
 
-    // Otherwise, save first then share
-    console.log('💾 Need to save first, then share');
     await handleSave();
   };
 
@@ -159,9 +127,8 @@ const MortgageCalculator: React.FC = () => {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      console.log('✅ Share URL copied to clipboard:', shareUrl);
     } catch (err) {
-      console.error('❌ Failed to copy to clipboard:', err);
+      console.error('Failed to copy to clipboard:', err);
       alert(`Share this link: ${shareUrl}`);
     }
   };
@@ -185,10 +152,7 @@ const MortgageCalculator: React.FC = () => {
                 <input
                   type="number"
                   value={homePrice}
-                  onChange={(e) => {
-                    console.log('🏠 Home price changed:', e.target.value);
-                    setHomePrice(Number(e.target.value));
-                  }}
+                  onChange={(e) => setHomePrice(Number(e.target.value))}
                   className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="500,000"
                 />
@@ -204,10 +168,7 @@ const MortgageCalculator: React.FC = () => {
                 <input
                   type="number"
                   value={downPayment}
-                  onChange={(e) => {
-                    console.log('💰 Down payment changed:', e.target.value);
-                    setDownPayment(Number(e.target.value));
-                  }}
+                  onChange={(e) => setDownPayment(Number(e.target.value))}
                   className="w-full pl-8 pr-16 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="100,000"
                 />
@@ -399,10 +360,7 @@ const MortgageCalculator: React.FC = () => {
                     Create a free account to save unlimited calculations and access them from anywhere.
                   </p>
                   <button
-                    onClick={() => {
-                      console.log('🔗 SIGNUP BUTTON CLICKED');
-                      window.location.href = '/signup';
-                    }}
+                    onClick={() => window.location.href = '/signup'}
                     className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
                   >
                     Sign Up Free
