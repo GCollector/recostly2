@@ -129,7 +129,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
-  /* Modern Button Components */
+  /* Modern Button Components - FIXED ACCESSIBILITY */
   .btn {
     @apply inline-flex items-center justify-center;
     padding: 0.75rem 1.5rem;
@@ -161,6 +161,7 @@
     left: 100%;
   }
 
+  /* PRIMARY BUTTON - FIXED ACCESSIBILITY */
   .btn-primary {
     background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
     color: white;
@@ -168,15 +169,24 @@
   }
 
   .btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: white; /* ENSURE WHITE TEXT ON HOVER */
     transform: translateY(-2px);
     box-shadow: 0 8px 25px 0 rgba(59, 130, 246, 0.5);
-    filter: brightness(1.1);
   }
 
   .btn-primary:active {
     transform: translateY(0);
+    color: white; /* ENSURE WHITE TEXT ON ACTIVE */
   }
 
+  .btn-primary:focus {
+    color: white; /* ENSURE WHITE TEXT ON FOCUS */
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+  }
+
+  /* SECONDARY BUTTON - FIXED ACCESSIBILITY */
   .btn-secondary {
     background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
     color: white;
@@ -184,11 +194,24 @@
   }
 
   .btn-secondary:hover {
+    background: linear-gradient(135deg, #059669 0%, #2563eb 100%);
+    color: white; /* ENSURE WHITE TEXT ON HOVER */
     transform: translateY(-2px);
     box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.5);
-    filter: brightness(1.1);
   }
 
+  .btn-secondary:active {
+    transform: translateY(0);
+    color: white; /* ENSURE WHITE TEXT ON ACTIVE */
+  }
+
+  .btn-secondary:focus {
+    color: white; /* ENSURE WHITE TEXT ON FOCUS */
+    outline: 2px solid #6ee7b7;
+    outline-offset: 2px;
+  }
+
+  /* OUTLINE BUTTON - IMPROVED ACCESSIBILITY */
   .btn-outline {
     background: transparent;
     color: #3b82f6;
@@ -198,11 +221,22 @@
 
   .btn-outline:hover {
     background: #3b82f6;
-    color: white;
+    color: white; /* ENSURE WHITE TEXT ON HOVER */
+    border-color: #3b82f6;
     transform: translateY(-1px);
     box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
   }
 
+  .btn-outline:active {
+    color: white; /* ENSURE WHITE TEXT ON ACTIVE */
+  }
+
+  .btn-outline:focus {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+  }
+
+  /* GHOST BUTTON - IMPROVED ACCESSIBILITY */
   .btn-ghost {
     background: rgba(255, 255, 255, 0.1);
     color: #475569;
@@ -212,9 +246,15 @@
   }
 
   .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e293b; /* DARKER TEXT FOR BETTER CONTRAST */
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-ghost:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
 
   .btn-lg {
