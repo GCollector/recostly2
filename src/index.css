@@ -23,36 +23,45 @@
     font-weight: var(--font-weight-bold);
     line-height: var(--line-height-tight);
     color: var(--neutral-900);
+    /* Ensure proper spacing for descenders */
+    padding-bottom: 0.1em;
   }
 
   h1 {
     font-size: var(--font-size-4xl);
     font-weight: var(--font-weight-extrabold);
+    /* Extra line height for large text to prevent clipping */
+    line-height: 1.1;
   }
 
   h2 {
     font-size: var(--font-size-3xl);
     font-weight: var(--font-weight-bold);
+    line-height: 1.2;
   }
 
   h3 {
     font-size: var(--font-size-2xl);
     font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
   }
 
   h4 {
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
   }
 
   h5 {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-medium);
+    line-height: 1.4;
   }
 
   h6 {
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-medium);
+    line-height: 1.5;
   }
 
   p {
@@ -116,6 +125,8 @@
     text-decoration: none;
     position: relative;
     overflow: hidden;
+    /* Ensure text doesn't get clipped */
+    line-height: 1.5;
   }
 
   .btn::before {
@@ -193,12 +204,14 @@
     padding: var(--spacing-4) var(--spacing-8);
     font-size: var(--font-size-lg);
     border-radius: var(--radius-xl);
+    line-height: 1.4;
   }
 
   .btn-sm {
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--font-size-xs);
     border-radius: var(--radius-md);
+    line-height: 1.6;
   }
 
   /* Modern Card Components */
@@ -263,6 +276,7 @@
     transition: all var(--transition-normal);
     box-shadow: var(--shadow-sm);
     width: 100%;
+    line-height: 1.5;
   }
 
   .input:focus {
@@ -296,6 +310,7 @@
     font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    line-height: 1.4;
   }
 
   .badge-primary {
@@ -336,6 +351,7 @@
     border: 1px solid;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    line-height: 1.5;
   }
 
   .alert-info {
@@ -371,6 +387,7 @@
     font-weight: var(--font-weight-medium);
     transition: all var(--transition-normal);
     text-decoration: none;
+    line-height: 1.5;
   }
 
   .nav-link::before {
@@ -454,6 +471,9 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Ensure proper line height for gradient text */
+    line-height: 1.1;
+    padding-bottom: 0.1em;
   }
 
   .text-gradient-accent {
@@ -461,6 +481,8 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.1;
+    padding-bottom: 0.1em;
   }
 
   /* Modern Spacing */
