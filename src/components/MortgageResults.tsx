@@ -408,10 +408,13 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     { name: 'Interest', value: result.totalInterest, color: '#EF4444' }
   ];
 
-  // Interest vs Principal comparison - Fixed data structure
+  // Interest vs Principal comparison - FIXED: Use vertical bar chart instead
   const interestVsPrincipalData = [
-    { category: 'Total Interest', amount: result.totalInterest, color: '#EF4444' },
-    { category: 'Principal Amount', amount: result.loanAmount, color: '#3B82F6' }
+    { 
+      name: 'Interest vs Principal',
+      interest: result.totalInterest, 
+      principal: result.loanAmount 
+    }
   ];
 
   // Payment over time data (first 10 years) - Ensure data exists
@@ -540,23 +543,24 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 </div>
               </div>
 
-              {/* Interest vs Principal Comparison */}
+              {/* Interest vs Principal Comparison - FIXED */}
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
                   Interest vs Principal
                 </h4>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={interestVsPrincipalData} layout="horizontal">
+                  <BarChart data={interestVsPrincipalData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                    <YAxis dataKey="category" type="category" width={100} />
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, '']} />
-                    <Bar dataKey="amount" fill="#3B82F6" radius={[0, 4, 4, 0]}>
-                      {interestVsPrincipalData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value, name) => [
+                      `$${Number(value).toLocaleString()}`, 
+                      name === 'interest' ? 'Total Interest' : 'Principal Amount'
+                    ]} />
+                    <Legend />
+                    <Bar dataKey="principal" fill="#3B82F6" name="Principal Amount" />
+                    <Bar dataKey="interest" fill="#EF4444" name="Total Interest" />
                   </BarChart>
                 </ResponsiveContainer>
                 <div className="mt-4 text-center">
