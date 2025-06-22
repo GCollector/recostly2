@@ -202,26 +202,23 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
   const investmentMetrics = calculateInvestmentMetrics();
 
-  // Chart data with proper percentages for pie chart
+  // FIXED: Chart data with correct percentages
   const totalValue = data.downPayment + loanAmount + totalInterest;
   const pieChartData = [
     { 
       name: 'Down Payment', 
       value: data.downPayment, 
-      color: '#10B981',
-      percent: Math.round((data.downPayment / totalValue) * 100)
+      color: '#10B981'
     },
     { 
       name: 'Principal', 
       value: loanAmount, 
-      color: '#3B82F6',
-      percent: Math.round((loanAmount / totalValue) * 100)
+      color: '#3B82F6'
     },
     { 
       name: 'Interest', 
       value: totalInterest, 
-      color: '#EF4444',
-      percent: Math.round((totalInterest / totalValue) * 100)
+      color: '#EF4444'
     }
   ];
 
@@ -245,7 +242,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     balance: year.balance
   }));
 
-  // Custom label function for pie chart - FIXED: Don't multiply by 100
+  // FIXED: Custom label function for pie chart - correct percentage calculation
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -262,7 +259,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         fontSize="12"
         fontWeight="600"
       >
-        {`${Math.round(percent * 100)}%`}
+        {`${(percent * 100).toFixed(0)}%`}
       </text>
     );
   };
