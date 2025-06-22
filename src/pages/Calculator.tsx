@@ -360,7 +360,7 @@ const Calculator: React.FC = () => {
                     className={getInputErrorClass(validationErrors, 'downPayment')}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Minimum: 5% for homes ≤$500K, 5%+10% for $500K-$1M, 20% for &gt;$1M
+                    Minimum: 5% for homes ≤$500K, 5%+10% for $500K-$1M, 20% for >$1M
                   </p>
                 </div>
 
@@ -645,39 +645,37 @@ const Calculator: React.FC = () => {
   // Stage 2: Results Page
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header with Edit and Share Buttons - Responsive Layout */}
+      {/* Header with Edit and Share Buttons - Properly Responsive */}
       <div className="space-y-4">
-        {/* Title and Description */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-bold text-gray-900">Calculation Results</h1>
-            <p className="text-lg text-gray-600 mt-1">
-              {formatCurrency(inputs.homePrice)} property in {inputs.city === 'toronto' ? 'Toronto' : 'Vancouver'}
-              {inputs.includeInvestment && <span className="text-emerald-600 ml-2">• Investment Analysis Included</span>}
-            </p>
-          </div>
-          
-          {/* Buttons - Stay on same line on larger screens, wrap on smaller screens */}
-          <div className="flex flex-wrap gap-3 shrink-0">
-            <button
-              onClick={handleEditInputs}
-              className="flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors whitespace-nowrap"
-            >
-              Edit Inputs
-            </button>
-            <button
-              onClick={handleShare}
-              disabled={!result || isSaving}
-              className={`flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                (!result || isSaving)
-                  ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-              }`}
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              {isSaving ? 'Creating Link...' : 'Share Results'}
-            </button>
-          </div>
+        {/* Title and Description - Always on top */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Calculation Results</h1>
+          <p className="text-lg text-gray-600 mt-1">
+            {formatCurrency(inputs.homePrice)} property in {inputs.city === 'toronto' ? 'Toronto' : 'Vancouver'}
+            {inputs.includeInvestment && <span className="text-emerald-600 ml-2">• Investment Analysis Included</span>}
+          </p>
+        </div>
+        
+        {/* Buttons - Responsive layout */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={handleEditInputs}
+            className="flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+          >
+            Edit Inputs
+          </button>
+          <button
+            onClick={handleShare}
+            disabled={!result || isSaving}
+            className={`flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors ${
+              (!result || isSaving)
+                ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            {isSaving ? 'Creating Link...' : 'Share Results'}
+          </button>
         </div>
       </div>
 
