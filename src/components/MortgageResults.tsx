@@ -401,31 +401,28 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     }] : [])
   ];
 
-  // Chart data for mortgage summary
+  // Chart data for mortgage summary - Fixed data structure
   const costBreakdownData = [
     { name: 'Down Payment', value: data.downPayment, color: '#10B981' },
     { name: 'Principal', value: result.loanAmount, color: '#3B82F6' },
     { name: 'Interest', value: result.totalInterest, color: '#EF4444' }
   ];
 
-  const monthlyBreakdownData = [
-    { name: 'Principal', value: Math.round((result.loanAmount / (data.amortizationYears * 12)) * 100) / 100, color: '#10B981' },
-    { name: 'Interest', value: Math.round((result.totalInterest / (data.amortizationYears * 12)) * 100) / 100, color: '#EF4444' }
-  ];
-
-  // Payment over time data (first 10 years)
-  const paymentOverTimeData = amortizationSchedule.slice(0, 10).map(year => ({
-    year: `Year ${year.year}`,
-    principal: year.principalPayment,
-    interest: year.interestPayment,
-    balance: year.balance
-  }));
-
-  // Interest vs Principal comparison
+  // Interest vs Principal comparison - Fixed data structure
   const interestVsPrincipalData = [
     { category: 'Total Interest', amount: result.totalInterest, color: '#EF4444' },
     { category: 'Principal Amount', amount: result.loanAmount, color: '#3B82F6' }
   ];
+
+  // Payment over time data (first 10 years) - Ensure data exists
+  const paymentOverTimeData = amortizationSchedule.length > 0 
+    ? amortizationSchedule.slice(0, 10).map(year => ({
+        year: `Year ${year.year}`,
+        principal: year.principalPayment,
+        interest: year.interestPayment,
+        balance: year.balance
+      }))
+    : [];
 
   const COLORS = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6'];
 
@@ -571,69 +568,73 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 </div>
               </div>
 
-              {/* Payment Progression Over Time */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                  Payment Breakdown Over Time (First 10 Years)
-                </h4>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={paymentOverTimeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value, name) => [
-                      `$${Number(value).toLocaleString()}`, 
-                      name === 'principal' ? 'Principal' : 'Interest'
-                    ]} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="interest" 
-                      stackId="1" 
-                      stroke="#EF4444" 
-                      fill="#EF4444" 
-                      fillOpacity={0.6}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="principal" 
-                      stackId="1" 
-                      stroke="#10B981" 
-                      fill="#10B981" 
-                      fillOpacity={0.6}
-                    />
-                    <Legend />
-                  </AreaChart>
-                </ResponsiveContainer>
-                <div className="mt-4 text-center text-sm text-slate-600">
-                  Notice how principal payments increase while interest decreases over time
+              {/* Payment Progression Over Time - Only show if data exists */}
+              {paymentOverTimeData.length > 0 && (
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                    Payment Breakdown Over Time (First 10 Years)
+                  </h4>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={paymentOverTimeData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(value, name) => [
+                        `$${Number(value).toLocaleString()}`, 
+                        name === 'principal' ? 'Principal' : 'Interest'
+                      ]} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="interest" 
+                        stackId="1" 
+                        stroke="#EF4444" 
+                        fill="#EF4444" 
+                        fillOpacity={0.6}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="principal" 
+                        stackId="1" 
+                        stroke="#10B981" 
+                        fill="#10B981" 
+                        fillOpacity={0.6}
+                      />
+                      <Legend />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 text-center text-sm text-slate-600">
+                    Notice how principal payments increase while interest decreases over time
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Mortgage Balance Decline */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                  Remaining Balance Over Time
-                </h4>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={paymentOverTimeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="balance" 
-                      stroke="#3B82F6" 
-                      fill="#3B82F6" 
-                      fillOpacity={0.3}
-                      strokeWidth={3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-                <div className="mt-4 text-center text-sm text-slate-600">
-                  Your mortgage balance decreases faster in later years
+              {/* Mortgage Balance Decline - Only show if data exists */}
+              {paymentOverTimeData.length > 0 && (
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                    Remaining Balance Over Time
+                  </h4>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={paymentOverTimeData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="year" />
+                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="balance" 
+                        stroke="#3B82F6" 
+                        fill="#3B82F6" 
+                        fillOpacity={0.3}
+                        strokeWidth={3}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 text-center text-sm text-slate-600">
+                    Your mortgage balance decreases faster in later years
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Property Details Summary */}
@@ -830,42 +831,46 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
               {/* Charts */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white p-4 rounded-lg border border-slate-200">
-                  <h4 className="text-lg font-medium text-slate-900 mb-4">Principal vs Interest Over Time</h4>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={amortizationSchedule.slice(0, 10)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" />
-                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value, name) => [
-                        `$${Number(value).toLocaleString()}`, 
-                        name === 'principalPayment' ? 'Principal' : 'Interest'
-                      ]} />
-                      <Legend />
-                      <Bar dataKey="principalPayment" stackId="a" fill="#10B981" name="Principal" />
-                      <Bar dataKey="interestPayment" stackId="a" fill="#EF4444" name="Interest" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {amortizationSchedule.length > 0 && (
+                  <>
+                    <div className="bg-white p-4 rounded-lg border border-slate-200">
+                      <h4 className="text-lg font-medium text-slate-900 mb-4">Principal vs Interest Over Time</h4>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={amortizationSchedule.slice(0, 10)}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                          <Tooltip formatter={(value, name) => [
+                            `$${Number(value).toLocaleString()}`, 
+                            name === 'principalPayment' ? 'Principal' : 'Interest'
+                          ]} />
+                          <Legend />
+                          <Bar dataKey="principalPayment" stackId="a" fill="#10B981" name="Principal" />
+                          <Bar dataKey="interestPayment" stackId="a" fill="#EF4444" name="Interest" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
 
-                <div className="bg-white p-4 rounded-lg border border-slate-200">
-                  <h4 className="text-lg font-medium text-slate-900 mb-4">Remaining Balance</h4>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={amortizationSchedule}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" />
-                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="balance" 
-                        stroke="#3B82F6" 
-                        strokeWidth={3}
-                        dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                    <div className="bg-white p-4 rounded-lg border border-slate-200">
+                      <h4 className="text-lg font-medium text-slate-900 mb-4">Remaining Balance</h4>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={amortizationSchedule}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                          <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
+                          <Line 
+                            type="monotone" 
+                            dataKey="balance" 
+                            stroke="#3B82F6" 
+                            strokeWidth={3}
+                            dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
