@@ -94,25 +94,32 @@ const MortgageCalculator: React.FC = () => {
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
   const handleSaveButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {    
+    event.preventDefault();
+    event.stopPropagation();
+    
     console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
     console.log('📊 Current state:', {
       user: user?.email || 'No user',
       result: result ? 'Has result' : 'No result',
       isSaving,
-      calculationId
+      calculationId,
+      isCalculating
     });
     
+    // Check if we have a result to save
     if (!result) {
-      console.log('❌ No result to save');
-      setSaveError('Please calculate a mortgage first');
+      console.log('❌ No result to save - calculation may still be running');
+      setSaveError('Please wait for the calculation to complete before saving');
       return;
     }
     
+    // Check if already saving
     if (isSaving) {
       console.log('⏳ Already saving, ignoring duplicate click');
       return;
     }
     
+    // Clear any previous errors
     setSaveError('');
     setIsSaving(true);
     
@@ -141,6 +148,9 @@ const MortgageCalculator: React.FC = () => {
       console.log('✅ Calculation saved successfully with ID:', id);
       setCalculationId(id);
       
+      // Show success message
+      setSaveError('');
+      
       // Show share modal for all users
       setShowShareModal(true);
       
@@ -164,12 +174,21 @@ const MortgageCalculator: React.FC = () => {
     event.stopPropagation();
     
     console.log('🔗 SHARE BUTTON CLICKED');
+    console.log('📊 Share button state:', {
+      result: result ? 'Has result' : 'No result',
+      calculationId: calculationId || 'No ID',
+      isSaving,
+      isCalculating
+    });
     
+    // Check if we have a result to share
     if (!result) {
-      setSaveError('Please calculate a mortgage first');
+      console.log('❌ No result to share - calculation may still be running');
+      setSaveError('Please wait for the calculation to complete before sharing');
       return;
     }
 
+    // Clear any previous errors
     setSaveError('');
 
     // If already saved, just show share modal
@@ -226,6 +245,9 @@ const MortgageCalculator: React.FC = () => {
   };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
+
+  // Check if buttons should be disabled
+  const buttonsDisabled = !result || isSaving;
 
   return (
     <div className="p-6 space-y-8">
@@ -367,7 +389,7 @@ const MortgageCalculator: React.FC = () => {
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
-                <span className="text-blue-700">Calculating...</span>
+                <span className="text-blue-700">Calculating mortgage...</span>
               </div>
             </div>
           )}
@@ -429,13 +451,28 @@ const MortgageCalculator: React.FC = () => {
                 </div>
               )}
 
+              {/* Success Message */}
+              {calculationId && !saveError && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    <span>Calculation saved successfully! You can now share it with others.</span>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons - PROPER BUTTON ONCLICK HANDLERS */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={handleSaveButtonClick}
-                  //disabled={isSaving || isCalculating}
-                  className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={buttonsDisabled}
+                  className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                    buttonsDisabled
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                  title={!result ? 'Wait for calculation to complete' : isSaving ? 'Saving...' : 'Save calculation'}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
@@ -444,13 +481,27 @@ const MortgageCalculator: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleShareButtonClick}
-                  disabled={isSaving || isCalculating}
-                  className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={buttonsDisabled}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
+                    buttonsDisabled
+                      ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                  }`}
+                  title={!result ? 'Wait for calculation to complete' : 'Share calculation'}
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </button>
               </div>
+              
+              {/* Button Status Info */}
+              {!result && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-sm text-amber-700">
+                    ⏳ Buttons will be enabled once the calculation is complete
+                  </p>
+                </div>
+              )}
               
               {!user && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
