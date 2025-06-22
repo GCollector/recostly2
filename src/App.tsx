@@ -1,14 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { CalculationProvider } from './contexts/CalculationContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Calculator from './pages/Calculator';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Pricing from './pages/Pricing';
-import SharedCalculation from './pages/SharedCalculation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -59,54 +57,51 @@ const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <CalculationProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/calculator" element={<Calculator />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/shared/:id" element={<SharedCalculation />} />
-              
-              {/* Protected Routes */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Auth Routes */}
-              <Route 
-                path="/login" 
-                element={
-                  <AuthRoute>
-                    <Login />
-                  </AuthRoute>
-                } 
-              />
-              <Route 
-                path="/signup" 
-                element={
-                  <AuthRoute>
-                    <Signup />
-                  </AuthRoute>
-                } 
-              />
-            </Routes>
-          </Layout>
-        </Router>
-      </CalculationProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/calculator" element={<Calculator />} />
+            <Route path="/pricing" element={<Pricing />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Auth Routes */}
+            <Route 
+              path="/login" 
+              element={
+                <AuthRoute>
+                  <Login />
+                </AuthRoute>
+              } 
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <AuthRoute>
+                  <Signup />
+                </AuthRoute>
+              } 
+            />
+          </Routes>
+        </Layout>
+      </Router>
     </AuthProvider>
   );
 }
