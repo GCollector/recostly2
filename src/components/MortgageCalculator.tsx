@@ -44,26 +44,23 @@ const MortgageCalculator: React.FC = () => {
   const [saveError, setSaveError] = useState('');
   const [calculationError, setCalculationError] = useState('');
 
-  // Add window error handler to catch any JavaScript errors
+  // IMMEDIATE TEST - This should run when component mounts
   useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('🚨 JavaScript Error:', event.error);
-      console.error('🚨 Error message:', event.message);
-      console.error('🚨 Error filename:', event.filename);
-      console.error('🚨 Error line:', event.lineno);
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('🚨 Unhandled Promise Rejection:', event.reason);
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
+    console.log('🚀 MortgageCalculator component mounted');
+    console.log('🔍 Initial state:', {
+      user: user ? `${user.email} (${user.tier})` : 'No user',
+      saveCalculation: typeof saveCalculation,
+      hasLocalCalculation
+    });
+    
+    // Test if console.log works at all
+    console.log('✅ Console logging is working');
+    
+    // Test if we can access window
+    console.log('🌐 Window object:', typeof window);
+    
+    // Test if React events work
+    console.log('⚛️ React is working');
   }, []);
 
   const calculateMortgage = async () => {
@@ -115,215 +112,61 @@ const MortgageCalculator: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
-  // SIMPLIFIED SAVE BUTTON HANDLER WITH EXTENSIVE LOGGING
-  const handleSaveButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    // FIRST LOG - This should ALWAYS appear if the button is clicked
-    console.log('🔥🔥🔥 SAVE BUTTON CLICKED - ENTRY POINT');
-    console.log('🔥🔥🔥 Event object:', event);
-    console.log('🔥🔥🔥 Event type:', event.type);
-    console.log('🔥🔥🔥 Event target:', event.target);
-    
-    try {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      console.log('🔥 Event prevented and stopped');
-      console.log('📊 Current state check:', {
-        user: user ? `${user.email} (${user.tier})` : 'No user',
-        result: result ? 'Has result' : 'No result',
-        isSaving,
-        calculationId,
-        isCalculating,
-        saveCalculation: typeof saveCalculation
-      });
-      
-      // Check if we have a result to save
-      if (!result) {
-        console.log('❌ No result to save - calculation may still be running');
-        setSaveError('Please wait for the calculation to complete before saving');
-        return;
-      }
-      
-      // Check if already saving
-      if (isSaving) {
-        console.log('⏳ Already saving, ignoring duplicate click');
-        return;
-      }
-      
-      console.log('🚀 Starting save process...');
-      
-      // Clear any previous errors
-      setSaveError('');
-      setIsSaving(true);
-      
-      // Call the actual save function
-      performSave();
-      
-    } catch (error) {
-      console.error('💥 Error in handleSaveButtonClick:', error);
-      setSaveError('An error occurred while saving. Please try again.');
-      setIsSaving(false);
-    }
+  // ULTRA SIMPLE BUTTON HANDLERS - NO COMPLEX LOGIC
+  const testButtonClick = () => {
+    console.log('🔥🔥🔥 TEST BUTTON CLICKED - THIS SHOULD ALWAYS WORK');
+    alert('Test button clicked! Console logging is working.');
   };
 
-  // SEPARATE ASYNC FUNCTION FOR THE ACTUAL SAVE LOGIC
-  const performSave = async () => {
-    try {
-      console.log('💾 Preparing calculation data for save...');
-      
-      if (!result) {
-        throw new Error('No calculation result available');
-      }
-      
-      const calculationData = {
-        home_price: homePrice,
-        down_payment: downPayment,
-        interest_rate: interestRate,
-        amortization_years: amortizationYears,
-        payment_frequency: paymentFrequency,
-        province,
-        city,
-        is_first_time_buyer: isFirstTimeBuyer,
-        monthly_payment: result.monthlyPayment,
-        total_interest: result.totalInterest,
-        notes: {},
-        comments: null
-      };
-      
-      console.log('📤 Calling saveCalculation with data:', calculationData);
-      console.log('📤 saveCalculation function type:', typeof saveCalculation);
-      
-      if (typeof saveCalculation !== 'function') {
-        throw new Error('saveCalculation is not a function');
-      }
-      
-      const id = await saveCalculation(calculationData);
-      
-      console.log('✅ Calculation saved successfully with ID:', id);
-      setCalculationId(id);
-      
-      // Show success message
-      setSaveError('');
-      
-      // Show share modal for all users
-      setShowShareModal(true);
-      
-      // For non-authenticated users, show login prompt after first save
-      if (!user && !hasLocalCalculation) {
-        console.log('👤 Non-authenticated user - scheduling login prompt');
-        setTimeout(() => setShowLoginPrompt(true), 2000);
-      }
-      
-    } catch (error) {
-      console.error('💥 Error in performSave:', error);
-      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
-    } finally {
-      setIsSaving(false);
-      console.log('🏁 Save process completed');
-    }
-  };
-
-  // SIMPLIFIED SHARE BUTTON HANDLER
-  const handleShareButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - ENTRY POINT');
-    console.log('🔗🔗🔗 Event object:', event);
+  const simpleSaveClick = () => {
+    console.log('💾💾💾 SIMPLE SAVE CLICKED');
+    console.log('Current state:', { result: !!result, user: !!user, isSaving });
     
-    try {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      console.log('📊 Share button state:', {
-        result: result ? 'Has result' : 'No result',
-        calculationId: calculationId || 'No ID',
-        isSaving,
-        isCalculating
-      });
-      
-      // Check if we have a result to share
-      if (!result) {
-        console.log('❌ No result to share - calculation may still be running');
-        setSaveError('Please wait for the calculation to complete before sharing');
-        return;
-      }
-
-      // Clear any previous errors
-      setSaveError('');
-
-      // If already saved, just show share modal
-      if (calculationId) {
-        console.log('📤 Already saved, showing share modal');
-        setShowShareModal(true);
-        return;
-      }
-
-      // Otherwise, save first then share
-      console.log('💾 Not saved yet, saving first...');
-      handleSaveButtonClick(event);
-      
-    } catch (error) {
-      console.error('💥 Error in handleShareButtonClick:', error);
-      setSaveError('An error occurred while sharing. Please try again.');
-    }
-  };
-
-  const handleCopyButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    if (!calculationId) {
-      console.log('❌ No calculation ID to share');
-      setSaveError('Please save the calculation first');
+    if (!result) {
+      alert('No calculation result available');
       return;
     }
     
-    const shareUrl = `${window.location.origin}/shared/${calculationId}`;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      console.log('✅ Share URL copied to clipboard:', shareUrl);
-    } catch (err) {
-      console.error('❌ Failed to copy to clipboard:', err);
-      // Fallback: show the URL in an alert
-      alert(`Share this link: ${shareUrl}`);
-    }
+    alert('Save button clicked! Check console for details.');
   };
 
-  const handleCloseModalClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setShowShareModal(false);
-  };
-
-  const handleLoginPromptClose = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setShowLoginPrompt(false);
-  };
-
-  const handleSignUpClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    window.location.href = '/signup';
+  const simpleShareClick = () => {
+    console.log('🔗🔗🔗 SIMPLE SHARE CLICKED');
+    alert('Share button clicked! Check console for details.');
   };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
 
-  // Check if buttons should be disabled
-  const buttonsDisabled = !result || isSaving;
-
-  // Add debugging for context values
-  console.log('🔍 Component render state:', {
-    user: user ? `${user.email} (${user.tier})` : 'No user',
-    result: result ? 'Has result' : 'No result',
-    saveCalculation: typeof saveCalculation,
-    buttonsDisabled,
-    isSaving,
-    isCalculating
-  });
-
   return (
     <div className="p-6 space-y-8">
+      {/* EMERGENCY TEST SECTION */}
+      <div className="bg-red-100 border-2 border-red-500 p-4 rounded-lg">
+        <h3 className="text-red-800 font-bold mb-2">🚨 EMERGENCY BUTTON TEST</h3>
+        <p className="text-red-700 text-sm mb-3">
+          If these buttons don't work, there's a fundamental JavaScript issue:
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={testButtonClick}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            TEST CLICK
+          </button>
+          <button
+            onClick={() => console.log('🔥 Inline arrow function works')}
+            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+          >
+            TEST INLINE
+          </button>
+          <button
+            onClick={function() { console.log('🔥 Inline regular function works'); }}
+            className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+          >
+            TEST FUNCTION
+          </button>
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Section */}
         <div className="space-y-6">
@@ -339,7 +182,10 @@ const MortgageCalculator: React.FC = () => {
                 <input
                   type="number"
                   value={homePrice}
-                  onChange={(e) => setHomePrice(Number(e.target.value))}
+                  onChange={(e) => {
+                    console.log('🏠 Home price changed:', e.target.value);
+                    setHomePrice(Number(e.target.value));
+                  }}
                   className="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="500,000"
                 />
@@ -355,7 +201,10 @@ const MortgageCalculator: React.FC = () => {
                 <input
                   type="number"
                   value={downPayment}
-                  onChange={(e) => setDownPayment(Number(e.target.value))}
+                  onChange={(e) => {
+                    console.log('💰 Down payment changed:', e.target.value);
+                    setDownPayment(Number(e.target.value));
+                  }}
                   className="w-full pl-8 pr-16 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="100,000"
                 />
@@ -534,63 +383,72 @@ const MortgageCalculator: React.FC = () => {
                 </div>
               )}
 
+              {/* SIMPLE TEST BUTTONS SECTION */}
+              <div className="bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
+                <h4 className="font-bold text-yellow-800 mb-2">🧪 SIMPLE BUTTON TESTS</h4>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    onClick={simpleSaveClick}
+                    className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+                  >
+                    Simple Save Test
+                  </button>
+                  <button
+                    onClick={simpleShareClick}
+                    className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700"
+                  >
+                    Simple Share Test
+                  </button>
+                </div>
+                <p className="text-xs text-yellow-700">
+                  These buttons should work and show alerts. If they don't, there's a JavaScript error.
+                </p>
+              </div>
+
               {/* DEBUG INFO */}
-              <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
+              <div className="bg-gray-100 border p-3 rounded-lg text-xs font-mono">
                 <strong>Debug Info:</strong><br/>
                 User: {user ? `${user.email} (${user.tier})` : 'No user'}<br/>
                 Result: {result ? 'Available' : 'None'}<br/>
                 SaveFunction: {typeof saveCalculation}<br/>
-                ButtonsDisabled: {buttonsDisabled ? 'Yes' : 'No'}<br/>
-                IsSaving: {isSaving ? 'Yes' : 'No'}
+                IsSaving: {isSaving ? 'Yes' : 'No'}<br/>
+                HasLocalCalc: {hasLocalCalculation ? 'Yes' : 'No'}
               </div>
 
-              {/* Action Buttons - WITH EXTENSIVE LOGGING */}
+              {/* ORIGINAL ACTION BUTTONS - SIMPLIFIED */}
               <div className="flex gap-3 pt-4">
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    console.log('🔥🔥🔥 BUTTON CLICKED - IMMEDIATE LOG');
-                    handleSaveButtonClick(e);
+                  onClick={() => {
+                    console.log('🔥 SAVE BUTTON CLICKED - DIRECT ONCLICK');
+                    alert('Save button clicked! Check console.');
                   }}
-                  disabled={buttonsDisabled}
+                  disabled={!result || isSaving}
                   className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
-                    buttonsDisabled
+                    (!result || isSaving)
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
-                  title={!result ? 'Wait for calculation to complete' : isSaving ? 'Saving...' : 'Save calculation'}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
                 
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    console.log('🔗🔗🔗 SHARE BUTTON CLICKED - IMMEDIATE LOG');
-                    handleShareButtonClick(e);
+                  onClick={() => {
+                    console.log('🔗 SHARE BUTTON CLICKED - DIRECT ONCLICK');
+                    alert('Share button clicked! Check console.');
                   }}
-                  disabled={buttonsDisabled}
+                  disabled={!result || isSaving}
                   className={`flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
-                    buttonsDisabled
+                    (!result || isSaving)
                       ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
                       : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
                   }`}
-                  title={!result ? 'Wait for calculation to complete' : 'Share calculation'}
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </button>
               </div>
-              
-              {/* Button Status Info */}
-              {!result && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p className="text-sm text-amber-700">
-                    ⏳ Buttons will be enabled once the calculation is complete
-                  </p>
-                </div>
-              )}
               
               {!user && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -599,8 +457,10 @@ const MortgageCalculator: React.FC = () => {
                     Create a free account to save unlimited calculations and access them from anywhere.
                   </p>
                   <button
-                    type="button"
-                    onClick={handleSignUpClick}
+                    onClick={() => {
+                      console.log('🔗 SIGNUP BUTTON CLICKED');
+                      window.location.href = '/signup';
+                    }}
                     className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
                   >
                     Sign Up Free
@@ -615,38 +475,6 @@ const MortgageCalculator: React.FC = () => {
       {/* Notes Section for Premium Users */}
       {user?.tier === 'premium' && calculationId && (
         <NotesSection calculationId={calculationId} section="mortgage" />
-      )}
-
-      {/* Login Prompt Modal for Public Users */}
-      {showLoginPrompt && !user && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="text-center mb-6">
-              <LogIn className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Save Multiple Calculations</h3>
-              <p className="text-gray-600">
-                You've saved one calculation! Create an account to save unlimited calculations, 
-                access them from any device, and unlock premium features.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleLoginPromptClose}
-                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
-              >
-                Maybe Later
-              </button>
-              <button
-                type="button"
-                onClick={handleSignUpClick}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                Sign Up Free
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Share Modal */}
@@ -667,8 +495,15 @@ const MortgageCalculator: React.FC = () => {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-sm"
                   />
                   <button
-                    type="button"
-                    onClick={handleCopyButtonClick}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${window.location.origin}/shared/${calculationId}`);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch (err) {
+                        alert(`Share this link: ${window.location.origin}/shared/${calculationId}`);
+                      }
+                    }}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors"
                   >
                     {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -680,8 +515,7 @@ const MortgageCalculator: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <button
-                  type="button"
-                  onClick={handleCloseModalClick}
+                  onClick={() => setShowShareModal(false)}
                   className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
                 >
                   Close
