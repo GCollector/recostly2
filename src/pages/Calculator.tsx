@@ -839,22 +839,22 @@ const Calculator: React.FC = () => {
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-4 justify-center">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
         {user ? (
           <button
             onClick={handleSave}
             disabled={!result || isSaving}
-            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+            className={`flex items-center justify-center px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg ${
               (!result || isSaving)
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-5 w-5 mr-2" />
             {isSaving ? 'Saving...' : 'Save Calculation'}
           </button>
         ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center max-w-md">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center max-w-md mx-auto">
             <Crown className="h-8 w-8 text-blue-600 mx-auto mb-3" />
             <h3 className="font-semibold text-blue-900 mb-2">Save Your Calculations</h3>
             <p className="text-sm text-blue-700 mb-4">
@@ -862,7 +862,7 @@ const Calculator: React.FC = () => {
             </p>
             <button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               Sign Up to Save
             </button>
@@ -872,13 +872,13 @@ const Calculator: React.FC = () => {
         <button
           onClick={handleShare}
           disabled={!result || isSaving}
-          className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+          className={`flex items-center justify-center px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg ${
             (!result || isSaving)
               ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
-              : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
           }`}
         >
-          <Share2 className="h-4 w-4 mr-2" />
+          <Share2 className="h-5 w-5 mr-2" />
           {isSaving ? 'Creating Link...' : 'Share Results'}
         </button>
       </div>
