@@ -32,7 +32,7 @@ export const useAuth = () => {
 // Timeout constants
 const SIGN_IN_TIMEOUT = 10000; // 10 seconds
 const PROFILE_LOAD_TIMEOUT = 8000; // 8 seconds
-const SESSION_INIT_TIMEOUT = 5000; // 5 seconds
+const SESSION_INIT_TIMEOUT = 10000; // 10 seconds (increased from 5 seconds)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
