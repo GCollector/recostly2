@@ -162,12 +162,15 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const getCalculationAsync = async (id: string): Promise<MortgageCalculation | null> => {
+    // First check if we have it in our local state
     const existingCalc = calculations.find(calc => calc.id === id);
     if (existingCalc) {
       return existingCalc;
     }
 
+    // If not found locally, query the database directly
     try {
+      console.log('Querying database for calculation:', id);
       const { data, error } = await supabase
         .from('mortgage_calculation')
         .select('*')
@@ -175,11 +178,14 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
+        console.error('Database query error:', error);
         return null;
       }
 
+      console.log('Found calculation in database:', data);
       return data;
     } catch (error) {
+      console.error('Error in getCalculationAsync:', error);
       return null;
     }
   };

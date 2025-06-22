@@ -66,6 +66,8 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/pricing" element={<Pricing />} />
+              
+              {/* Shared calculation route - accessible to everyone */}
               <Route path="/shared/:id" element={<SharedCalculation />} />
               
               {/* Protected Routes */}
@@ -103,6 +105,9 @@ function App() {
                   </AuthRoute>
                 } 
               />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>
         </Router>
