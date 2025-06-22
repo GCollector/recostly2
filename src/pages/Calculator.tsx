@@ -76,28 +76,28 @@ const Calculator: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="text-center space-y-3 sm:space-y-4 px-4">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading text-slate-900">
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
           Canadian Mortgage Calculator
         </h1>
-        <p className="text-base sm:text-lg font-sans text-slate-600 max-w-3xl mx-auto">
+        <p className="text-lg font-sans text-slate-600 max-w-3xl mx-auto">
           Professional mortgage calculations with optional investment analysis for Canadian real estate.
         </p>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center justify-center space-x-3 sm:space-x-4 px-4">
+      <div className="flex items-center justify-center space-x-4">
         <div className="flex items-center space-x-2">
-          <span className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
             1
           </span>
           <span className="text-sm font-medium font-sans text-slate-900">Input Details</span>
         </div>
         <ArrowRight className="h-4 w-4 text-slate-400" />
         <div className="flex items-center space-x-2">
-          <span className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-400 text-white text-sm font-medium">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-400 text-white text-sm font-medium">
             2
           </span>
           <span className="text-sm font-medium font-sans text-slate-600">View Results</span>
@@ -105,18 +105,18 @@ const Calculator: React.FC = () => {
       </div>
 
       {/* Form Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px] mx-4 sm:mx-0" data-testid="calculator-content">
-        <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
+        <div className="p-8 space-y-8">
           {/* Mortgage Details Section */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-semibold font-heading text-slate-900 mb-3 sm:mb-4">Mortgage Details</h2>
-            <p className="text-slate-600 font-sans mb-4 sm:mb-6">Enter your property and financing information</p>
+            <h2 className="text-2xl font-semibold font-heading text-slate-900 mb-4">Mortgage Details</h2>
+            <p className="text-slate-600 font-sans mb-6">Enter your property and financing information</p>
             
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-8">
               {/* Property & Financing */}
               <div>
                 <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4">Property & Financing</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
                       Home Price
@@ -127,7 +127,7 @@ const Calculator: React.FC = () => {
                         type="number"
                         value={mortgageData.homePrice}
                         onChange={(e) => handleInputChange('homePrice', Number(e.target.value))}
-                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                         placeholder="500,000"
                       />
                     </div>
@@ -143,7 +143,7 @@ const Calculator: React.FC = () => {
                         type="number"
                         value={mortgageData.downPayment}
                         onChange={(e) => handleInputChange('downPayment', Number(e.target.value))}
-                        className="w-full pl-8 pr-16 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                        className="w-full pl-8 pr-16 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                         placeholder="100,000"
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-sans text-slate-500">
@@ -162,7 +162,7 @@ const Calculator: React.FC = () => {
                         step="0.01"
                         value={mortgageData.interestRate}
                         onChange={(e) => handleInputChange('interestRate', Number(e.target.value))}
-                        className="w-full pr-8 pl-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                        className="w-full pr-8 pl-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                         placeholder="5.25"
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
@@ -176,7 +176,7 @@ const Calculator: React.FC = () => {
                     <select
                       value={mortgageData.amortizationYears}
                       onChange={(e) => handleInputChange('amortizationYears', Number(e.target.value))}
-                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                     >
                       {[15, 20, 25, 30].map(years => (
                         <option key={years} value={years}>{years} years</option>
@@ -191,7 +191,7 @@ const Calculator: React.FC = () => {
                     <select
                       value={mortgageData.paymentFrequency}
                       onChange={(e) => handleInputChange('paymentFrequency', e.target.value as 'monthly' | 'bi-weekly')}
-                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                     >
                       <option value="monthly">Monthly</option>
                       <option value="bi-weekly">Bi-weekly</option>
@@ -214,7 +214,7 @@ const Calculator: React.FC = () => {
                           handleInputChange('city', 'vancouver');
                         }
                       }}
-                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans text-base"
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
                     >
                       <option value="toronto">Toronto, ON</option>
                       <option value="vancouver">Vancouver, BC</option>
@@ -241,20 +241,20 @@ const Calculator: React.FC = () => {
           </div>
 
           {/* Investment Property Analysis */}
-          <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-4 sm:p-6 border border-emerald-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <div className="flex items-start sm:items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center">
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div>
                   <h3 className="text-lg font-semibold font-heading text-slate-900">Investment Property Analysis</h3>
-                  <p className="text-sm font-sans text-slate-600 mt-1">Turn your home purchase into a profitable investment opportunity</p>
+                  <p className="text-sm font-sans text-slate-600">Turn your home purchase into a profitable investment opportunity</p>
                 </div>
               </div>
               
               {/* Toggle Switch */}
-              <div className="flex items-center space-x-3 flex-shrink-0">
+              <div className="flex items-center space-x-3">
                 <span className="text-sm font-medium text-slate-700">
                   {mortgageData.enableInvestmentAnalysis ? 'Enabled' : 'Enable'}
                 </span>
@@ -277,7 +277,7 @@ const Calculator: React.FC = () => {
 
             {mortgageData.enableInvestmentAnalysis && (
               <div className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
                       Expected Monthly Rent
@@ -288,7 +288,7 @@ const Calculator: React.FC = () => {
                         type="number"
                         value={mortgageData.monthlyRent}
                         onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
-                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                         placeholder="2,500"
                       />
                     </div>
@@ -297,7 +297,7 @@ const Calculator: React.FC = () => {
 
                 <div>
                   <h4 className="text-md font-semibold font-heading text-slate-900 mb-4">Monthly Operating Expenses</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
                         Property Taxes
@@ -308,7 +308,7 @@ const Calculator: React.FC = () => {
                           type="number"
                           value={mortgageData.monthlyExpenses?.taxes}
                           onChange={(e) => handleExpenseChange('taxes', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                           placeholder="400"
                         />
                       </div>
@@ -324,7 +324,7 @@ const Calculator: React.FC = () => {
                           type="number"
                           value={mortgageData.monthlyExpenses?.insurance}
                           onChange={(e) => handleExpenseChange('insurance', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                           placeholder="150"
                         />
                       </div>
@@ -340,7 +340,7 @@ const Calculator: React.FC = () => {
                           type="number"
                           value={mortgageData.monthlyExpenses?.condoFees}
                           onChange={(e) => handleExpenseChange('condoFees', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                           placeholder="300"
                         />
                       </div>
@@ -356,7 +356,7 @@ const Calculator: React.FC = () => {
                           type="number"
                           value={mortgageData.monthlyExpenses?.maintenance}
                           onChange={(e) => handleExpenseChange('maintenance', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                           placeholder="200"
                         />
                       </div>
@@ -372,7 +372,7 @@ const Calculator: React.FC = () => {
                           type="number"
                           value={mortgageData.monthlyExpenses?.other}
                           onChange={(e) => handleExpenseChange('other', Number(e.target.value))}
-                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white text-base"
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
                           placeholder="100"
                         />
                       </div>
@@ -384,10 +384,10 @@ const Calculator: React.FC = () => {
           </div>
 
           {/* Calculate Button */}
-          <div className="flex justify-center pt-4 sm:pt-6">
+          <div className="flex justify-center pt-6">
             <button
               onClick={handleCalculateResults}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg w-full sm:w-auto justify-center"
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               <CalculatorIcon className="h-5 w-5" />
               <span>Calculate Results</span>
