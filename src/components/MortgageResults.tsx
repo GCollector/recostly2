@@ -403,7 +403,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-red-600 mb-2">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
                       ${Math.round(totalInterest).toLocaleString()}
                     </div>
                     <div className="text-sm font-medium text-slate-600 mb-1">Total Interest</div>
@@ -415,7 +415,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-600 mb-2">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
                       ${Math.round(totalCost).toLocaleString()}
                     </div>
                     <div className="text-sm font-medium text-slate-600 mb-1">Total Cost</div>
