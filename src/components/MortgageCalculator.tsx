@@ -70,6 +70,8 @@ const MortgageCalculator: React.FC = () => {
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
 
   const handleSave = async () => {
+    console.log('💾 Save button clicked');
+    
     if (!result) {
       console.log('❌ No result to save');
       setSaveError('Please calculate a mortgage first');
@@ -102,18 +104,14 @@ const MortgageCalculator: React.FC = () => {
       console.log('✅ Calculation saved with ID:', id);
       setCalculationId(id);
       
-      if (user) {
-        // For authenticated users, show success and share modal
-        setSaveError('');
-        setShowShareModal(true);
-      } else {
-        // For non-authenticated users, show login prompt after first save
-        setSaveError('');
-        setShowShareModal(true);
-        if (!hasLocalCalculation) {
-          setTimeout(() => setShowLoginPrompt(true), 2000);
-        }
+      // Show share modal for all users
+      setShowShareModal(true);
+      
+      // For non-authenticated users, show login prompt after first save
+      if (!user && !hasLocalCalculation) {
+        setTimeout(() => setShowLoginPrompt(true), 2000);
       }
+      
     } catch (error) {
       console.error('💥 Error saving calculation:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
@@ -360,6 +358,21 @@ const MortgageCalculator: React.FC = () => {
                   Share
                 </button>
               </div>
+              
+              {!user && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-800 mb-2">Want to save more calculations?</h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Create a free account to save unlimited calculations and access them from anywhere.
+                  </p>
+                  <button
+                    onClick={() => window.location.href = '/signup'}
+                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
+                  >
+                    Sign Up Free
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -428,22 +441,6 @@ const MortgageCalculator: React.FC = () => {
                   <p className="text-sm text-green-600 mt-1">Copied to clipboard!</p>
                 )}
               </div>
-              
-              {!user && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-800 mb-2">Want to save more calculations?</h4>
-                  <p className="text-sm text-blue-700 mb-3">
-                    Create a free account to save unlimited calculations and access them from anywhere.
-                  </p>
-                  <button
-                    onClick={() => window.location.href = '/signup'}
-                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
-                  >
-                    Sign Up Free
-                  </button>
-                </div>
-              )}
-              
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowShareModal(false)}
