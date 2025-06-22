@@ -13,7 +13,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import ThemeSelector from './ThemeSelector';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, signOut, loading } = useAuth();
@@ -105,8 +104,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
             
             <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-              <ThemeSelector />
-              
               {user ? (
                 <div className="relative">
                   <button
@@ -188,8 +185,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
             </div>
             
-            <div className="sm:hidden flex items-center space-x-2">
-              <ThemeSelector />
+            <div className="sm:hidden flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-neutral-500 hover:text-neutral-700 p-2 rounded-lg hover:bg-white/50 transition-colors"
@@ -293,7 +289,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Main content */}
-      <main className="container-modern py-8 space-modern">
+      <main className="container-modern py-12 space-modern">
         {children}
       </main>
     </div>
