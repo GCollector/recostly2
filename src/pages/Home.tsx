@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calculator, TrendingUp, Shield, Star, Calendar, Eye, Share2 } from 'lucide-react';
+import { Calculator, TrendingUp, Shield, Star, Calendar, Eye, Share2, CreditCard } from 'lucide-react';
 import { Home as HomeIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
@@ -334,6 +334,33 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Pricing Link Section for Non-Logged-In Users */}
+      <div className="bg-white rounded-2xl p-8 md:p-12 text-center border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <CreditCard className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h2 className="text-3xl font-bold font-heading text-slate-900 mb-4">Flexible Pricing Plans</h2>
+        <p className="text-xl font-sans text-slate-600 mb-8 max-w-2xl mx-auto">
+          Choose the plan that works best for you. From free calculations to premium features for real estate professionals.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            to="/pricing"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg"
+          >
+            View Pricing Plans
+          </Link>
+          <Link
+            to="/calculator"
+            className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105"
+          >
+            Try Free Calculator
+          </Link>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import {
   CreditCard,
   ChevronDown,
   Loader2,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -41,11 +42,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [profileDropdownOpen]);
 
-  const navigation = [
+  // Different navigation for logged-in vs logged-out users
+  const loggedOutNavigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
     { name: 'Pricing', href: '/pricing', icon: CreditCard },
   ];
+
+  const loggedInNavigation = [
+    { name: 'Home', href: '/', icon: Home },
+    { name: 'Calculator', href: '/calculator', icon: Calculator },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  ];
+
+  const navigation = user ? loggedInNavigation : loggedOutNavigation;
 
   const handleLogout = async () => {
     try {
@@ -146,14 +156,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         </div>
                       </div>
                       <Link
-                        to="/dashboard"
-                        className="flex items-center px-4 py-3 text-sm font-sans text-slate-700 hover:bg-slate-50 transition-colors"
-                        onClick={() => setProfileDropdownOpen(false)}
-                      >
-                        <User className="h-4 w-4 mr-3" />
-                        My Calculations
-                      </Link>
-                      <Link
                         to="/settings"
                         className="flex items-center px-4 py-3 text-sm font-sans text-slate-700 hover:bg-slate-50 transition-colors"
                         onClick={() => setProfileDropdownOpen(false)}
@@ -161,9 +163,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         <Settings className="h-4 w-4 mr-3" />
                         Account Settings
                       </Link>
+                      <Link
+                        to="/pricing"
+                        className="flex items-center px-4 py-3 text-sm font-sans text-slate-700 hover:bg-slate-50 transition-colors"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <CreditCard className="h-4 w-4 mr-3" />
+                        Pricing & Plans
+                      </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-3 text-sm font-sans text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="flex items-center w-full px-4 py-3 text-sm font-sans text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-100"
                       >
                         <LogOut className="h-4 w-4 mr-3" />
                         Sign Out
@@ -246,18 +256,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </div>
                   </div>
                   <Link
-                    to="/dashboard"
-                    className="block px-4 py-2 text-base font-medium font-sans text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Calculations
-                  </Link>
-                  <Link
                     to="/settings"
                     className="block px-4 py-2 text-base font-medium font-sans text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Account Settings
+                  </Link>
+                  <Link
+                    to="/pricing"
+                    className="block px-4 py-2 text-base font-medium font-sans text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Pricing & Plans
                   </Link>
                   <button
                     onClick={() => {
