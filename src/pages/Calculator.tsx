@@ -441,131 +441,162 @@ const Calculator: React.FC = () => {
               </div>
             </div>
 
-            {/* Investment Analysis Section - Always Visible */}
+            {/* Investment Analysis Toggle */}
             <div className="border-t border-gray-200 pt-8">
               <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-xl p-8 shadow-lg">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-emerald-900 flex items-center">
-                    <TrendingUp className="h-6 w-6 mr-3 text-emerald-600" />
-                    Investment Property Analysis
-                  </h2>
-                  <p className="text-emerald-700 mt-2 text-lg">
-                    Turn your home purchase into a profitable investment opportunity
-                  </p>
-                </div>
-
-                <div className="space-y-6 bg-white/80 backdrop-blur-sm p-6 rounded-lg border border-emerald-200/50">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-emerald-800 mb-2">
-                        Monthly Rental Income
-                      </label>
-                      <CurrencyInput
-                        value={inputs.monthlyRent}
-                        onChange={(value) => updateInput('monthlyRent', value)}
-                        placeholder="2,500"
-                        className="focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                      />
-                    </div>
-                  </div>
-
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-emerald-900 mb-4">Monthly Operating Expenses</h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-emerald-800 mb-2">
-                          Property Taxes
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.taxes}
-                          onChange={(value) => updateExpense('taxes', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-emerald-800 mb-2">
-                          Insurance
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.insurance}
-                          onChange={(value) => updateExpense('insurance', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-emerald-800 mb-2">
-                          Condo Fees
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.condoFees}
-                          onChange={(value) => updateExpense('condoFees', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-emerald-800 mb-2">
-                          Maintenance & Repairs
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.maintenance}
-                          onChange={(value) => updateExpense('maintenance', value)}
-                          className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-emerald-800 mb-2">
-                          Other Expenses
-                        </label>
-                        <CurrencyInput
-                          value={inputs.monthlyExpenses.other}
-                          onChange={(value) => updateExpense('other', value)}
-                          placeholder="Property management, etc."
-                          className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
-                        />
-                      </div>
-                    </div>
+                    <h2 className="text-2xl font-bold text-emerald-900 flex items-center">
+                      <TrendingUp className="h-6 w-6 mr-3 text-emerald-600" />
+                      Investment Property Analysis
+                    </h2>
+                    <p className="text-emerald-700 mt-2 text-lg">
+                      Turn your home purchase into a profitable investment opportunity
+                    </p>
                   </div>
-
-                  <div className="bg-emerald-100/70 border border-emerald-300 rounded-lg p-6">
-                    <h4 className="font-semibold text-emerald-900 mb-3 text-lg">🎯 Investment Analysis Benefits</h4>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <ul className="text-sm text-emerald-800 space-y-2">
-                        <li className="flex items-center">
-                          <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
-                          Calculate cap rate and ROI
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
-                          Determine monthly cash flow
-                        </li>
-                      </ul>
-                      <ul className="text-sm text-emerald-800 space-y-2">
-                        <li className="flex items-center">
-                          <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
-                          Find break-even rental rate
-                        </li>
-                        <li className="flex items-center">
-                          <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
-                          Compare investment scenarios
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => updateInput('includeInvestment', !inputs.includeInvestment)}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg ${
+                      inputs.includeInvestment
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-white hover:bg-emerald-50 text-emerald-700 border-2 border-emerald-600'
+                    }`}
+                  >
+                    {inputs.includeInvestment ? 'Investment Enabled' : 'Enable Investment Analysis'}
+                  </button>
                 </div>
+
+                {inputs.includeInvestment && (
+                  <div className="space-y-6 bg-white/80 backdrop-blur-sm p-6 rounded-lg border border-emerald-200/50">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-emerald-800 mb-2">
+                          Monthly Rental Income
+                        </label>
+                        <CurrencyInput
+                          value={inputs.monthlyRent}
+                          onChange={(value) => updateInput('monthlyRent', value)}
+                          placeholder="2,500"
+                          className="focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-emerald-900 mb-4">Monthly Operating Expenses</h3>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Property Taxes
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.taxes}
+                            onChange={(value) => updateExpense('taxes', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Insurance
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.insurance}
+                            onChange={(value) => updateExpense('insurance', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Condo Fees
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.condoFees}
+                            onChange={(value) => updateExpense('condoFees', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Maintenance & Repairs
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.maintenance}
+                            onChange={(value) => updateExpense('maintenance', value)}
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Other Expenses
+                          </label>
+                          <CurrencyInput
+                            value={inputs.monthlyExpenses.other}
+                            onChange={(value) => updateExpense('other', value)}
+                            placeholder="Property management, etc."
+                            className="py-2 focus:ring-emerald-500 focus:border-emerald-500 border-emerald-200"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-100/70 border border-emerald-300 rounded-lg p-6">
+                      <h4 className="font-semibold text-emerald-900 mb-3 text-lg">🎯 Investment Analysis Benefits</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <ul className="text-sm text-emerald-800 space-y-2">
+                          <li className="flex items-center">
+                            <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
+                            Calculate cap rate and ROI
+                          </li>
+                          <li className="flex items-center">
+                            <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
+                            Determine monthly cash flow
+                          </li>
+                        </ul>
+                        <ul className="text-sm text-emerald-800 space-y-2">
+                          <li className="flex items-center">
+                            <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
+                            Find break-even rental rate
+                          </li>
+                          <li className="flex items-center">
+                            <span className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></span>
+                            Compare investment scenarios
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!inputs.includeInvestment && (
+                  <div className="bg-emerald-100/50 border border-emerald-200 rounded-lg p-6 text-center">
+                    <TrendingUp className="h-12 w-12 text-emerald-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-emerald-900 mb-2">Ready to Analyze Your Investment?</h3>
+                    <p className="text-emerald-700 mb-4">
+                      Enable investment analysis to calculate cap rates, cash flow, ROI, and break-even metrics for your property.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm text-emerald-800">
+                      <ul className="space-y-2">
+                        <li>• Monthly cash flow analysis</li>
+                        <li>• Cap rate calculations</li>
+                      </ul>
+                      <ul className="space-y-2">
+                        <li>• Return on investment (ROI)</li>
+                        <li>• Break-even rental rates</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Calculate Button */}
             <div className="border-t border-gray-200 pt-8">
               <button
-                onClick={() => {
-                  updateInput('includeInvestment', true);
-                  handleCalculate();
-                }}
+                onClick={handleCalculate}
                 disabled={!canCalculate}
                 className={`w-full flex items-center justify-center px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg ${
                   canCalculate
@@ -575,7 +606,10 @@ const Calculator: React.FC = () => {
               >
                 {!canCalculate && <AlertTriangle className="h-5 w-5 mr-3" />}
                 <CalculatorIcon className="h-5 w-5 mr-3" />
-                {canCalculate ? 'Calculate Mortgage & Investment' : 'Please Fix Errors Above'}
+                {canCalculate ? 
+                  (inputs.includeInvestment ? 'Calculate Mortgage & Investment' : 'Calculate Mortgage') : 
+                  'Please Fix Errors Above'
+                }
                 {canCalculate && <ArrowRight className="h-5 w-5 ml-3" />}
               </button>
               
@@ -600,6 +634,7 @@ const Calculator: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Calculation Results</h1>
           <p className="text-lg text-gray-600">
             {formatCurrency(inputs.homePrice)} property in {inputs.city === 'toronto' ? 'Toronto' : 'Vancouver'}
+            {inputs.includeInvestment && <span className="text-emerald-600 ml-2">• Investment Analysis Included</span>}
           </p>
         </div>
         <button
