@@ -93,15 +93,12 @@ const MortgageCalculator: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
-  const handleSave = async (event?: React.MouseEvent) => {
+  const handleSaveButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     // Prevent any default behavior and stop propagation
+    event.preventDefault();
+    event.stopPropagation();
+    
     console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
-    
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    
     console.log('📊 Current state:', {
       user: user?.email || 'No user',
       result: result ? 'Has result' : 'No result',
@@ -166,7 +163,35 @@ const MortgageCalculator: React.FC = () => {
     }
   };
 
-  const handleShare = async () => {
+  const handleShareButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    console.log('🔗 SHARE BUTTON CLICKED');
+    
+    if (!result) {
+      setSaveError('Please calculate a mortgage first');
+      return;
+    }
+
+    setSaveError('');
+
+    // If already saved, just show share modal
+    if (calculationId) {
+      console.log('📤 Already saved, showing share modal');
+      setShowShareModal(true);
+      return;
+    }
+
+    // Otherwise, save first then share
+    console.log('💾 Not saved yet, saving first...');
+    await handleSaveButtonClick(event);
+  };
+
+  const handleCopyButtonClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
     if (!calculationId) {
       console.log('❌ No calculation ID to share');
       setSaveError('Please save the calculation first');
@@ -186,31 +211,22 @@ const MortgageCalculator: React.FC = () => {
     }
   };
 
-  const handleDirectShare = async (event?: React.MouseEvent) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    
-    console.log('🔗 Direct share button clicked');
-    
-    if (!result) {
-      setSaveError('Please calculate a mortgage first');
-      return;
-    }
+  const handleCloseModalClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setShowShareModal(false);
+  };
 
-    setSaveError('');
+  const handleLoginPromptClose = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setShowLoginPrompt(false);
+  };
 
-    // If already saved, just show share modal
-    if (calculationId) {
-      console.log('📤 Already saved, showing share modal');
-      setShowShareModal(true);
-      return;
-    }
-
-    // Otherwise, save first then share
-    console.log('💾 Not saved yet, saving first...');
-    await handleSave();
+  const handleSignUpClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = '/signup';
   };
 
   const downPaymentPercent = Math.round((downPayment / homePrice) * 100);
@@ -417,24 +433,23 @@ const MortgageCalculator: React.FC = () => {
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {/* Action Buttons - PROPER BUTTON ONCLICK HANDLERS */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={handleSave}
+                  onClick={handleSaveButtonClick}
                   disabled={isSaving || isCalculating}
                   className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ pointerEvents: (isSaving || isCalculating) ? 'none' : 'auto' }}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
+                
                 <button
                   type="button"
-                  onClick={handleDirectShare}
+                  onClick={handleShareButtonClick}
                   disabled={isSaving || isCalculating}
                   className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ pointerEvents: (isSaving || isCalculating) ? 'none' : 'auto' }}
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
@@ -448,7 +463,8 @@ const MortgageCalculator: React.FC = () => {
                     Create a free account to save unlimited calculations and access them from anywhere.
                   </p>
                   <button
-                    onClick={() => window.location.href = '/signup'}
+                    type="button"
+                    onClick={handleSignUpClick}
                     className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
                   >
                     Sign Up Free
@@ -479,13 +495,15 @@ const MortgageCalculator: React.FC = () => {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setShowLoginPrompt(false)}
+                type="button"
+                onClick={handleLoginPromptClose}
                 className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
               >
                 Maybe Later
               </button>
               <button
-                onClick={() => window.location.href = '/signup'}
+                type="button"
+                onClick={handleSignUpClick}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
                 Sign Up Free
@@ -513,7 +531,8 @@ const MortgageCalculator: React.FC = () => {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-sm"
                   />
                   <button
-                    onClick={handleShare}
+                    type="button"
+                    onClick={handleCopyButtonClick}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors"
                   >
                     {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -525,7 +544,8 @@ const MortgageCalculator: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowShareModal(false)}
+                  type="button"
+                  onClick={handleCloseModalClick}
                   className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
                 >
                   Close
