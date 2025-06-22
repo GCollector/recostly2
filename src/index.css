@@ -129,7 +129,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
-  /* Modern Button Components - ACCESSIBILITY FIXED WITH !IMPORTANT */
+  /* Modern Button Components - TARGETED ACCESSIBILITY FIX */
   .btn {
     @apply inline-flex items-center justify-center;
     padding: 0.75rem 1.5rem;
@@ -161,85 +161,77 @@
     left: 100%;
   }
 
-  /* PRIMARY BUTTON - FIXED WITH !IMPORTANT */
+  /* PRIMARY BUTTON - BLUE BACKGROUND WITH WHITE TEXT */
   .btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
     box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
   }
 
   .btn-primary:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
-    color: white !important; /* FORCE WHITE TEXT */
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: white; /* Ensure white text on hover */
     transform: translateY(-2px);
     box-shadow: 0 8px 25px 0 rgba(59, 130, 246, 0.5);
   }
 
   .btn-primary:active {
     transform: translateY(0);
-    color: white !important; /* FORCE WHITE TEXT */
-    background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%) !important;
+    color: white;
+    background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
   }
 
   .btn-primary:focus {
-    color: white !important; /* FORCE WHITE TEXT */
+    color: white;
     outline: 2px solid #93c5fd;
     outline-offset: 2px;
   }
 
-  .btn-primary:visited {
-    color: white !important; /* FORCE WHITE TEXT */
-  }
-
-  /* SECONDARY BUTTON - FIXED WITH !IMPORTANT */
+  /* SECONDARY BUTTON - GREEN/BLUE GRADIENT WITH WHITE TEXT */
   .btn-secondary {
-    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+    color: white;
     box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
   }
 
   .btn-secondary:hover {
-    background: linear-gradient(135deg, #059669 0%, #2563eb 100%) !important;
-    color: white !important; /* FORCE WHITE TEXT */
+    background: linear-gradient(135deg, #059669 0%, #2563eb 100%);
+    color: white; /* Ensure white text on hover */
     transform: translateY(-2px);
     box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.5);
   }
 
   .btn-secondary:active {
     transform: translateY(0);
-    color: white !important; /* FORCE WHITE TEXT */
-    background: linear-gradient(135deg, #047857 0%, #1d4ed8 100%) !important;
+    color: white;
+    background: linear-gradient(135deg, #047857 0%, #1d4ed8 100%);
   }
 
   .btn-secondary:focus {
-    color: white !important; /* FORCE WHITE TEXT */
+    color: white;
     outline: 2px solid #6ee7b7;
     outline-offset: 2px;
   }
 
-  .btn-secondary:visited {
-    color: white !important; /* FORCE WHITE TEXT */
-  }
-
-  /* OUTLINE BUTTON - IMPROVED ACCESSIBILITY */
+  /* OUTLINE BUTTON - BLUE BORDER, BLUE TEXT, WHITE BACKGROUND ON HOVER */
   .btn-outline {
-    background: transparent !important;
-    color: #3b82f6 !important;
-    border: 2px solid #3b82f6 !important;
+    background: transparent;
+    color: #3b82f6;
+    border: 2px solid #3b82f6;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   }
 
   .btn-outline:hover {
-    background: #3b82f6 !important;
-    color: white !important; /* FORCE WHITE TEXT ON HOVER */
-    border-color: #3b82f6 !important;
+    background: #3b82f6;
+    color: white; /* White text when background becomes blue */
+    border-color: #3b82f6;
     transform: translateY(-1px);
     box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
   }
 
   .btn-outline:active {
-    color: white !important; /* FORCE WHITE TEXT */
-    background: #2563eb !important;
+    color: white;
+    background: #2563eb;
   }
 
   .btn-outline:focus {
@@ -247,18 +239,18 @@
     outline-offset: 2px;
   }
 
-  /* GHOST BUTTON - IMPROVED ACCESSIBILITY */
+  /* GHOST BUTTON - TRANSPARENT WITH PROPER CONTRAST */
   .btn-ghost {
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: #475569 !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.1);
+    color: #475569;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
   .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.9) !important;
-    color: #1e293b !important; /* DARKER TEXT FOR BETTER CONTRAST */
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e293b; /* Darker text for better contrast on white background */
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
@@ -693,26 +685,25 @@
   }
 }
 
-/* ADDITIONAL BUTTON ACCESSIBILITY OVERRIDES */
-/* Force white text on all blue button states */
-.bg-blue-600,
-.bg-blue-700,
-.hover\:bg-blue-700:hover,
-.hover\:bg-blue-800:hover,
-[class*="bg-blue"] {
+/* TARGETED BUTTON ACCESSIBILITY FIXES */
+/* Only target specific blue button classes that need white text */
+.bg-blue-600:not(.btn-outline):not(.btn-ghost),
+.bg-blue-700:not(.btn-outline):not(.btn-ghost),
+.hover\:bg-blue-700:hover:not(.btn-outline):not(.btn-ghost),
+.hover\:bg-blue-800:hover:not(.btn-outline):not(.btn-ghost) {
   color: white !important;
 }
 
-/* Ensure Tailwind blue buttons have white text */
-.bg-blue-600:hover,
-.bg-blue-700:hover,
-.bg-blue-800:hover {
+/* Ensure Tailwind utility classes for blue buttons have proper contrast */
+.text-white.bg-blue-600,
+.text-white.bg-blue-700,
+.text-white.bg-blue-800 {
   color: white !important;
 }
 
-/* Override any conflicting text colors on blue backgrounds */
-.text-blue-600.bg-blue-600,
-.text-blue-700.bg-blue-700,
-.text-blue-800.bg-blue-800 {
+/* Fix any blue-on-blue text issues specifically */
+.text-blue-600.bg-blue-600:not(.btn-outline),
+.text-blue-700.bg-blue-700:not(.btn-outline),
+.text-blue-800.bg-blue-800:not(.btn-outline) {
   color: white !important;
 }
