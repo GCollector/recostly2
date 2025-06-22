@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, TrendingUp, DollarSign, Calculator, Home, BarChart3 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { ArrowLeft, Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, TrendingUp, DollarSign, Calculator, Home, BarChart3, PieChart } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Cell, AreaChart, Area } from 'recharts';
 import { MortgageData } from '../pages/Calculator';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
@@ -401,97 +401,272 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     }] : [])
   ];
 
+  // Chart data for mortgage summary
+  const costBreakdownData = [
+    { name: 'Down Payment', value: data.downPayment, color: '#10B981' },
+    { name: 'Principal', value: result.loanAmount, color: '#3B82F6' },
+    { name: 'Interest', value: result.totalInterest, color: '#EF4444' }
+  ];
+
+  const monthlyBreakdownData = [
+    { name: 'Principal', value: Math.round((result.loanAmount / (data.amortizationYears * 12)) * 100) / 100, color: '#10B981' },
+    { name: 'Interest', value: Math.round((result.totalInterest / (data.amortizationYears * 12)) * 100) / 100, color: '#EF4444' }
+  ];
+
+  // Payment over time data (first 10 years)
+  const paymentOverTimeData = amortizationSchedule.slice(0, 10).map(year => ({
+    year: `Year ${year.year}`,
+    principal: year.principalPayment,
+    interest: year.interestPayment,
+    balance: year.balance
+  }));
+
+  // Interest vs Principal comparison
+  const interestVsPrincipalData = [
+    { category: 'Total Interest', amount: result.totalInterest, color: '#EF4444' },
+    { category: 'Principal Amount', amount: result.loanAmount, color: '#3B82F6' }
+  ];
+
+  const COLORS = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6'];
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'mortgage':
         return (
-          <div className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Mortgage Results */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-slate-900">Payment Summary</h3>
-                
-                <div className="bg-blue-50 p-6 rounded-lg">
+          <div className="space-y-8">
+            {/* Top Summary Cards */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Main Payment Card */}
+              <div className="lg:col-span-1">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 shadow-lg">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Calculator className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-4xl font-bold text-blue-700 mb-2">
                       ${result.monthlyPayment.toLocaleString()}
                     </div>
-                    <div className="text-sm text-blue-700">
+                    <div className="text-lg font-semibold text-blue-800">
                       {data.paymentFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
                     </div>
+                    <div className="text-sm text-blue-600 mt-2">
+                      {data.interestRate}% • {data.amortizationYears} years
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Metrics */}
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <div className="text-2xl font-bold text-slate-900">
+                    ${result.loanAmount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-slate-600">Loan Amount</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {Math.round((result.loanAmount / data.homePrice) * 100)}% of home price
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <div className="text-lg font-semibold text-slate-900">
-                      ${result.loanAmount.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-slate-600">Loan Amount</div>
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <div className="text-2xl font-bold text-slate-900">
+                    ${result.totalInterest.toLocaleString()}
                   </div>
-
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <div className="text-lg font-semibold text-slate-900">
-                      ${result.totalInterest.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-slate-600">Total Interest</div>
+                  <div className="text-sm text-slate-600">Total Interest</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Over {data.amortizationYears} years
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-slate-900">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <div className="text-2xl font-bold text-slate-900">
+                    ${data.downPayment.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-slate-600">Down Payment</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {Math.round((data.downPayment / data.homePrice) * 100)}% down
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <div className="text-2xl font-bold text-slate-900">
                     ${result.totalCost.toLocaleString()}
                   </div>
-                  <div className="text-sm text-slate-600">Total Cost of Home</div>
+                  <div className="text-sm text-slate-600">Total Cost</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Including all interest
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Beautiful Charts Section */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Total Cost Breakdown Pie Chart */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                  <PieChart className="h-5 w-5 mr-2 text-blue-600" />
+                  Total Cost Breakdown
+                </h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={costBreakdownData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {costBreakdownData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, '']} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>
+                    <span>Down Payment</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    <span>Principal</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span>Interest</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Property Details */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-slate-900">Property Details</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between py-3 border-b border-slate-200">
-                    <span className="text-slate-600">Purchase Price</span>
-                    <span className="font-semibold text-slate-900">
-                      ${data.homePrice.toLocaleString()}
-                    </span>
+              {/* Interest vs Principal Comparison */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+                  Interest vs Principal
+                </h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={interestVsPrincipalData} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <YAxis dataKey="category" type="category" width={100} />
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, '']} />
+                    <Bar dataKey="amount" fill="#3B82F6" radius={[0, 4, 4, 0]}>
+                      {interestVsPrincipalData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center">
+                  <div className="text-sm text-slate-600">
+                    Interest represents <span className="font-semibold text-red-600">
+                      {Math.round((result.totalInterest / result.totalCost) * 100)}%
+                    </span> of your total payments
                   </div>
-                  
-                  <div className="flex justify-between py-3 border-b border-slate-200">
-                    <span className="text-slate-600">Down Payment</span>
-                    <span className="font-semibold text-slate-900">
-                      ${data.downPayment.toLocaleString()} 
-                      <span className="text-sm text-slate-500 ml-1">
-                        ({Math.round((data.downPayment / data.homePrice) * 100)}%)
-                      </span>
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between py-3 border-b border-slate-200">
-                    <span className="text-slate-600">Interest Rate</span>
-                    <span className="font-semibold text-slate-900">{data.interestRate}%</span>
-                  </div>
-                  
-                  <div className="flex justify-between py-3 border-b border-slate-200">
-                    <span className="text-slate-600">Amortization</span>
-                    <span className="font-semibold text-slate-900">{data.amortizationYears} years</span>
-                  </div>
-                  
-                  <div className="flex justify-between py-3 border-b border-slate-200">
-                    <span className="text-slate-600">Location</span>
-                    <span className="font-semibold text-slate-900">
-                      {data.city === 'toronto' ? 'Toronto, ON' : 'Vancouver, BC'}
-                    </span>
-                  </div>
-                  
-                  {data.isFirstTimeBuyer && (
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <span className="text-green-800 font-medium">✓ First-Time Homebuyer</span>
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Payment Progression Over Time */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                  Payment Breakdown Over Time (First 10 Years)
+                </h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={paymentOverTimeData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value, name) => [
+                      `$${Number(value).toLocaleString()}`, 
+                      name === 'principal' ? 'Principal' : 'Interest'
+                    ]} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="interest" 
+                      stackId="1" 
+                      stroke="#EF4444" 
+                      fill="#EF4444" 
+                      fillOpacity={0.6}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="principal" 
+                      stackId="1" 
+                      stroke="#10B981" 
+                      fill="#10B981" 
+                      fillOpacity={0.6}
+                    />
+                    <Legend />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-sm text-slate-600">
+                  Notice how principal payments increase while interest decreases over time
+                </div>
+              </div>
+
+              {/* Mortgage Balance Decline */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                  Remaining Balance Over Time
+                </h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={paymentOverTimeData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Remaining Balance']} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="balance" 
+                      stroke="#3B82F6" 
+                      fill="#3B82F6" 
+                      fillOpacity={0.3}
+                      strokeWidth={3}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-sm text-slate-600">
+                  Your mortgage balance decreases faster in later years
+                </div>
+              </div>
+            </div>
+
+            {/* Property Details Summary */}
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 p-6 rounded-xl border border-slate-200">
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Property Summary</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-slate-900">${data.homePrice.toLocaleString()}</div>
+                  <div className="text-sm text-slate-600">Purchase Price</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-slate-900">{data.interestRate}%</div>
+                  <div className="text-sm text-slate-600">Interest Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-slate-900">{data.amortizationYears} years</div>
+                  <div className="text-sm text-slate-600">Amortization</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-slate-900">
+                    {data.city === 'toronto' ? 'Toronto, ON' : 'Vancouver, BC'}
+                  </div>
+                  <div className="text-sm text-slate-600">Location</div>
+                </div>
+              </div>
+              
+              {data.isFirstTimeBuyer && (
+                <div className="mt-4 text-center">
+                  <div className="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    ✓ First-Time Homebuyer Benefits Applied
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
