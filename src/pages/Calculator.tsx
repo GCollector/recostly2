@@ -1,99 +1,389 @@
 import React, { useState } from 'react';
-import { Calculator as CalculatorIcon, Home, DollarSign, TrendingUp, BarChart3 } from 'lucide-react';
-import MortgageCalculator from '../components/MortgageCalculator';
-import ClosingCosts from '../components/ClosingCosts';
-import AmortizationSchedule from '../components/AmortizationSchedule';
-import InvestmentCalculator from '../components/InvestmentCalculator';
+import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft, TrendingUp } from 'lucide-react';
+import MortgageResults from '../components/MortgageResults';
+
+export interface MortgageData {
+  homePrice: number;
+  downPayment: number;
+  interestRate: number;
+  amortizationYears: number;
+  paymentFrequency: 'monthly' | 'bi-weekly';
+  province: 'ontario' | 'bc';
+  city: 'toronto' | 'vancouver';
+  isFirstTimeBuyer: boolean;
+  enableInvestmentAnalysis: boolean;
+  monthlyRent?: number;
+  monthlyExpenses?: {
+    taxes: number;
+    insurance: number;
+    condoFees: number;
+    maintenance: number;
+    other: number;
+  };
+}
 
 const Calculator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
-
-  const tabs = [
-    {
-      id: 'mortgage' as const,
-      name: 'Mortgage Calculator',
-      icon: CalculatorIcon,
-      description: 'Calculate monthly payments and total costs'
-    },
-    {
-      id: 'closing' as const,
-      name: 'Closing Costs',
-      icon: Home,
-      description: 'Estimate closing costs and fees'
-    },
-    {
-      id: 'amortization' as const,
-      name: 'Amortization',
-      icon: BarChart3,
-      description: 'View payment schedule and charts'
-    },
-    {
-      id: 'investment' as const,
-      name: 'Investment',
-      icon: TrendingUp,
-      description: 'Analyze rental property returns'
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [mortgageData, setMortgageData] = useState<MortgageData>({
+    homePrice: 500000,
+    downPayment: 100000,
+    interestRate: 5.25,
+    amortizationYears: 25,
+    paymentFrequency: 'monthly',
+    province: 'ontario',
+    city: 'toronto',
+    isFirstTimeBuyer: false,
+    enableInvestmentAnalysis: false,
+    monthlyRent: 2500,
+    monthlyExpenses: {
+      taxes: 400,
+      insurance: 150,
+      condoFees: 300,
+      maintenance: 200,
+      other: 100
     }
-  ];
+  });
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'mortgage':
-        return <MortgageCalculator />;
-      case 'closing':
-        return <ClosingCosts />;
-      case 'amortization':
-        return <AmortizationSchedule />;
-      case 'investment':
-        return <InvestmentCalculator />;
-      default:
-        return <MortgageCalculator />;
-    }
+  const handleInputChange = (field: keyof MortgageData, value: any) => {
+    setMortgageData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
+
+  const handleExpenseChange = (field: keyof NonNullable<MortgageData['monthlyExpenses']>, value: number) => {
+    setMortgageData(prev => ({
+      ...prev,
+      monthlyExpenses: {
+        ...prev.monthlyExpenses!,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleCalculateResults = () => {
+    setCurrentStep(2);
+  };
+
+  const handleBackToForm = () => {
+    setCurrentStep(1);
+  };
+
+  const downPaymentPercent = Math.round((mortgageData.downPayment / mortgageData.homePrice) * 100);
+
+  if (currentStep === 2) {
+    return <MortgageResults data={mortgageData} onBack={handleBackToForm} />;
+  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
-          Mortgage & Real Estate Calculators
+          Canadian Mortgage Calculator
         </h1>
         <p className="text-lg font-sans text-slate-600 max-w-3xl mx-auto">
-          Professional tools for Canadian real estate calculations. Calculate payments, closing costs, 
-          amortization schedules, and investment metrics.
+          Professional mortgage calculations with optional investment analysis for Canadian real estate.
         </p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-2" aria-label="Calculator tabs">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center p-4 rounded-lg text-center transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-                aria-label={`Switch to ${tab.name}`}
-                data-testid={`tab-${tab.id}`}
-              >
-                <Icon className="h-6 w-6 mb-2" />
-                <span className="text-sm font-medium font-sans">{tab.name}</span>
-                <span className="text-xs font-sans text-slate-500 mt-1 hidden sm:block">
-                  {tab.description}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+      {/* Step Indicator */}
+      <div className="flex items-center justify-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
+            1
+          </span>
+          <span className="text-sm font-medium font-sans text-slate-900">Input Details</span>
+        </div>
+        <ArrowRight className="h-4 w-4 text-slate-400" />
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-400 text-white text-sm font-medium">
+            2
+          </span>
+          <span className="text-sm font-medium font-sans text-slate-600">View Results</span>
+        </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="tab-content">
-        {renderTabContent()}
+      {/* Form Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
+        <div className="p-6 lg:p-8 space-y-8">
+          {/* Mortgage Details Section */}
+          <div>
+            <h2 className="text-2xl font-semibold font-heading text-slate-900 mb-4">Mortgage Details</h2>
+            <p className="text-slate-600 font-sans mb-6">Enter your property and financing information</p>
+            
+            <div className="space-y-8">
+              {/* Property & Financing */}
+              <div>
+                <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4">Property & Financing</h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Home Price
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                      <input
+                        type="number"
+                        value={mortgageData.homePrice}
+                        onChange={(e) => handleInputChange('homePrice', Number(e.target.value))}
+                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                        placeholder="500,000"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Down Payment
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                      <input
+                        type="number"
+                        value={mortgageData.downPayment}
+                        onChange={(e) => handleInputChange('downPayment', Number(e.target.value))}
+                        className="w-full pl-8 pr-16 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                        placeholder="100,000"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-sans text-slate-500">
+                        {downPaymentPercent}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Interest Rate
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={mortgageData.interestRate}
+                        onChange={(e) => handleInputChange('interestRate', Number(e.target.value))}
+                        className="w-full pr-8 pl-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                        placeholder="5.25"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Amortization Period
+                    </label>
+                    <select
+                      value={mortgageData.amortizationYears}
+                      onChange={(e) => handleInputChange('amortizationYears', Number(e.target.value))}
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                    >
+                      {[15, 20, 25, 30].map(years => (
+                        <option key={years} value={years}>{years} years</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Payment Frequency
+                    </label>
+                    <select
+                      value={mortgageData.paymentFrequency}
+                      onChange={(e) => handleInputChange('paymentFrequency', e.target.value as 'monthly' | 'bi-weekly')}
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="bi-weekly">Bi-weekly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Location
+                    </label>
+                    <select
+                      value={mortgageData.province === 'ontario' ? 'toronto' : 'vancouver'}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === 'toronto') {
+                          handleInputChange('province', 'ontario');
+                          handleInputChange('city', 'toronto');
+                        } else {
+                          handleInputChange('province', 'bc');
+                          handleInputChange('city', 'vancouver');
+                        }
+                      }}
+                      className="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                    >
+                      <option value="toronto">Toronto, ON</option>
+                      <option value="vancouver">Vancouver, BC</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex items-center">
+                    <input
+                      id="first-time-buyer"
+                      type="checkbox"
+                      checked={mortgageData.isFirstTimeBuyer}
+                      onChange={(e) => handleInputChange('isFirstTimeBuyer', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                    />
+                    <label htmlFor="first-time-buyer" className="ml-2 block text-sm font-sans text-slate-700">
+                      First-time homebuyer
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Investment Property Analysis */}
+          <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold font-heading text-slate-900">Investment Property Analysis</h3>
+                  <p className="text-sm font-sans text-slate-600">Turn your home purchase into a profitable investment opportunity</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleInputChange('enableInvestmentAnalysis', !mortgageData.enableInvestmentAnalysis)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium font-sans transition-all duration-200 ${
+                  mortgageData.enableInvestmentAnalysis
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <span>{mortgageData.enableInvestmentAnalysis ? 'Enabled' : 'Enable'}</span>
+              </button>
+            </div>
+
+            {mortgageData.enableInvestmentAnalysis && (
+              <div className="space-y-6 mt-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                      Expected Monthly Rent
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                      <input
+                        type="number"
+                        value={mortgageData.monthlyRent}
+                        onChange={(e) => handleInputChange('monthlyRent', Number(e.target.value))}
+                        className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                        placeholder="2,500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-md font-semibold font-heading text-slate-900 mb-4">Monthly Operating Expenses</h4>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                        Property Taxes
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                        <input
+                          type="number"
+                          value={mortgageData.monthlyExpenses?.taxes}
+                          onChange={(e) => handleExpenseChange('taxes', Number(e.target.value))}
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                          placeholder="400"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                        Insurance
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                        <input
+                          type="number"
+                          value={mortgageData.monthlyExpenses?.insurance}
+                          onChange={(e) => handleExpenseChange('insurance', Number(e.target.value))}
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                          placeholder="150"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                        Condo Fees
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                        <input
+                          type="number"
+                          value={mortgageData.monthlyExpenses?.condoFees}
+                          onChange={(e) => handleExpenseChange('condoFees', Number(e.target.value))}
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                          placeholder="300"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                        Maintenance
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                        <input
+                          type="number"
+                          value={mortgageData.monthlyExpenses?.maintenance}
+                          onChange={(e) => handleExpenseChange('maintenance', Number(e.target.value))}
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                          placeholder="200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
+                        Other Expenses
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                        <input
+                          type="number"
+                          value={mortgageData.monthlyExpenses?.other}
+                          onChange={(e) => handleExpenseChange('other', Number(e.target.value))}
+                          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
+                          placeholder="100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Calculate Button */}
+          <div className="flex justify-center pt-6">
+            <button
+              onClick={handleCalculateResults}
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              <CalculatorIcon className="h-5 w-5" />
+              <span>Calculate Results</span>
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
