@@ -20,7 +20,8 @@ describe('FormValidation', () => {
     it('should validate home price', () => {
       const errors = validateMortgageInputs({
         ...validInputs,
-        homePrice: 0
+        homePrice: 0,
+        downPayment: 0
       })
       
       expect(errors).toHaveLength(1)

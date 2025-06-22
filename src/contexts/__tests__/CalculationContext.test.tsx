@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { CalculationProvider, useCalculations } from '../CalculationContext'
-import { mockUser, mockCalculation } from '../test/utils'
+import { mockUser, mockCalculation } from '../../test/utils'
 
 // Mock AuthContext
 vi.mock('../AuthContext', () => ({

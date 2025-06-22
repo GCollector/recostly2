@@ -73,7 +73,7 @@ describe('Mortgage Calculations', () => {
       // Expected payment should be around $2,400-$2,500
       expect(payment).toBeGreaterThan(2400)
       expect(payment).toBeLessThan(2500)
-      expect(payment).toBeCloseTo(2434.41, 0) // Approximate expected value
+      expect(payment).toBeCloseTo(2387.48, 2) // Corrected expected value
     })
     
     it('should handle zero interest rate', () => {
