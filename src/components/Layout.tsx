@@ -42,11 +42,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [profileDropdownOpen]);
 
-  // Different navigation for logged-in vs logged-out users
+  // Same navigation for both logged-in and logged-out users (no pricing in header)
   const loggedOutNavigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
-    { name: 'Pricing', href: '/pricing', icon: CreditCard },
   ];
 
   const loggedInNavigation = [
