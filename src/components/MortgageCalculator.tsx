@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Share2, Copy, CheckCircle, Crown, AlertTriangle, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
+import { supabase } from '../lib/supabase';
 import NotesSection from './NotesSection';
 
 interface CalculationResult {
@@ -9,6 +10,15 @@ interface CalculationResult {
   totalInterest: number;
   totalCost: number;
   loanAmount: number;
+  biWeeklyPayment?: number;
+  paymentSchedule?: {
+    year: number;
+    principalPayment: number;
+    interestPayment: number;
+    balance: number;
+    totalPayment: number;
+    cumulativeInterest: number;
+  }[];
 }
 
 const MortgageCalculator: React.FC = () => {
@@ -30,44 +40,58 @@ const MortgageCalculator: React.FC = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [calculationError, setCalculationError] = useState('');
 
-  const calculateMortgage = () => {
-    console.log('🧮 Starting mortgage calculation...');
+  const calculateMortgage = async () => {
+    console.log('🧮 Starting server-side mortgage calculation...');
     
-    const loanAmount = homePrice - downPayment;
-    const monthlyRate = interestRate / 100 / 12;
-    const totalPayments = amortizationYears * 12;
+    setIsCalculating(true);
+    setCalculationError('');
     
-    let monthlyPayment = 0;
-    if (monthlyRate > 0) {
-      monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
-                      (Math.pow(1 + monthlyRate, totalPayments) - 1);
-    } else {
-      monthlyPayment = loanAmount / totalPayments;
-    }
-    
-    const totalCost = monthlyPayment * totalPayments + downPayment;
-    const totalInterest = totalCost - homePrice;
-    
-    if (paymentFrequency === 'bi-weekly') {
-      monthlyPayment = monthlyPayment / 2;
-    }
-    
-    const calculatedResult = {
-      monthlyPayment: Math.round(monthlyPayment * 100) / 100,
-      totalInterest: Math.round(totalInterest * 100) / 100,
-      totalCost: Math.round(totalCost * 100) / 100,
-      loanAmount: Math.round(loanAmount * 100) / 100
-    };
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-mortgage', {
+        body: {
+          homePrice,
+          downPayment,
+          interestRate,
+          amortizationYears,
+          paymentFrequency,
+          province,
+          city,
+          isFirstTimeBuyer
+        }
+      });
 
-    console.log('✅ Calculation completed:', calculatedResult);
-    setResult(calculatedResult);
+      if (error) {
+        console.error('❌ Calculation error:', error);
+        setCalculationError(error.message || 'Failed to calculate mortgage');
+        setResult(null);
+        return;
+      }
+
+      if (data) {
+        console.log('✅ Calculation completed:', data);
+        setResult(data);
+      }
+    } catch (error) {
+      console.error('💥 Error calling calculation function:', error);
+      setCalculationError('Failed to calculate mortgage. Please try again.');
+      setResult(null);
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
+  // Auto-calculate when inputs change (with debounce)
   useEffect(() => {
-    calculateMortgage();
-  }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency]);
+    const timeoutId = setTimeout(() => {
+      calculateMortgage();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
   const handleSave = async () => {
     console.log('💾 Save button clicked');
@@ -295,7 +319,25 @@ const MortgageCalculator: React.FC = () => {
         <div className="space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900">Payment Breakdown</h2>
           
-          {result && (
+          {/* Calculation Status */}
+          {isCalculating && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+                <span className="text-blue-700">Calculating...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Calculation Error */}
+          {calculationError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+              <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <span>{calculationError}</span>
+            </div>
+          )}
+          
+          {result && !isCalculating && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-6 rounded-lg">
                 <div className="text-center">
@@ -305,6 +347,11 @@ const MortgageCalculator: React.FC = () => {
                   <div className="text-sm text-blue-700">
                     {paymentFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
                   </div>
+                  {result.biWeeklyPayment && paymentFrequency === 'bi-weekly' && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      (${result.biWeeklyPayment.toLocaleString()} bi-weekly)
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -343,7 +390,7 @@ const MortgageCalculator: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isCalculating}
                   className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="h-4 w-4 mr-2" />
@@ -351,7 +398,7 @@ const MortgageCalculator: React.FC = () => {
                 </button>
                 <button
                   onClick={handleDirectShare}
-                  disabled={isSaving}
+                  disabled={isSaving || isCalculating}
                   className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Share2 className="h-4 w-4 mr-2" />
