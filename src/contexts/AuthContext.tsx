@@ -29,9 +29,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Unique symbol to identify timeout
-const TIMEOUT_SYMBOL = Symbol('timeout');
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -41,26 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Loading profile for user:', supabaseUser.email);
 
-      // Create timeout promise that resolves with timeout symbol
-      const profilePromise = supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
-
-      const timeoutPromise = new Promise((resolve) => 
-        setTimeout(() => resolve(TIMEOUT_SYMBOL), 10000)
-      );
-
-      const result = await Promise.race([profilePromise, timeoutPromise]);
-
-      // Check if timeout occurred
-      if (result === TIMEOUT_SYMBOL) {
-        console.warn('⏰ Profile fetch timeout - continuing without profile');
-        return null;
-      }
-
-      const { data: profile, error } = result as any;
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
@@ -74,32 +56,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: supabaseUser.email || '',
             name: supabaseUser.user_metadata?.name || 
                   supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.email?.split('@')[0] || 
                   'User',
-            tier: 'public' as const
+            tier: 'basic' as const // Default to basic role as per user story
           };
 
-          const createPromise = supabase
+          const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert(newProfile)
             .select()
             .single();
-
-          const createTimeoutPromise = new Promise((resolve) => 
-            setTimeout(() => resolve(TIMEOUT_SYMBOL), 10000)
-          );
-
-          const createResult = await Promise.race([
-            createPromise, 
-            createTimeoutPromise
-          ]);
-
-          // Check if creation timeout occurred
-          if (createResult === TIMEOUT_SYMBOL) {
-            console.warn('⏰ Profile creation timeout - continuing without profile');
-            return null;
-          }
-
-          const { data: createdProfile, error: createError } = createResult as any;
 
           if (createError) {
             console.error('❌ Error creating profile:', createError);
@@ -121,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      return null; // Return null instead of throwing
+      return null;
     }
   };
 
@@ -169,21 +135,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Set timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('⏰ Auth initialization timeout - forcing loading to false');
-        setLoading(false);
-        setUser(null);
-        setSession(null);
-      }
-    }, 8000); // 8 second timeout
-
     initializeAuth();
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
     };
   }, []);
 

@@ -58,7 +58,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Show simple loading spinner only for a short time
+  // Show loading spinner only briefly
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
