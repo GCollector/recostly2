@@ -137,4 +137,22 @@ describe('Calculator Page Regression Tests', () => {
       expect(tab).not.toHaveAttribute('disabled')
     })
   })
+
+  it('REGRESSION: should never revert to step-by-step form workflow', () => {
+    render(<Calculator />)
+    
+    // Should NOT have step indicators from the form-based version
+    expect(screen.queryByText(/input details/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/view results/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/step 1/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/step 2/i)).not.toBeInTheDocument()
+    
+    // Should NOT have form navigation buttons
+    expect(screen.queryByRole('button', { name: /calculate results/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument()
+    
+    // Should have tabbed interface instead
+    expect(screen.getByRole('navigation', { name: /calculator tabs/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button').length).toBe(4) // 4 tabs, not form buttons
+  })
 })
