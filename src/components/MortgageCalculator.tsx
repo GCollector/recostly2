@@ -95,12 +95,13 @@ const MortgageCalculator: React.FC = () => {
 
   const handleSave = async (event?: React.MouseEvent) => {
     // Prevent any default behavior and stop propagation
+    console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
+    
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
     
-    console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
     console.log('📊 Current state:', {
       user: user?.email || 'No user',
       result: result ? 'Has result' : 'No result',
