@@ -319,10 +319,30 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   };
 
   const tabs = [
-    { id: 'mortgage', name: 'Mortgage Summary', shortName: 'Summary', icon: Calculator },
-    { id: 'closing', name: 'Closing Costs', shortName: 'Closing', icon: Home },
-    { id: 'amortization', name: 'Amortization', shortName: 'Amortization', icon: BarChart3 },
-    ...(data.enableInvestmentAnalysis ? [{ id: 'investment', name: 'Investment Analysis', shortName: 'Investment', icon: TrendingUp }] : [])
+    { 
+      id: 'mortgage', 
+      name: 'Mortgage Summary', 
+      description: 'Payment details and breakdown',
+      icon: Calculator 
+    },
+    { 
+      id: 'closing', 
+      name: 'Closing Costs', 
+      description: 'Fees and closing expenses',
+      icon: Home 
+    },
+    { 
+      id: 'amortization', 
+      name: 'Amortization', 
+      description: 'Payment schedule and charts',
+      icon: BarChart3 
+    },
+    ...(data.enableInvestmentAnalysis ? [{ 
+      id: 'investment', 
+      name: 'Investment Analysis', 
+      description: 'ROI and cash flow metrics',
+      icon: TrendingUp 
+    }] : [])
   ] as const;
 
   const renderTabContent = () => {
@@ -784,24 +804,24 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       </div>
 
       {/* Tab Navigation */}
-      <nav className="bg-white rounded-xl shadow-sm border border-slate-200 p-2" aria-label="Results tabs">
-        <div className={`grid gap-1 ${data.enableInvestmentAnalysis ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+      <nav className="bg-white rounded-xl shadow-sm border border-slate-200 p-4" aria-label="Results tabs">
+        <div className={`grid gap-6 ${data.enableInvestmentAnalysis ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-3'}`}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg text-center transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center p-4 rounded-lg text-center transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-blue-50 text-blue-700 border-2 border-blue-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-2 border-transparent'
                 }`}
                 aria-label={`Switch to ${tab.name}`}
               >
-                <Icon className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium hidden sm:block">{tab.name}</span>
-                <span className="text-xs font-medium sm:hidden">{tab.shortName}</span>
+                <Icon className="h-6 w-6 mb-2" />
+                <span className="text-sm font-semibold">{tab.name}</span>
+                <span className="text-xs text-slate-500 mt-1">{tab.description}</span>
               </button>
             );
           })}
