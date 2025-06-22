@@ -52,7 +52,7 @@ interface InvestmentResult {
 
 const Calculator: React.FC = () => {
   const { user } = useAuth();
-  const { saveCalculation } = useCalculations();
+  const { saveCalculation, calculations } = useCalculations();
   
   const [stage, setStage] = useState<'form' | 'results'>('form');
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
@@ -193,10 +193,27 @@ const Calculator: React.FC = () => {
     setStage('form');
   };
 
+  const canSaveCalculation = () => {
+    if (!user) return false;
+    
+    // Free users (basic tier) can only save 1 calculation
+    if (user.tier === 'basic' && calculations.length >= 1) {
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSave = async () => {
     if (!user) {
       // Show signup prompt for non-authenticated users
       window.location.href = '/signup';
+      return;
+    }
+
+    // Check save limits for free users
+    if (!canSaveCalculation()) {
+      setSaveError('Free users can only save 1 calculation. Upgrade to save unlimited calculations.');
       return;
     }
 
@@ -628,21 +645,35 @@ const Calculator: React.FC = () => {
   // Stage 2: Results Page
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header with Edit Button */}
-      <div className="flex items-center justify-between">
-        <div>
+      {/* Header with Edit and Share Buttons */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900">Calculation Results</h1>
           <p className="text-lg text-gray-600">
             {formatCurrency(inputs.homePrice)} property in {inputs.city === 'toronto' ? 'Toronto' : 'Vancouver'}
             {inputs.includeInvestment && <span className="text-emerald-600 ml-2">• Investment Analysis Included</span>}
           </p>
         </div>
-        <button
-          onClick={handleEditInputs}
-          className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-        >
-          Edit Inputs
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <button
+            onClick={handleEditInputs}
+            className="flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+          >
+            Edit Inputs
+          </button>
+          <button
+            onClick={handleShare}
+            disabled={!result || isSaving}
+            className={`flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors ${
+              (!result || isSaving)
+                ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            {isSaving ? 'Creating Link...' : 'Share Results'}
+          </button>
+        </div>
       </div>
 
       {/* Key Summary Cards */}
@@ -843,9 +874,9 @@ const Calculator: React.FC = () => {
         {user ? (
           <button
             onClick={handleSave}
-            disabled={!result || isSaving}
+            disabled={!result || isSaving || !canSaveCalculation()}
             className={`flex items-center justify-center px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg ${
-              (!result || isSaving)
+              (!result || isSaving || !canSaveCalculation())
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
@@ -868,20 +899,24 @@ const Calculator: React.FC = () => {
             </button>
           </div>
         )}
-        
-        <button
-          onClick={handleShare}
-          disabled={!result || isSaving}
-          className={`flex items-center justify-center px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg ${
-            (!result || isSaving)
-              ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-          }`}
-        >
-          <Share2 className="h-5 w-5 mr-2" />
-          {isSaving ? 'Creating Link...' : 'Share Results'}
-        </button>
       </div>
+
+      {/* Free User Save Limit Warning */}
+      {user && user.tier === 'basic' && calculations.length >= 1 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center max-w-md mx-auto">
+          <Crown className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+          <h3 className="font-semibold text-amber-900 mb-2">Save Limit Reached</h3>
+          <p className="text-sm text-amber-700 mb-4">
+            Free users can save 1 calculation. Upgrade to save unlimited calculations and unlock premium features.
+          </p>
+          <button
+            onClick={() => window.location.href = '/pricing'}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            Upgrade Now
+          </button>
+        </div>
+      )}
 
       {/* Share Modal */}
       {showShareModal && calculationId && (

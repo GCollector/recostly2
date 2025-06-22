@@ -100,6 +100,11 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     }
 
+    // Server-side validation for free users
+    if (user.tier === 'basic' && calculations.length >= 1) {
+      throw new Error('Free users can only save 1 calculation. Upgrade to save unlimited calculations.');
+    }
+
     try {
       const insertData = {
         ...calculation,
@@ -113,6 +118,10 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
+        // Check for specific server-side validation errors
+        if (error.message?.includes('save limit')) {
+          throw new Error('Free users can only save 1 calculation. Upgrade to save unlimited calculations.');
+        }
         throw new Error('Failed to save calculation: ' + error.message);
       }
 
