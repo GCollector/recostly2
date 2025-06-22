@@ -79,13 +79,16 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const saveCalculation = async (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    console.log('💾 Saving calculation...', { user: user?.email, calculation });
+    console.log('🚀 SAVE CALCULATION CALLED');
+    console.log('📊 Input data:', calculation);
+    console.log('👤 User:', user?.email || 'No user');
 
     if (!user) {
       // For non-authenticated users, save to localStorage and create a shareable version
       console.log('👤 No user - creating temporary shareable calculation');
       
       try {
+        console.log('📤 Inserting into database for sharing...');
         const { data, error } = await supabase
           .from('mortgage_calculation')
           .insert({
@@ -96,18 +99,24 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           .single();
 
         if (error) {
-          console.error('❌ Error creating shareable calculation:', error);
+          console.error('❌ Database insert error:', error);
+          console.error('❌ Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           throw new Error('Failed to create shareable calculation: ' + error.message);
         }
 
         if (data) {
-          console.log('✅ Shareable calculation created:', data.id);
+          console.log('✅ Shareable calculation created successfully:', data.id);
           // Also save to localStorage for the user
           saveToLocalStorage(calculation);
           return data.id;
         }
 
-        throw new Error('Failed to create shareable calculation');
+        throw new Error('Failed to create shareable calculation - no data returned');
       } catch (error) {
         console.error('💥 Error in saveCalculation for non-user:', error);
         throw error;
@@ -117,29 +126,42 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // For authenticated users, save normally
     try {
       console.log('👤 Authenticated user - saving to database');
+      console.log('📤 Inserting calculation for user:', user.id);
+      
+      const insertData = {
+        ...calculation,
+        user_id: user.id,
+      };
+      
+      console.log('📋 Final insert data:', insertData);
+      
       const { data, error } = await supabase
         .from('mortgage_calculation')
-        .insert({
-          ...calculation,
-          user_id: user.id,
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (error) {
-        console.error('❌ Error saving calculation:', error);
+        console.error('❌ Database insert error for authenticated user:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw new Error('Failed to save calculation: ' + error.message);
       }
 
       if (data) {
-        console.log('✅ Calculation saved successfully:', data.id);
+        console.log('✅ Calculation saved successfully for authenticated user:', data.id);
+        console.log('📊 Saved data:', data);
         setCalculations(prev => [data, ...prev]);
         return data.id;
       }
 
       throw new Error('Failed to save calculation - no data returned');
     } catch (error) {
-      console.error('💥 Error in saveCalculation:', error);
+      console.error('💥 Error in saveCalculation for authenticated user:', error);
       throw error;
     }
   };

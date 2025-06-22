@@ -93,8 +93,20 @@ const MortgageCalculator: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [homePrice, downPayment, interestRate, amortizationYears, paymentFrequency, province, city, isFirstTimeBuyer]);
 
-  const handleSave = async () => {
-    console.log('💾 Save button clicked');
+  const handleSave = async (event?: React.MouseEvent) => {
+    // Prevent any default behavior and stop propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    console.log('🔥 SAVE BUTTON CLICKED - Starting save process');
+    console.log('📊 Current state:', {
+      user: user?.email || 'No user',
+      result: result ? 'Has result' : 'No result',
+      isSaving,
+      calculationId
+    });
     
     if (!result) {
       console.log('❌ No result to save');
@@ -102,11 +114,16 @@ const MortgageCalculator: React.FC = () => {
       return;
     }
     
+    if (isSaving) {
+      console.log('⏳ Already saving, ignoring duplicate click');
+      return;
+    }
+    
     setSaveError('');
     setIsSaving(true);
     
     try {
-      console.log('💾 Saving calculation...', { user: user?.email, result });
+      console.log('💾 Preparing calculation data for save...');
       
       const calculationData = {
         home_price: homePrice,
@@ -123,9 +140,11 @@ const MortgageCalculator: React.FC = () => {
         comments: null
       };
       
+      console.log('📤 Calling saveCalculation with data:', calculationData);
+      
       const id = await saveCalculation(calculationData);
       
-      console.log('✅ Calculation saved with ID:', id);
+      console.log('✅ Calculation saved successfully with ID:', id);
       setCalculationId(id);
       
       // Show share modal for all users
@@ -133,6 +152,7 @@ const MortgageCalculator: React.FC = () => {
       
       // For non-authenticated users, show login prompt after first save
       if (!user && !hasLocalCalculation) {
+        console.log('👤 Non-authenticated user - scheduling login prompt');
         setTimeout(() => setShowLoginPrompt(true), 2000);
       }
       
@@ -141,6 +161,7 @@ const MortgageCalculator: React.FC = () => {
       setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
       setIsSaving(false);
+      console.log('🏁 Save process completed');
     }
   };
 
@@ -164,7 +185,14 @@ const MortgageCalculator: React.FC = () => {
     }
   };
 
-  const handleDirectShare = async () => {
+  const handleDirectShare = async (event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    console.log('🔗 Direct share button clicked');
+    
     if (!result) {
       setSaveError('Please calculate a mortgage first');
       return;
@@ -174,11 +202,13 @@ const MortgageCalculator: React.FC = () => {
 
     // If already saved, just show share modal
     if (calculationId) {
+      console.log('📤 Already saved, showing share modal');
       setShowShareModal(true);
       return;
     }
 
     // Otherwise, save first then share
+    console.log('💾 Not saved yet, saving first...');
     await handleSave();
   };
 
@@ -389,17 +419,21 @@ const MortgageCalculator: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={handleSave}
                   disabled={isSaving || isCalculating}
                   className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ pointerEvents: (isSaving || isCalculating) ? 'none' : 'auto' }}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : user ? 'Save Calculation' : 'Save & Share'}
                 </button>
                 <button
+                  type="button"
                   onClick={handleDirectShare}
                   disabled={isSaving || isCalculating}
                   className="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ pointerEvents: (isSaving || isCalculating) ? 'none' : 'auto' }}
                 >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
