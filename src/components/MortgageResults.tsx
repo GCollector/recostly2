@@ -319,24 +319,28 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     { 
       id: 'mortgage', 
       name: 'Mortgage Summary', 
+      shortName: 'Summary',
       description: 'Payment details and breakdown',
       icon: Calculator 
     },
     { 
       id: 'closing', 
       name: 'Closing Costs', 
+      shortName: 'Closing',
       description: 'Fees and closing expenses',
       icon: Home 
     },
     { 
       id: 'amortization', 
       name: 'Amortization', 
+      shortName: 'Amortization',
       description: 'Payment schedule and charts',
       icon: BarChart3 
     },
     ...(data.enableInvestmentAnalysis ? [{ 
       id: 'investment', 
       name: 'Investment Analysis', 
+      shortName: 'Investment',
       description: 'ROI and cash flow metrics',
       icon: TrendingUp 
     }] : [])
@@ -347,48 +351,78 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       case 'mortgage':
         return (
           <div className="space-y-8">
-            {/* Summary Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-blue-50 p-6 rounded-xl">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
-                    ${Math.round(monthlyPayment).toLocaleString()}
+            {/* Featured Monthly Payment + Supporting Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Featured Monthly Payment Card */}
+              <div className="lg:col-span-1">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                      <Calculator className="h-6 w-6 text-white" />
+                    </div>
                   </div>
-                  <div className="text-sm text-blue-700">
-                    {data.paymentFrequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
+                  <div className="text-center">
+                    <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-3">
+                      ${Math.round(monthlyPayment).toLocaleString()}
+                    </div>
+                    <div className="text-lg font-semibold text-blue-700 mb-2">
+                      Monthly Payment
+                    </div>
+                    <div className="text-sm text-blue-600">
+                      {data.interestRate}% • {data.amortizationYears} years
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-xl">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900 mb-2">
-                    ${loanAmount.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-slate-600">Loan Amount</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {100 - downPaymentPercent}% of home price
+              {/* Supporting Information Cards */}
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${loanAmount.toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Loan Amount</div>
+                    <div className="text-xs text-slate-500">
+                      {100 - downPaymentPercent}% of home price
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-red-50 p-6 rounded-xl">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 mb-2">
-                    ${Math.round(totalInterest).toLocaleString()}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${data.downPayment.toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Down Payment</div>
+                    <div className="text-xs text-slate-500">
+                      {downPaymentPercent}% down
+                    </div>
                   </div>
-                  <div className="text-sm text-red-700">Total Interest</div>
-                  <div className="text-xs text-red-500 mt-1">Over {data.amortizationYears} years</div>
                 </div>
-              </div>
 
-              <div className="bg-emerald-50 p-6 rounded-xl">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600 mb-2">
-                    ${Math.round(totalCost).toLocaleString()}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600 mb-2">
+                      ${Math.round(totalInterest).toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Total Interest</div>
+                    <div className="text-xs text-slate-500">
+                      Over {data.amortizationYears} years
+                    </div>
                   </div>
-                  <div className="text-sm text-emerald-700">Total Cost</div>
-                  <div className="text-xs text-emerald-500 mt-1">Including all interest</div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-600 mb-2">
+                      ${Math.round(totalCost).toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Total Cost</div>
+                    <div className="text-xs text-slate-500">
+                      Including all interest
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -798,7 +832,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
       {/* Tab Navigation */}
       <nav className="bg-white rounded-xl shadow-sm border border-slate-200 p-4" aria-label="Results tabs">
-        <div className={`grid gap-6 ${data.enableInvestmentAnalysis ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`grid gap-1 ${data.enableInvestmentAnalysis ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -807,14 +841,15 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex flex-col items-center justify-center p-4 rounded-lg text-center transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-700 border-2 border-blue-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-2 border-transparent'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
                 aria-label={`Switch to ${tab.name}`}
               >
                 <Icon className="h-6 w-6 mb-2" />
-                <span className="text-sm font-semibold">{tab.name}</span>
-                <span className="text-xs text-slate-500 mt-1">{tab.description}</span>
+                <span className="text-sm font-medium hidden sm:block">{tab.name}</span>
+                <span className="text-sm font-medium sm:hidden">{tab.shortName}</span>
+                <span className="text-xs text-slate-500 mt-1 hidden lg:block">{tab.description}</span>
               </button>
             );
           })}
