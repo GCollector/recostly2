@@ -40,9 +40,9 @@ The Calculator page MUST follow this exact two-step process:
 
 ### Database Trigger Requirements
 ```sql
--- Free users (tier = 'basic' in database) can only save 1 calculation
-IF user_tier = 'basic' AND calculation_count >= 1 THEN
-  RAISE EXCEPTION 'Free users can only save 1 calculation. Upgrade to save unlimited calculations.';
+-- Free users (tier = 'free' in database) can only save 1 calculation
+IF user_tier = 'free' AND calculation_count >= 1 THEN
+  RAISE EXCEPTION 'Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.';
 END IF;
 ```
 
@@ -279,6 +279,21 @@ export interface MortgageData {
 - Optimal chart sizing and spacing
 - Enhanced hover states and transitions
 
+## NEW: Shared Calculation Page Requirements
+
+### Shared Calculation Display
+- No step indicator on shared calculation page
+- Same tab-based results display as step 2 of the calculator
+- No ability to edit the calculation
+- Clear "Create Your Own" link to start a new calculation
+- Proper display of all calculation details and charts
+
+### Marketing Content for Premium Users
+- Premium users can add marketing content to shared calculations
+- Marketing content includes profile image and custom text
+- Marketing content is shown by default but can be hidden by viewers
+- Non-premium users see generic calculator branding
+
 ## Visual Reference Requirements
 
 The design MUST match these specifications:
@@ -335,6 +350,8 @@ Any changes MUST pass these tests:
 - ✅ Database uses singular table names
 - ✅ Save limits work correctly for each tier
 - ✅ Error messages are clear and actionable
+- ✅ Shared calculation page displays correctly
+- ✅ Marketing content shows/hides correctly on shared pages
 
 ## NEW: Chart Data Requirements
 
@@ -370,6 +387,7 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 10. Confirm Edit button shows "Edit" text only
 11. Test tier-based save limits work correctly
 12. Verify error messages are clear and helpful
+13. Test shared calculation page functionality
 
 ## NEW: Database Integration Requirements
 
@@ -393,8 +411,8 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 ## Change Log
 
 ### Recent Updates:
-1. **User Tier System**: Added comprehensive tier definitions and save limit requirements
-2. **Save Limit Implementation**: Both client-side and server-side validation
+1. **User Tier System**: Updated tier definitions to use 'free', 'basic', and 'premium'
+2. **Save Limit Implementation**: Both client-side and server-side validation for free users
 3. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
 4. **Database Triggers**: Server-side enforcement of save limits based on user tier
 5. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
@@ -411,6 +429,8 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 16. **Chart Data Fixes**: Corrected pie chart percentages and data validation
 17. **Mobile Optimization**: Enhanced responsive design across all components
 18. **Testing Framework**: Added comprehensive structure validation tests
+19. **Shared Calculation Page**: Added requirements for shared calculation display
+20. **Marketing Content**: Added ability for premium users to customize shared calculation pages
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -422,3 +442,4 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Established singular table naming convention
 - Standardized Edit button text to "Edit" only
 - Implemented proper tier-based save limits
+- Enhanced shared calculation functionality

@@ -3,6 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { Calculator, Home, MapPin, Percent, Calendar, MessageCircle, User, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
+import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule } from '../utils/mortgageCalculations';
+import ResultsTabNavigation from '../components/results/ResultsTabNavigation';
+import MortgageSummaryTab from '../components/results/MortgageSummaryTab';
+import ClosingCostsTab from '../components/results/ClosingCostsTab';
+import AmortizationTab from '../components/results/AmortizationTab';
 import type { Database } from '../lib/supabase';
 
 type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
@@ -15,6 +20,8 @@ const SharedCalculation: React.FC = () => {
   const [owner, setOwner] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization'>('mortgage');
+  const [showMarketingContent, setShowMarketingContent] = useState(true);
 
   useEffect(() => {
     const fetchCalculation = async () => {
@@ -49,6 +56,7 @@ const SharedCalculation: React.FC = () => {
             } else {
               setError('Failed to load calculation. Please try again later.');
             }
+            setIsLoading(false);
             return;
           }
           
@@ -57,6 +65,7 @@ const SharedCalculation: React.FC = () => {
         
         if (!calc) {
           setError('Calculation not found. The link may be invalid or the calculation may have been deleted.');
+          setIsLoading(false);
           return;
         }
         
@@ -141,263 +150,259 @@ const SharedCalculation: React.FC = () => {
     );
   }
 
-  // Calculate derived values
-  const monthlyRate = calculation.interest_rate / 100 / 12;
-  const totalPayments = calculation.amortization_years * 12;
+  // Calculate derived values for display
   const loanAmount = calculation.home_price - calculation.down_payment;
-  
-  let monthlyPayment = 0;
-  if (monthlyRate > 0) {
-    monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
-                    (Math.pow(1 + monthlyRate, totalPayments) - 1);
-  } else {
-    monthlyPayment = loanAmount / totalPayments;
-  }
-
-  const totalCost = monthlyPayment * totalPayments + calculation.down_payment;
+  const monthlyRate = calculation.interest_rate / 100 / 12;
+  const monthlyPayment = calculateMonthlyPayment(loanAmount, calculation.interest_rate, calculation.amortization_years);
+  const totalCost = monthlyPayment * calculation.amortization_years * 12 + calculation.down_payment;
   const totalInterest = totalCost - calculation.home_price;
   const downPaymentPercent = Math.round((calculation.down_payment / calculation.home_price) * 100);
 
+  // Calculate closing costs
+  const closingCosts = calculateClosingCosts(
+    calculation.home_price, 
+    calculation.province, 
+    calculation.city, 
+    calculation.is_first_time_buyer
+  );
+
+  // Generate amortization schedule
+  const amortizationSchedule = generateAmortizationSchedule(
+    loanAmount, 
+    monthlyPayment, 
+    monthlyRate, 
+    calculation.amortization_years
+  );
+
+  // Create MortgageData object for components
+  const mortgageData = {
+    homePrice: calculation.home_price,
+    downPayment: calculation.down_payment,
+    interestRate: calculation.interest_rate,
+    amortizationYears: calculation.amortization_years,
+    paymentFrequency: calculation.payment_frequency,
+    province: calculation.province,
+    city: calculation.city,
+    isFirstTimeBuyer: calculation.is_first_time_buyer,
+    enableInvestmentAnalysis: false, // Shared calculations don't show investment analysis
+    monthlyRent: 2500,
+    monthlyExpenses: {
+      taxes: 400,
+      insurance: 150,
+      condoFees: 300,
+      maintenance: 200,
+      other: 100
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'mortgage':
+        return (
+          <MortgageSummaryTab
+            data={mortgageData}
+            monthlyPayment={monthlyPayment}
+            loanAmount={loanAmount}
+            totalInterest={totalInterest}
+            totalCost={totalCost}
+            downPaymentPercent={downPaymentPercent}
+          />
+        );
+      case 'closing':
+        return (
+          <ClosingCostsTab
+            data={mortgageData}
+            closingCosts={closingCosts}
+          />
+        );
+      case 'amortization':
+        return (
+          <AmortizationTab
+            loanAmount={loanAmount}
+            totalInterest={totalInterest}
+            amortizationYears={calculation.amortization_years}
+            amortizationSchedule={amortizationSchedule}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Header with Back Link */}
-        <div className="flex items-center space-x-4 mb-6">
-          <Link
-            to="/calculator"
-            className="inline-flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Header with Back Link */}
+      <div className="flex items-center space-x-4 mb-6">
+        <Link
+          to="/calculator"
+          className="inline-flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-sans">Create Your Own</span>
+        </Link>
+      </div>
+
+      {/* Main Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
+          Mortgage Calculation Results
+        </h1>
+        <p className="text-lg font-sans text-slate-600">
+          Detailed analysis for ${calculation.home_price.toLocaleString()} property
+        </p>
+        <div className="flex items-center justify-center text-sm font-sans text-slate-500">
+          <Calendar className="h-4 w-4 mr-1" />
+          Created on {new Date(calculation.created_at).toLocaleDateString()}
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="grid grid-cols-3 gap-1">
+          <button
+            onClick={() => setActiveTab('mortgage')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg text-center transition-all duration-200 ${
+              activeTab === 'mortgage'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="font-sans">Create Your Own</span>
-          </Link>
+            <Calculator className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium hidden sm:block">Mortgage Summary</span>
+            <span className="text-sm font-medium sm:hidden">Summary</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('closing')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg text-center transition-all duration-200 ${
+              activeTab === 'closing'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Home className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium hidden sm:block">Closing Costs</span>
+            <span className="text-sm font-medium sm:hidden">Closing</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('amortization')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg text-center transition-all duration-200 ${
+              activeTab === 'amortization'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Calculator className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium hidden sm:block">Amortization</span>
+            <span className="text-sm font-medium sm:hidden">Schedule</span>
+          </button>
         </div>
+      </div>
 
-        {/* Main Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
-            Mortgage Calculation Summary
-          </h1>
-          <p className="text-lg font-sans text-slate-600">
-            Detailed breakdown for ${calculation.home_price.toLocaleString()} property
-          </p>
-          <div className="flex items-center justify-center text-sm font-sans text-slate-500">
-            <Calendar className="h-4 w-4 mr-1" />
-            Created on {new Date(calculation.created_at).toLocaleDateString()}
-          </div>
-        </div>
+      {/* Tab Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
+        {renderTabContent()}
+      </div>
 
-        {/* Main Results Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:p-8">
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Payment Information */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold font-heading text-slate-900 flex items-center">
-                <Calculator className="h-6 w-6 mr-3 text-blue-600" />
-                Payment Details
-              </h2>
-              
-              <div className="bg-blue-50 p-6 rounded-xl">
-                <div className="text-center">
-                  <div className="text-4xl font-bold font-heading text-blue-600 mb-2">
-                    ${Math.round(monthlyPayment).toLocaleString()}
-                  </div>
-                  <div className="text-sm font-sans text-blue-700">
-                    {calculation.payment_frequency === 'monthly' ? 'Monthly' : 'Bi-weekly'} Payment
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold font-heading text-slate-900">
-                    ${loanAmount.toLocaleString()}
-                  </div>
-                  <div className="text-sm font-sans text-slate-600">Loan Amount</div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold font-heading text-slate-900">
-                    ${Math.round(totalInterest).toLocaleString()}
-                  </div>
-                  <div className="text-sm font-sans text-slate-600">Total Interest</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Property Information */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold font-heading text-slate-900 flex items-center">
-                <Home className="h-6 w-6 mr-3 text-emerald-600" />
-                Property Details
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-slate-200">
-                  <span className="font-sans text-slate-600">Purchase Price</span>
-                  <span className="font-semibold font-heading text-slate-900">
-                    ${calculation.home_price.toLocaleString()}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between py-3 border-b border-slate-200">
-                  <span className="font-sans text-slate-600">Down Payment</span>
-                  <span className="font-semibold font-heading text-slate-900">
-                    ${calculation.down_payment.toLocaleString()} 
-                    <span className="text-sm font-sans text-slate-500 ml-1">
-                      ({downPaymentPercent}%)
-                    </span>
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between py-3 border-b border-slate-200">
-                  <span className="font-sans text-slate-600 flex items-center">
-                    <Percent className="h-4 w-4 mr-1" />
-                    Interest Rate
-                  </span>
-                  <span className="font-semibold font-heading text-slate-900">{calculation.interest_rate}%</span>
-                </div>
-                
-                <div className="flex items-center justify-between py-3 border-b border-slate-200">
-                  <span className="font-sans text-slate-600">Amortization</span>
-                  <span className="font-semibold font-heading text-slate-900">{calculation.amortization_years} years</span>
-                </div>
-                
-                <div className="flex items-center justify-between py-3 border-b border-slate-200">
-                  <span className="font-sans text-slate-600 flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    Location
-                  </span>
-                  <span className="font-semibold font-heading text-slate-900">
-                    {calculation.city === 'toronto' ? 'Toronto, ON' : 'Vancouver, BC'}
-                  </span>
-                </div>
-                
-                {calculation.is_first_time_buyer && (
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <span className="font-medium font-sans text-green-800">✓ First-Time Homebuyer</span>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* Comments Section */}
+      {calculation.comments && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4 flex items-center">
+            <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
+            Comments
+          </h3>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="font-sans text-blue-800 whitespace-pre-wrap">{calculation.comments}</p>
           </div>
         </div>
+      )}
 
-        {/* Comments Section */}
-        {calculation.comments && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4 flex items-center">
-              <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
-              Comments
-            </h3>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="font-sans text-blue-800 whitespace-pre-wrap">{calculation.comments}</p>
-            </div>
+      {/* Marketing Content (Premium Feature) */}
+      {owner && owner.tier === 'premium' && (owner.marketing_image || owner.marketing_copy) && showMarketingContent && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-semibold font-heading text-slate-900">Professional Services</h3>
+            <button
+              onClick={() => setShowMarketingContent(false)}
+              className="text-slate-400 hover:text-slate-600 text-sm"
+            >
+              Hide
+            </button>
           </div>
-        )}
-
-        {/* Financial Summary */}
-        <div className="bg-slate-50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4">Financial Summary</h3>
-          <div className="grid md:grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold font-heading text-slate-900">
-                ${Math.round(totalCost).toLocaleString()}
-              </div>
-              <div className="text-sm font-sans text-slate-600">Total Cost of Home</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold font-heading text-slate-900">
-                ${Math.round(totalInterest).toLocaleString()}
-              </div>
-              <div className="text-sm font-sans text-slate-600">Total Interest Paid</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold font-heading text-slate-900">
-                {downPaymentPercent}%
-              </div>
-              <div className="text-sm font-sans text-slate-600">Down Payment Ratio</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Marketing Content (Premium Feature) */}
-        {owner && owner.tier === 'premium' && (owner.marketing_image || owner.marketing_copy) && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-            <div className="border-t border-slate-200 pt-6">
-              <div className="text-center space-y-4">
-                {owner.marketing_image ? (
-                  <img
-                    src={owner.marketing_image}
-                    alt="Professional"
-                    className="w-20 h-20 object-cover rounded-full mx-auto"
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
-                    <User className="h-10 w-10 text-white" />
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold font-heading text-slate-900">{owner.name}</h3>
-                  {owner.marketing_copy ? (
-                    <p className="font-sans text-slate-600 max-w-2xl mx-auto whitespace-pre-wrap">
-                      {owner.marketing_copy}
-                    </p>
-                  ) : (
-                    <p className="font-sans text-slate-600 max-w-2xl mx-auto">
-                      Professional mortgage and real estate services. Contact me for personalized assistance with your home buying journey.
-                    </p>
-                  )}
-                  <div className="text-sm font-sans text-slate-500">
-                    <span>📧 {owner.email}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Default Marketing Content for Non-Premium Users */}
-        {(!owner || owner.tier !== 'premium' || (!owner.marketing_image && !owner.marketing_copy)) && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-            <div className="border-t border-slate-200 pt-6">
-              <div className="text-center space-y-4">
+          <div className="border-t border-slate-200 pt-6">
+            <div className="text-center space-y-4">
+              {owner.marketing_image ? (
+                <img
+                  src={owner.marketing_image}
+                  alt="Professional"
+                  className="w-20 h-20 object-cover rounded-full mx-auto"
+                />
+              ) : (
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
-                  <Calculator className="h-10 w-10 text-white" />
+                  <User className="h-10 w-10 text-white" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold font-heading text-slate-900">Professional Mortgage Calculator</h3>
-                  <p className="font-sans text-slate-600 max-w-2xl mx-auto">
-                    Get expert guidance on your mortgage journey. Our professional mortgage calculator 
-                    helps Canadian homebuyers navigate the complex world of real estate financing with 
-                    accurate calculations and detailed breakdowns.
+              )}
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold font-heading text-slate-900">{owner.name}</h3>
+                {owner.marketing_copy ? (
+                  <p className="font-sans text-slate-600 max-w-2xl mx-auto whitespace-pre-wrap">
+                    {owner.marketing_copy}
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm font-sans text-slate-600">
-                    <span>🏠 Canadian Real Estate Focus</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>📊 Professional Grade Calculations</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>🔒 Secure & Private</span>
-                  </div>
+                ) : (
+                  <p className="font-sans text-slate-600 max-w-2xl mx-auto">
+                    Professional mortgage and real estate services. Contact me for personalized assistance with your home buying journey.
+                  </p>
+                )}
+                <div className="text-sm font-sans text-slate-500">
+                  <span>📧 {owner.email}</span>
                 </div>
               </div>
             </div>
           </div>
-        )}
-
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-center text-white">
-          <h2 className="text-2xl font-bold font-heading mb-4">Create Your Own Calculation</h2>
-          <p className="font-sans text-blue-100 mb-6 max-w-2xl mx-auto">
-            Use our professional mortgage calculator to explore different scenarios and find the perfect financing solution for your needs.
-          </p>
-          <Link
-            to="/calculator"
-            className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium font-sans transition-colors shadow-lg"
-          >
-            <Calculator className="h-4 w-4" />
-            <span>Start New Calculation</span>
-          </Link>
         </div>
+      )}
+
+      {/* Default Marketing Content for Non-Premium Users */}
+      {(!owner || owner.tier !== 'premium' || (!owner.marketing_image && !owner.marketing_copy) || !showMarketingContent) && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="border-t border-slate-200 pt-6">
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
+                <Calculator className="h-10 w-10 text-white" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold font-heading text-slate-900">Professional Mortgage Calculator</h3>
+                <p className="font-sans text-slate-600 max-w-2xl mx-auto">
+                  Get expert guidance on your mortgage journey. Our professional mortgage calculator 
+                  helps Canadian homebuyers navigate the complex world of real estate financing with 
+                  accurate calculations and detailed breakdowns.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm font-sans text-slate-600">
+                  <span>🏠 Canadian Real Estate Focus</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>📊 Professional Grade Calculations</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>🔒 Secure & Private</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Call to Action */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-center text-white">
+        <h2 className="text-2xl font-bold font-heading mb-4">Create Your Own Calculation</h2>
+        <p className="font-sans text-blue-100 mb-6 max-w-2xl mx-auto">
+          Use our professional mortgage calculator to explore different scenarios and find the perfect financing solution for your needs.
+        </p>
+        <Link
+          to="/calculator"
+          className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium font-sans transition-colors shadow-lg"
+        >
+          <Calculator className="h-4 w-4" />
+          <span>Start New Calculation</span>
+        </Link>
       </div>
     </div>
   );
