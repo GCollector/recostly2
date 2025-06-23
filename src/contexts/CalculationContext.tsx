@@ -81,8 +81,8 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       throw error;
     }
 
-    // Client-side validation for free users (tier = 'basic' in database means free user)
-    if (user.tier === 'basic' && calculations.length >= 1) {
+    // Client-side validation for free users (tier = 'free' now means free registered users)
+    if (user.tier === 'free' && calculations.length >= 1) {
       // Return a specific error type for save limits
       const error = new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
       (error as any).type = 'SAVE_LIMIT_REACHED';

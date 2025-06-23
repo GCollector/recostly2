@@ -99,6 +99,7 @@ const SubscriptionManager: React.FC = () => {
 
   const isPremium = user.tier === 'premium';
   const isBasic = user.tier === 'basic';
+  const isFree = user.tier === 'free';
   const hasActiveSubscription = user.subscription_status === 'active';
   const stripeConfigured = isStripeConfigured();
 

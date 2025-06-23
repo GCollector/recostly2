@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   supabaseUser.user_metadata?.full_name || 
                   supabaseUser.email?.split('@')[0] || 
                   'User',
-            tier: 'basic' as const
+            tier: 'free' as const
           };
 
           debugLog('Creating new profile in background with data:', newProfile);
@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               supabaseUser.user_metadata?.full_name || 
               supabaseUser.email?.split('@')[0] || 
               'User',
-        tier: 'basic' as const,
+        tier: 'free' as const,
         stripe_customer_id: null,
         stripe_subscription_id: null,
         subscription_status: null,
@@ -261,7 +261,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: currentSession.user.id,
                 email: currentSession.user.email || '',
                 name: currentSession.user.user_metadata?.name || 'User',
-                tier: 'basic' as const,
+                tier: 'free' as const,
                 stripe_customer_id: null,
                 stripe_subscription_id: null,
                 subscription_status: null,
@@ -324,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               id: newSession.user.id,
               email: newSession.user.email || '',
               name: newSession.user.user_metadata?.name || 'User',
-              tier: 'basic' as const,
+              tier: 'free' as const,
               stripe_customer_id: null,
               stripe_subscription_id: null,
               subscription_status: null,

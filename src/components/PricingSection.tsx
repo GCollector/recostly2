@@ -74,6 +74,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ showTitle = true, compa
 
   const isPremium = user?.tier === 'premium';
   const isBasic = user?.tier === 'basic';
+  const isFree = user?.tier === 'free';
   const stripeConfigured = isStripeConfigured();
 
   return (

@@ -39,7 +39,7 @@ export type Database = {
           id: string
           email: string
           name: string
-          tier: 'basic' | 'premium'
+          tier: 'free' | 'basic' | 'premium'
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string | null
@@ -52,7 +52,7 @@ export type Database = {
           id: string
           email: string
           name: string
-          tier?: 'basic' | 'premium'
+          tier?: 'free' | 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
@@ -65,7 +65,7 @@ export type Database = {
           id?: string
           email?: string
           name?: string
-          tier?: 'basic' | 'premium'
+          tier?: 'free' | 'basic' | 'premium'
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
