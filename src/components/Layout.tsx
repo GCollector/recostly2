@@ -10,7 +10,6 @@ import {
   X,
   CreditCard,
   ChevronDown,
-  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -34,6 +33,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [user, loading, location.pathname, navigate]);
 
+  // Redirect home to dashboard for logged-in users
+  useEffect(() => {
+    if (!loading && user && location.pathname === '/') {
+      console.log('Redirecting logged-in user from home to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, location.pathname, navigate]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -46,16 +53,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [profileDropdownOpen]);
 
-  // Same navigation for both logged-in and logged-out users (no pricing in header)
+  // Navigation for logged-out users (includes Home)
   const loggedOutNavigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
   ];
 
+  // Navigation for logged-in users (Home becomes Dashboard)
   const loggedInNavigation = [
-    { name: 'Home', href: '/', icon: Home },
+    { name: 'Home', href: '/dashboard', icon: Home }, // Home points to dashboard
     { name: 'Calculator', href: '/calculator', icon: Calculator },
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   ];
 
   const navigation = user ? loggedInNavigation : loggedOutNavigation;
@@ -92,7 +99,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
                 {navigation.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location.pathname === item.href;
+                  const isActive = (user && item.href === '/dashboard' && location.pathname === '/dashboard') || 
+                                   (!user && item.href === '/' && location.pathname === '/') ||
+                                   (item.href !== '/' && item.href !== '/dashboard' && location.pathname === item.href);
                   return (
                     <Link
                       key={item.name}
@@ -214,7 +223,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="pt-2 pb-3 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.href;
+                const isActive = (user && item.href === '/dashboard' && location.pathname === '/dashboard') || 
+                                 (!user && item.href === '/' && location.pathname === '/') ||
+                                 (item.href !== '/' && item.href !== '/dashboard' && location.pathname === item.href);
                 return (
                   <Link
                     key={item.name}
