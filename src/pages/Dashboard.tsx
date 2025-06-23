@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Calculator, Trash2, Share2, Eye, Calendar, Crown, Plus } from 'lucide-react';
+import { Calculator, Trash2, Share2, Eye, Calendar, Crown, Plus, Copy, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { calculations, deleteCalculation } = useCalculations();
+  const { calculations, deleteCalculation, cloneCalculation } = useCalculations();
   const [searchParams] = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [cloneLoading, setCloneLoading] = useState<string | null>(null);
+  const [cloneError, setCloneError] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,8 +36,6 @@ const Dashboard: React.FC = () => {
   }
 
   const handleViewCalculation = (calc: any) => {
-    // Navigate to calculator with the saved calculation data
-    // We'll pass the calculation data via state so it can be loaded in step 2
     navigate('/calculator', { 
       state: { 
         calculationData: {
@@ -48,8 +48,10 @@ const Dashboard: React.FC = () => {
           city: calc.city,
           isFirstTimeBuyer: calc.is_first_time_buyer,
           enableInvestmentAnalysis: calc.notes?.enableInvestmentAnalysis || false,
-          enableClosingCosts: calc.notes?.enableClosingCosts !== false, // Default to true
-          showMarketingOnShare: calc.notes?.showMarketingOnShare !== false, // Default to true
+          enableClosingCosts: calc.notes?.enableClosingCosts !== false,
+          showMarketingOnShare: calc.notes?.showMarketingOnShare !== false,
+          enableAffordabilityEstimator: calc.notes?.enableAffordabilityEstimator || false,
+          enableRentVsBuy: calc.notes?.enableRentVsBuy || false,
           monthlyRent: calc.notes?.investment_data?.monthlyRent || 2500,
           monthlyExpenses: calc.notes?.investment_data?.monthlyExpenses || {
             taxes: 400,
@@ -59,10 +61,10 @@ const Dashboard: React.FC = () => {
             other: 100
           }
         },
-        startAtStep: 2, // Tell calculator to start at step 2 (results)
-        calculationId: calc.id, // Pass the calculation ID
-        notes: calc.notes || {}, // Pass existing notes
-        comments: calc.comments || '' // Pass existing comments
+        startAtStep: 2,
+        calculationId: calc.id,
+        notes: calc.notes || {},
+        comments: calc.comments || ''
       }
     });
   };
@@ -88,17 +90,78 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Helper function to check if calculation has actual notes content
+  const handleClone = async (calculationId: string) => {
+    setCloneLoading(calculationId);
+    setCloneError('');
+    
+    try {
+      const newCalculationId = await cloneCalculation(calculationId);
+      
+      // Navigate to the cloned calculation for editing
+      const originalCalc = calculations.find(calc => calc.id === calculationId);
+      if (originalCalc) {
+        navigate('/calculator', {
+          state: {
+            calculationData: {
+              homePrice: originalCalc.home_price,
+              downPayment: originalCalc.down_payment,
+              interestRate: originalCalc.interest_rate,
+              amortizationYears: originalCalc.amortization_years,
+              paymentFrequency: originalCalc.payment_frequency,
+              province: originalCalc.province,
+              city: originalCalc.city,
+              isFirstTimeBuyer: originalCalc.is_first_time_buyer,
+              enableInvestmentAnalysis: originalCalc.notes?.enableInvestmentAnalysis || false,
+              enableClosingCosts: originalCalc.notes?.enableClosingCosts !== false,
+              showMarketingOnShare: originalCalc.notes?.showMarketingOnShare !== false,
+              enableAffordabilityEstimator: originalCalc.notes?.enableAffordabilityEstimator || false,
+              enableRentVsBuy: originalCalc.notes?.enableRentVsBuy || false,
+              monthlyRent: originalCalc.notes?.investment_data?.monthlyRent || 2500,
+              monthlyExpenses: originalCalc.notes?.investment_data?.monthlyExpenses || {
+                taxes: 400,
+                insurance: 150,
+                condoFees: 300,
+                maintenance: 200,
+                other: 100
+              }
+            },
+            startAtStep: 1, // Start at input form for editing
+            calculationId: newCalculationId,
+            notes: originalCalc.notes || {},
+            comments: originalCalc.comments || ''
+          }
+        });
+      }
+    } catch (error: any) {
+      console.error('Error cloning calculation:', error);
+      
+      if (error.type === 'SAVE_LIMIT_REACHED') {
+        setCloneError('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to clone this one.');
+      } else {
+        setCloneError('Failed to clone calculation. Please try again.');
+      }
+    } finally {
+      setCloneLoading(null);
+    }
+  };
+
+  const canClone = (calculationId: string): boolean => {
+    if (user.tier === 'free') {
+      // Free users can only have 1 calculation, so they can't clone unless they have 0
+      return calculations.length === 0;
+    }
+    // Basic and premium users can clone unlimited
+    return true;
+  };
+
   const hasActualNotes = (notes: any) => {
     if (!notes) return false;
     
-    // Check if any section has actual note content
-    return ['mortgage', 'closing', 'amortization', 'investment'].some(section => {
+    return ['mortgage', 'closing', 'amortization', 'investment', 'rentVsBuy'].some(section => {
       return notes[section] && notes[section].trim().length > 0;
     });
   };
 
-  // Helper function to check if calculation has actual comments
   const hasActualComments = (comments: string | null) => {
     return comments && comments.trim().length > 0;
   };
@@ -111,6 +174,33 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center">
             <Crown className="h-5 w-5 mr-2" />
             <span>Subscription updated successfully! Your new features are now available.</span>
+          </div>
+        </div>
+      )}
+
+      {/* Clone Error Message */}
+      {cloneError && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium mb-1">Cannot Clone Calculation</p>
+              <p className="text-sm">{cloneError}</p>
+              <div className="mt-2">
+                <Link
+                  to="/pricing"
+                  className="text-sm bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded transition-colors"
+                >
+                  Upgrade Now
+                </Link>
+              </div>
+            </div>
+            <button
+              onClick={() => setCloneError('')}
+              className="text-amber-400 hover:text-amber-600"
+            >
+              ×
+            </button>
           </div>
         </div>
       )}
@@ -212,13 +302,11 @@ const Dashboard: React.FC = () => {
                             First-Time Buyer
                           </span>
                         )}
-                        {/* Show if calculation has actual notes content */}
                         {hasActualNotes(calc.notes) && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                             Has Notes
                           </span>
                         )}
-                        {/* Show if calculation has actual comments */}
                         {hasActualComments(calc.comments) && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Has Comments
@@ -256,6 +344,20 @@ const Dashboard: React.FC = () => {
                       >
                         <Share2 className="h-4 w-4" />
                       </button>
+                      {canClone(calc.id) && (
+                        <button
+                          onClick={() => handleClone(calc.id)}
+                          disabled={cloneLoading === calc.id}
+                          className="p-2 text-gray-400 hover:text-purple-600 transition-colors rounded-lg hover:bg-purple-50 disabled:opacity-50"
+                          title="Clone Calculation"
+                        >
+                          {cloneLoading === calc.id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(calc.id)}
                         className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
