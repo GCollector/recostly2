@@ -27,6 +27,9 @@ export interface MortgageData {
 const Calculator: React.FC = () => {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [savedCalculationId, setSavedCalculationId] = useState<string>('');
+  const [currentNotes, setCurrentNotes] = useState<Record<string, string>>({});
+  const [currentComments, setCurrentComments] = useState<string>('');
   const [mortgageData, setMortgageData] = useState<MortgageData>({
     homePrice: 500000,
     downPayment: 100000,
@@ -52,6 +55,13 @@ const Calculator: React.FC = () => {
     if (location.state?.calculationData && location.state?.startAtStep) {
       setMortgageData(location.state.calculationData);
       setCurrentStep(location.state.startAtStep);
+      
+      // If coming from a saved calculation, set the ID and existing notes/comments
+      if (location.state.calculationId) {
+        setSavedCalculationId(location.state.calculationId);
+        setCurrentNotes(location.state.notes || {});
+        setCurrentComments(location.state.comments || '');
+      }
     }
   }, [location.state]);
 
@@ -85,8 +95,21 @@ const Calculator: React.FC = () => {
     setCurrentStep(1);
   };
 
+  const handleCalculationSaved = (calculationId: string) => {
+    setSavedCalculationId(calculationId);
+  };
+
   if (currentStep === 2) {
-    return <MortgageResults data={mortgageData} onBack={handleBackToForm} />;
+    return (
+      <MortgageResults 
+        data={mortgageData} 
+        onBack={handleBackToForm}
+        calculationId={savedCalculationId}
+        currentNotes={currentNotes}
+        currentComments={currentComments}
+        onCalculationSaved={handleCalculationSaved}
+      />
+    );
   }
 
   return (

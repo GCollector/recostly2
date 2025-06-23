@@ -57,7 +57,10 @@ const Dashboard: React.FC = () => {
             other: 100
           }
         },
-        startAtStep: 2 // Tell calculator to start at step 2 (results)
+        startAtStep: 2, // Tell calculator to start at step 2 (results)
+        calculationId: calc.id, // Pass the calculation ID
+        notes: calc.notes || {}, // Pass existing notes
+        comments: calc.comments || '' // Pass existing comments
       }
     });
   };
@@ -190,6 +193,17 @@ const Dashboard: React.FC = () => {
                         {calc.is_first_time_buyer && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             First-Time Buyer
+                          </span>
+                        )}
+                        {/* Show if calculation has notes or comments */}
+                        {(calc.notes && Object.keys(calc.notes).length > 0) && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            Has Notes
+                          </span>
+                        )}
+                        {calc.comments && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Has Comments
                           </span>
                         )}
                       </div>

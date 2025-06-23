@@ -19,6 +19,7 @@ interface MortgageResultsProps {
   calculationId?: string;
   currentNotes?: Record<string, string>;
   currentComments?: string;
+  onCalculationSaved?: (calculationId: string) => void;
 }
 
 const MortgageResults: React.FC<MortgageResultsProps> = ({ 
@@ -26,7 +27,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   onBack, 
   calculationId, 
   currentNotes = {},
-  currentComments = ''
+  currentComments = '',
+  onCalculationSaved
 }) => {
   const { user } = useAuth();
   const { saveCalculation, calculations } = useCalculations();
@@ -77,12 +79,18 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         is_first_time_buyer: data.isFirstTimeBuyer,
         monthly_payment: monthlyPayment,
         total_interest: totalInterest,
-        notes: {},
-        comments: null
+        notes: currentNotes,
+        comments: currentComments
       };
       
       const id = await saveCalculation(calculationData);
       setSavedCalculationId(id);
+      
+      // Notify parent component
+      if (onCalculationSaved) {
+        onCalculationSaved(id);
+      }
+      
       setSaveMessage({
         type: 'success',
         title: 'Calculation saved successfully!',
@@ -277,7 +285,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         {renderTabContent()}
       </div>
 
-      {/* Premium Comments Section */}
+      {/* Premium Comments Section - Always visible when calculation is saved */}
       {savedCalculationId && (
         <CommentsSection
           calculationId={savedCalculationId}
