@@ -23,6 +23,27 @@ The Calculator page MUST follow this exact two-step process:
   - **Amortization** - Payment schedule with interactive charts
   - **Investment Analysis** - ROI, cash flow, cap rate (if enabled)
 
+## NEW: Database Naming Convention
+
+### Table Naming Requirements
+- **ALL database tables MUST use singular names**
+- Examples:
+  - ✅ `profile` (not `profiles`)
+  - ✅ `mortgage_calculation` (not `mortgage_calculations`)
+  - ✅ `user` (not `users`)
+  - ✅ `payment` (not `payments`)
+
+### Migration Standards
+- All new tables must follow singular naming
+- Existing tables should be renamed to singular form when possible
+- Foreign key references must use singular table names
+- Index names should reference singular table names
+
+### Code Integration
+- TypeScript interfaces should reflect singular table names
+- Supabase client calls must use singular table names
+- All database queries must target singular table names
+
 ## NEW: Visual Design Requirements
 
 ### Step Indicator
@@ -73,6 +94,46 @@ The Calculator page MUST follow this exact two-step process:
 - **Responsive**: All charts in ResponsiveContainer
 - **Colors**: Consistent color scheme (emerald, blue, red)
 
+## NEW: Component Architecture Requirements
+
+### Modular Component Structure
+- **Large components MUST be broken down into smaller, manageable components**
+- **Maximum file size**: 200-300 lines per component
+- **Single Responsibility Principle**: Each component should have one clear purpose
+- **Reusability**: Components should be designed for reuse where possible
+
+### Required Component Breakdown
+
+#### Input Form Components (`src/components/mortgage/`)
+- `MortgageInputForm.tsx` - Main container for all input sections
+- `PropertyFinancingSection.tsx` - Basic mortgage inputs
+- `InvestmentAnalysisSection.tsx` - Investment analysis container
+- `InvestmentToggle.tsx` - Reusable toggle switch
+- `InvestmentFields.tsx` - Investment-specific fields
+
+#### Results Components (`src/components/results/`)
+- `MortgageSummaryTab.tsx` - Featured payment + charts + summary
+- `ClosingCostsTab.tsx` - Closing costs breakdown
+- `AmortizationTab.tsx` - Amortization schedule with charts
+- `InvestmentAnalysisTab.tsx` - Investment metrics
+- `ResultsTabNavigation.tsx` - Tab navigation component
+- `ResultsActionButtons.tsx` - Save and share buttons
+
+#### Shared Components (`src/components/shared/`)
+- `ShareModal.tsx` - Reusable modal for sharing
+- Other reusable UI components as needed
+
+#### Utilities (`src/utils/`)
+- `mortgageCalculations.ts` - Pure calculation functions
+- Other utility functions as needed
+
+### Component Design Principles
+- **Props Interface**: Each component must have a clear TypeScript interface
+- **Error Boundaries**: Components should handle errors gracefully
+- **Loading States**: Components should show appropriate loading states
+- **Accessibility**: All components must be accessible (ARIA labels, keyboard navigation)
+- **Testing**: Each component should be testable in isolation
+
 ## FORBIDDEN CHANGES
 
 ❌ **NEVER** revert to:
@@ -80,6 +141,7 @@ The Calculator page MUST follow this exact two-step process:
 - Single-page calculator without steps
 - Multiple calculator components on one page
 - Old single-form calculator structure
+- Monolithic components over 300 lines
 
 ❌ **NEVER** remove:
 - Step indicator with proper styling
@@ -88,19 +150,42 @@ The Calculator page MUST follow this exact two-step process:
 - Investment analysis toggle
 - Featured monthly payment card layout
 - Responsive tab design
+- Component modularity
 
 ❌ **NEVER** change:
 - Font colors for consistency (all supporting amounts in slate-900)
 - Tab structure with full/short names for responsive design
 - Investment toggle gradient background
 - Step indicator active/inactive states
+- Singular table naming convention
 
 ## Required File Structure
 
 ```
-src/pages/Calculator.tsx - Main component with two-step logic
-src/components/MortgageResults.tsx - Results display with tabs
-src/test/calculator-structure.test.tsx - Structure validation tests
+src/
+├── pages/
+│   └── Calculator.tsx - Main component with two-step logic
+├── components/
+│   ├── mortgage/
+│   │   ├── MortgageInputForm.tsx
+│   │   ├── PropertyFinancingSection.tsx
+│   │   ├── InvestmentAnalysisSection.tsx
+│   │   ├── InvestmentToggle.tsx
+│   │   └── InvestmentFields.tsx
+│   ├── results/
+│   │   ├── MortgageSummaryTab.tsx
+│   │   ├── ClosingCostsTab.tsx
+│   │   ├── AmortizationTab.tsx
+│   │   ├── InvestmentAnalysisTab.tsx
+│   │   ├── ResultsTabNavigation.tsx
+│   │   └── ResultsActionButtons.tsx
+│   ├── shared/
+│   │   └── ShareModal.tsx
+│   └── MortgageResults.tsx - Results display with tabs
+├── utils/
+│   └── mortgageCalculations.ts
+└── test/
+    └── calculator-structure.test.tsx - Structure validation tests
 ```
 
 ## NEW: Data Structure Requirements
@@ -127,6 +212,12 @@ export interface MortgageData {
   };
 }
 ```
+
+### Database Schema Requirements
+- All table names MUST be singular
+- Foreign key references MUST use singular table names
+- Index names MUST reference singular table names
+- Migration files MUST follow singular naming convention
 
 ### Investment Analysis Requirements
 - Toggle switch with emerald color scheme
@@ -201,6 +292,9 @@ Any changes MUST pass these tests:
 - ✅ Back button returns to input form
 - ✅ Investment analysis tab appears when enabled
 - ✅ Mobile responsive design works correctly
+- ✅ All components are under 300 lines
+- ✅ Components can be tested in isolation
+- ✅ Database uses singular table names
 
 ## NEW: Chart Data Requirements
 
@@ -231,6 +325,8 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 5. Ensure no tabbed calculator interface is introduced
 6. Verify chart functionality remains intact
 7. Confirm font color consistency is maintained
+8. Ensure components remain modular and under size limits
+9. Verify database operations use singular table names
 
 ## NEW: Database Integration Requirements
 
@@ -239,25 +335,32 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Integration with CalculationContext
 - Proper error handling and loading states
 - Share modal with copy-to-clipboard functionality
+- All database operations MUST use singular table names
 
 ### Data Persistence
 - Form data preserved when navigating between steps
 - Investment analysis state maintained
 - Calculation results stored with proper structure
+- Database queries MUST target singular table names
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, and consistent styling are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, and singular database table naming are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
-2. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
-3. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
-4. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
-5. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
-6. **Chart Data Fixes**: Corrected pie chart percentages and data validation
-7. **Mobile Optimization**: Enhanced responsive design across all components
-8. **Testing Framework**: Added comprehensive structure validation tests
+1. **Database Naming Convention**: Added requirement for singular table names across all database operations
+2. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
+3. **Modular Design**: Established clear file structure and component organization principles
+4. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
+5. **Testing Isolation**: Added requirements for component-level testing
+6. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
+7. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
+8. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
+9. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
+10. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
+11. **Chart Data Fixes**: Corrected pie chart percentages and data validation
+12. **Mobile Optimization**: Enhanced responsive design across all components
+13. **Testing Framework**: Added comprehensive structure validation tests
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -265,3 +368,5 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Kept responsive design requirements
 - Maintained chart rendering capabilities
 - Preserved database integration features
+- Enforced component modularity
+- Established singular table naming convention
