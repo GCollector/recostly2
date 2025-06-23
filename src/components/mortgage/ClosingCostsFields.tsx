@@ -28,7 +28,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
     // Update first-time buyer rebate when status changes
     onClosingCostChange('firstTimeBuyerRebate', defaultClosingCosts.firstTimeBuyerRebate);
     
-  }, [data.homePrice, data.province, data.city, data.isFirstTimeBuyer]);
+  }, [data.homePrice, data.province, data.city, data.isFirstTimeBuyer, onClosingCostChange]);
 
   return (
     <div className="space-y-6 mt-6">

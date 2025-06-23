@@ -52,6 +52,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
 
   // Calculate mortgage values
   const loanAmount = loanCalculation ? loanCalculation.totalLoanAmount : (data.homePrice - data.downPayment);
+  const baseLoanAmount = loanCalculation ? loanCalculation.baseLoanAmount : (data.homePrice - data.downPayment);
+  const cmhcPremium = loanCalculation ? loanCalculation.cmhcPremium : 0;
   const monthlyRate = data.interestRate / 100 / 12;
   const monthlyPayment = calculateMonthlyPayment(loanAmount, data.interestRate, data.amortizationYears);
   const totalCost = monthlyPayment * data.amortizationYears * 12 + data.downPayment;
@@ -103,7 +105,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
       const notesData = {
         ...currentNotes,
         investment_data: investmentData,
-        showMarketingOnShare: data.showMarketingOnShare
+        showMarketingOnShare: data.showMarketingOnShare,
+        enableInvestmentAnalysis: data.enableInvestmentAnalysis,
+        enableClosingCosts: data.enableClosingCosts
       };
       
       const calculationData = {
@@ -224,6 +228,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
             data={data}
             monthlyPayment={monthlyPayment}
             loanAmount={loanAmount}
+            baseLoanAmount={baseLoanAmount}
+            cmhcPremium={cmhcPremium}
             totalInterest={totalInterest}
             totalCost={totalCost}
             downPaymentPercent={downPaymentPercent}

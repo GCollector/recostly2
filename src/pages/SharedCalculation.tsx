@@ -142,13 +142,15 @@ const SharedCalculation: React.FC = () => {
 
   // Determine if closing costs and investment analysis are enabled
   const enableClosingCosts = calculation.notes?.enableClosingCosts !== false; // Default to true if not specified
-  const enableInvestmentAnalysis = !!calculation.notes?.investment_data;
+  const enableInvestmentAnalysis = !!calculation.notes?.enableInvestmentAnalysis || !!calculation.notes?.investment_data;
 
   // Calculate loan amounts including CMHC insurance
   const loanCalculation = calculateTotalLoanAmount(calculation.home_price, calculation.down_payment);
   
   // Calculate derived values for display
   const loanAmount = loanCalculation.totalLoanAmount;
+  const baseLoanAmount = loanCalculation.baseLoanAmount;
+  const cmhcPremium = loanCalculation.cmhcPremium;
   const monthlyRate = calculation.interest_rate / 100 / 12;
   const monthlyPayment = calculation.monthly_payment;
   const totalCost = monthlyPayment * calculation.amortization_years * 12 + calculation.down_payment;
@@ -212,6 +214,8 @@ const SharedCalculation: React.FC = () => {
             }}
             monthlyPayment={monthlyPayment}
             loanAmount={loanAmount}
+            baseLoanAmount={baseLoanAmount}
+            cmhcPremium={cmhcPremium}
             totalInterest={totalInterest}
             totalCost={totalCost}
             downPaymentPercent={downPaymentPercent}
