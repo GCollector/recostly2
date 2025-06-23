@@ -104,7 +104,21 @@ const Calculator: React.FC = () => {
           calculationData.showMarketingOnShare = notes.showMarketingOnShare;
         }
         
-        setCurrentNotes(notes);
+        // Filter out control flags from notes to avoid showing them as actual notes
+        const filteredNotes: Record<string, string> = {};
+        Object.entries(notes).forEach(([key, value]) => {
+          if (
+            key !== 'enableInvestmentAnalysis' && 
+            key !== 'enableClosingCosts' && 
+            key !== 'showMarketingOnShare' && 
+            key !== 'investment_data' &&
+            typeof value === 'string'
+          ) {
+            filteredNotes[key] = value;
+          }
+        });
+        
+        setCurrentNotes(filteredNotes);
       }
       
       setMortgageData(calculationData);

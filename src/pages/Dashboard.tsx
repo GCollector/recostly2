@@ -47,11 +47,11 @@ const Dashboard: React.FC = () => {
           province: calc.province,
           city: calc.city,
           isFirstTimeBuyer: calc.is_first_time_buyer,
-          enableInvestmentAnalysis: false, // Default to false, can be enhanced later
-          enableClosingCosts: true, // Default to true
-          showMarketingOnShare: true, // Default to true
-          monthlyRent: 2500, // Default values
-          monthlyExpenses: {
+          enableInvestmentAnalysis: calc.notes?.enableInvestmentAnalysis || false,
+          enableClosingCosts: calc.notes?.enableClosingCosts !== false, // Default to true
+          showMarketingOnShare: calc.notes?.showMarketingOnShare !== false, // Default to true
+          monthlyRent: calc.notes?.investment_data?.monthlyRent || 2500,
+          monthlyExpenses: calc.notes?.investment_data?.monthlyExpenses || {
             taxes: 400,
             insurance: 150,
             condoFees: 300,

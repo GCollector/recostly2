@@ -30,6 +30,29 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
     
   }, [data.homePrice, data.province, data.city, data.isFirstTimeBuyer, onClosingCostChange]);
 
+  // Ensure all values are numbers with fallbacks to 0
+  const safeClosingCosts = {
+    landTransferTax: data.closingCosts?.landTransferTax ?? 0,
+    additionalTax: data.closingCosts?.additionalTax ?? 0,
+    legalFees: data.closingCosts?.legalFees ?? 0,
+    titleInsurance: data.closingCosts?.titleInsurance ?? 0,
+    homeInspection: data.closingCosts?.homeInspection ?? 0,
+    appraisal: data.closingCosts?.appraisal ?? 0,
+    surveyFee: data.closingCosts?.surveyFee ?? 0,
+    firstTimeBuyerRebate: data.closingCosts?.firstTimeBuyerRebate ?? 0
+  };
+
+  // Calculate total closing costs
+  const totalClosingCosts = 
+    safeClosingCosts.landTransferTax +
+    safeClosingCosts.additionalTax +
+    safeClosingCosts.legalFees +
+    safeClosingCosts.titleInsurance +
+    safeClosingCosts.homeInspection +
+    safeClosingCosts.appraisal +
+    safeClosingCosts.surveyFee -
+    safeClosingCosts.firstTimeBuyerRebate;
+
   return (
     <div className="space-y-6 mt-6">
       <div>
@@ -40,7 +63,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               {data.province === 'ontario' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
             </label>
             <CurrencyInput
-              value={data.closingCosts?.landTransferTax || 0}
+              value={safeClosingCosts.landTransferTax}
               onChange={(value) => onClosingCostChange('landTransferTax', value)}
               prefix="$"
               placeholder="8475"
@@ -56,7 +79,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
                 Toronto Municipal Tax
               </label>
               <CurrencyInput
-                value={data.closingCosts?.additionalTax || 0}
+                value={safeClosingCosts.additionalTax}
                 onChange={(value) => onClosingCostChange('additionalTax', value)}
                 prefix="$"
                 placeholder="8475"
@@ -72,7 +95,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               Legal Fees
             </label>
             <CurrencyInput
-              value={data.closingCosts?.legalFees || 0}
+              value={safeClosingCosts.legalFees}
               onChange={(value) => onClosingCostChange('legalFees', value)}
               prefix="$"
               placeholder="2000"
@@ -84,7 +107,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               Title Insurance
             </label>
             <CurrencyInput
-              value={data.closingCosts?.titleInsurance || 0}
+              value={safeClosingCosts.titleInsurance}
               onChange={(value) => onClosingCostChange('titleInsurance', value)}
               prefix="$"
               placeholder="400"
@@ -96,7 +119,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               Home Inspection
             </label>
             <CurrencyInput
-              value={data.closingCosts?.homeInspection || 0}
+              value={safeClosingCosts.homeInspection}
               onChange={(value) => onClosingCostChange('homeInspection', value)}
               prefix="$"
               placeholder="500"
@@ -108,7 +131,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               Property Appraisal
             </label>
             <CurrencyInput
-              value={data.closingCosts?.appraisal || 0}
+              value={safeClosingCosts.appraisal}
               onChange={(value) => onClosingCostChange('appraisal', value)}
               prefix="$"
               placeholder="400"
@@ -120,7 +143,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               Survey Fee
             </label>
             <CurrencyInput
-              value={data.closingCosts?.surveyFee || 0}
+              value={safeClosingCosts.surveyFee}
               onChange={(value) => onClosingCostChange('surveyFee', value)}
               prefix="$"
               placeholder="1000"
@@ -132,7 +155,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
               First-Time Buyer Rebate
             </label>
             <CurrencyInput
-              value={data.closingCosts?.firstTimeBuyerRebate || 0}
+              value={safeClosingCosts.firstTimeBuyerRebate}
               onChange={(value) => onClosingCostChange('firstTimeBuyerRebate', value)}
               prefix="$"
               placeholder="0"
@@ -150,16 +173,7 @@ const ClosingCostsFields: React.FC<ClosingCostsFieldsProps> = ({
         <div className="flex justify-between items-center">
           <span className="font-medium text-blue-800">Total Closing Costs:</span>
           <span className="text-xl font-bold text-blue-900">
-            ${(
-              (data.closingCosts?.landTransferTax || 0) +
-              (data.closingCosts?.additionalTax || 0) +
-              (data.closingCosts?.legalFees || 0) +
-              (data.closingCosts?.titleInsurance || 0) +
-              (data.closingCosts?.homeInspection || 0) +
-              (data.closingCosts?.appraisal || 0) +
-              (data.closingCosts?.surveyFee || 0) -
-              (data.closingCosts?.firstTimeBuyerRebate || 0)
-            ).toLocaleString()}
+            ${totalClosingCosts.toLocaleString()}
           </span>
         </div>
       </div>

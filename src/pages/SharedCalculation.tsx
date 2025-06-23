@@ -195,6 +195,22 @@ const SharedCalculation: React.FC = () => {
   // Check if marketing should be shown (default to true if not specified)
   const showMarketingContent = calculation.notes?.showMarketingOnShare !== false;
 
+  // Filter out control flags from notes to avoid showing them as actual notes
+  const filteredNotes: Record<string, string> = {};
+  if (calculation.notes) {
+    Object.entries(calculation.notes).forEach(([key, value]) => {
+      if (
+        key !== 'enableInvestmentAnalysis' && 
+        key !== 'enableClosingCosts' && 
+        key !== 'showMarketingOnShare' && 
+        key !== 'investment_data' &&
+        typeof value === 'string'
+      ) {
+        filteredNotes[key] = value;
+      }
+    });
+  }
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'mortgage':
@@ -221,7 +237,7 @@ const SharedCalculation: React.FC = () => {
             totalCost={totalCost}
             downPaymentPercent={downPaymentPercent}
             calculationId={calculation.id}
-            currentNotes={calculation.notes || {}}
+            currentNotes={filteredNotes}
             readonly={true}
           />
         );
@@ -244,7 +260,7 @@ const SharedCalculation: React.FC = () => {
             }}
             closingCosts={closingCosts}
             calculationId={calculation.id}
-            currentNotes={calculation.notes || {}}
+            currentNotes={filteredNotes}
             readonly={true}
           />
         );
@@ -257,7 +273,7 @@ const SharedCalculation: React.FC = () => {
             amortizationYears={calculation.amortization_years}
             amortizationSchedule={amortizationSchedule}
             calculationId={calculation.id}
-            currentNotes={calculation.notes || {}}
+            currentNotes={filteredNotes}
             readonly={true}
           />
         );
@@ -282,7 +298,7 @@ const SharedCalculation: React.FC = () => {
             }}
             investmentMetrics={investmentMetrics}
             calculationId={calculation.id}
-            currentNotes={calculation.notes || {}}
+            currentNotes={filteredNotes}
             readonly={true}
           />
         );
