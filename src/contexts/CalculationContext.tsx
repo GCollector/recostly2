@@ -75,12 +75,18 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const saveCalculation = async (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      throw new Error('Please create an account to save calculations.');
+      // Return a specific error type for no user
+      const error = new Error('Please create an account to save calculations.');
+      (error as any).type = 'AUTH_REQUIRED';
+      throw error;
     }
 
     // Client-side validation for free users (tier = 'basic' in database means free user)
     if (user.tier === 'basic' && calculations.length >= 1) {
-      throw new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+      // Return a specific error type for save limits
+      const error = new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+      (error as any).type = 'SAVE_LIMIT_REACHED';
+      throw error;
     }
 
     try {
@@ -98,7 +104,9 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (error) {
         // Check for specific server-side validation errors
         if (error.message?.includes('save limit') || error.message?.includes('Free users can only save')) {
-          throw new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+          const limitError = new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+          (limitError as any).type = 'SAVE_LIMIT_REACHED';
+          throw limitError;
         }
         throw new Error('Failed to save calculation: ' + error.message);
       }
@@ -269,3 +277,4 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </CalculationContext.Provider>
   );
 };
+</invoke>

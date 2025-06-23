@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Info, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import { MortgageData } from '../pages/Calculator';
@@ -25,7 +25,12 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   const [calculationId, setCalculationId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [saveMessage, setSaveMessage] = useState<{
+    type: 'success' | 'info' | 'warning';
+    title: string;
+    message: string;
+    actions?: Array<{ label: string; action: () => void; variant: 'primary' | 'secondary' }>;
+  } | null>(null);
 
   // Calculate mortgage values
   const loanAmount = data.homePrice - data.downPayment;
@@ -47,7 +52,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     : null;
 
   const handleSave = async () => {
-    setSaveError('');
+    setSaveMessage(null);
     setIsSaving(true);
     
     try {
@@ -68,11 +73,66 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       
       const id = await saveCalculation(calculationData);
       setCalculationId(id);
-      setSaveError('');
+      setSaveMessage({
+        type: 'success',
+        title: 'Calculation saved successfully!',
+        message: 'You can now share it with others or access it from your dashboard.'
+      });
       setShowShareModal(true);
-    } catch (error) {
-      console.error('Error saving calculation:', error);
-      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
+    } catch (error: any) {
+      console.log('Save attempt result:', error.type, error.message);
+      
+      if (error.type === 'AUTH_REQUIRED') {
+        setSaveMessage({
+          type: 'info',
+          title: 'Account required to save calculations',
+          message: 'Create a free account to save and manage your mortgage calculations.',
+          actions: [
+            { 
+              label: 'Sign Up Free', 
+              action: () => window.location.href = '/signup',
+              variant: 'primary'
+            },
+            { 
+              label: 'Sign In', 
+              action: () => window.location.href = '/login',
+              variant: 'secondary'
+            }
+          ]
+        });
+      } else if (error.type === 'SAVE_LIMIT_REACHED') {
+        setSaveMessage({
+          type: 'info',
+          title: 'Save limit reached',
+          message: 'Free users can save 1 calculation. Upgrade to Basic plan for unlimited saves, or delete your existing calculation.',
+          actions: [
+            { 
+              label: 'Upgrade to Basic ($9/month)', 
+              action: () => window.location.href = '/pricing',
+              variant: 'primary'
+            },
+            { 
+              label: 'Manage Saved Calculations', 
+              action: () => window.location.href = '/dashboard',
+              variant: 'secondary'
+            }
+          ]
+        });
+      } else {
+        // This is an actual unexpected error
+        setSaveMessage({
+          type: 'warning',
+          title: 'Unable to save calculation',
+          message: error.message || 'An unexpected error occurred. Please try again.',
+          actions: [
+            { 
+              label: 'Try Again', 
+              action: () => setSaveMessage(null),
+              variant: 'primary'
+            }
+          ]
+        });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -199,30 +259,50 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         {renderTabContent()}
       </div>
 
-      {/* Error Display */}
-      {saveError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+      {/* Save Message Display */}
+      {saveMessage && (
+        <div className={`border rounded-lg p-4 flex items-start ${
+          saveMessage.type === 'success' ? 'bg-green-50 border-green-200' :
+          saveMessage.type === 'info' ? 'bg-blue-50 border-blue-200' :
+          'bg-amber-50 border-amber-200'
+        }`}>
+          <div className={`h-5 w-5 mr-3 mt-0.5 flex-shrink-0 ${
+            saveMessage.type === 'success' ? 'text-green-600' :
+            saveMessage.type === 'info' ? 'text-blue-600' :
+            'text-amber-600'
+          }`}>
+            {saveMessage.type === 'warning' ? <AlertTriangle /> : <Info />}
+          </div>
           <div className="flex-1">
-            <p className="font-medium">Unable to save calculation</p>
-            <p className="text-sm mt-1">{saveError}</p>
-            {saveError.includes('Free users can only save 1 calculation') && user?.tier === 'basic' && (
-              <div className="mt-3 space-y-2">
-                <p className="text-sm font-medium">Options:</p>
-                <div className="flex flex-col sm:flex-row gap-2">
+            <h4 className={`font-medium mb-1 ${
+              saveMessage.type === 'success' ? 'text-green-800' :
+              saveMessage.type === 'info' ? 'text-blue-800' :
+              'text-amber-800'
+            }`}>
+              {saveMessage.title}
+            </h4>
+            <p className={`text-sm mb-3 ${
+              saveMessage.type === 'success' ? 'text-green-700' :
+              saveMessage.type === 'info' ? 'text-blue-700' :
+              'text-amber-700'
+            }`}>
+              {saveMessage.message}
+            </p>
+            {saveMessage.actions && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                {saveMessage.actions.map((action, index) => (
                   <button
-                    onClick={() => window.location.href = '/pricing'}
-                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
+                    key={index}
+                    onClick={action.action}
+                    className={`text-sm px-3 py-1 rounded transition-colors ${
+                      action.variant === 'primary' 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                    }`}
                   >
-                    Upgrade to Basic ($9/month)
+                    {action.label}
                   </button>
-                  <button
-                    onClick={() => window.location.href = '/dashboard'}
-                    className="text-sm bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded transition-colors"
-                  >
-                    Manage Saved Calculations
-                  </button>
-                </div>
+                ))}
               </div>
             )}
           </div>
