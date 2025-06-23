@@ -4,10 +4,6 @@ import { Calculator, Home, MapPin, Percent, Calendar, MessageCircle, User, Arrow
 import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
 import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule } from '../utils/mortgageCalculations';
-import ResultsTabNavigation from '../components/results/ResultsTabNavigation';
-import MortgageSummaryTab from '../components/results/MortgageSummaryTab';
-import ClosingCostsTab from '../components/results/ClosingCostsTab';
-import AmortizationTab from '../components/results/AmortizationTab';
 import type { Database } from '../lib/supabase';
 
 type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
@@ -88,10 +84,11 @@ const SharedCalculation: React.FC = () => {
             setOwner(profile);
           }
         }
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching calculation:', error);
         setError('An unexpected error occurred. Please try again later.');
-      } finally {
         setIsLoading(false);
       }
     };
@@ -121,7 +118,7 @@ const SharedCalculation: React.FC = () => {
             to="/calculator"
             className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium font-sans transition-colors"
           >
-            <Calculator className="h-4 w-4" />
+            <Calculator className="h-4 w-4 mr-2" />
             <span>Create New Calculation</span>
           </Link>
         </div>
@@ -142,7 +139,7 @@ const SharedCalculation: React.FC = () => {
             to="/calculator"
             className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium font-sans transition-colors"
           >
-            <Calculator className="h-4 w-4" />
+            <Calculator className="h-4 w-4 mr-2" />
             <span>Create New Calculation</span>
           </Link>
         </div>
@@ -153,9 +150,9 @@ const SharedCalculation: React.FC = () => {
   // Calculate derived values for display
   const loanAmount = calculation.home_price - calculation.down_payment;
   const monthlyRate = calculation.interest_rate / 100 / 12;
-  const monthlyPayment = calculateMonthlyPayment(loanAmount, calculation.interest_rate, calculation.amortization_years);
+  const monthlyPayment = calculation.monthly_payment;
   const totalCost = monthlyPayment * calculation.amortization_years * 12 + calculation.down_payment;
-  const totalInterest = totalCost - calculation.home_price;
+  const totalInterest = calculation.total_interest;
   const downPaymentPercent = Math.round((calculation.down_payment / calculation.home_price) * 100);
 
   // Calculate closing costs
@@ -173,61 +170,6 @@ const SharedCalculation: React.FC = () => {
     monthlyRate, 
     calculation.amortization_years
   );
-
-  // Create MortgageData object for components
-  const mortgageData = {
-    homePrice: calculation.home_price,
-    downPayment: calculation.down_payment,
-    interestRate: calculation.interest_rate,
-    amortizationYears: calculation.amortization_years,
-    paymentFrequency: calculation.payment_frequency,
-    province: calculation.province,
-    city: calculation.city,
-    isFirstTimeBuyer: calculation.is_first_time_buyer,
-    enableInvestmentAnalysis: false, // Shared calculations don't show investment analysis
-    monthlyRent: 2500,
-    monthlyExpenses: {
-      taxes: 400,
-      insurance: 150,
-      condoFees: 300,
-      maintenance: 200,
-      other: 100
-    }
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'mortgage':
-        return (
-          <MortgageSummaryTab
-            data={mortgageData}
-            monthlyPayment={monthlyPayment}
-            loanAmount={loanAmount}
-            totalInterest={totalInterest}
-            totalCost={totalCost}
-            downPaymentPercent={downPaymentPercent}
-          />
-        );
-      case 'closing':
-        return (
-          <ClosingCostsTab
-            data={mortgageData}
-            closingCosts={closingCosts}
-          />
-        );
-      case 'amortization':
-        return (
-          <AmortizationTab
-            loanAmount={loanAmount}
-            totalInterest={totalInterest}
-            amortizationYears={calculation.amortization_years}
-            amortizationSchedule={amortizationSchedule}
-          />
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -300,7 +242,281 @@ const SharedCalculation: React.FC = () => {
 
       {/* Tab Content */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
-        {renderTabContent()}
+        {activeTab === 'mortgage' && (
+          <div className="space-y-8">
+            {/* Featured Monthly Payment + Supporting Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Featured Monthly Payment Card */}
+              <div className="lg:col-span-1">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                      <Calculator className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-3">
+                      ${Math.round(monthlyPayment).toLocaleString()}
+                    </div>
+                    <div className="text-lg font-semibold text-blue-700 mb-2">
+                      Monthly Payment
+                    </div>
+                    <div className="text-sm text-blue-600">
+                      {calculation.interest_rate}% • {calculation.amortization_years} years
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supporting Information Cards */}
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${loanAmount.toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Loan Amount</div>
+                    <div className="text-xs text-slate-500">
+                      {100 - downPaymentPercent}% of home price
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${calculation.down_payment.toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Down Payment</div>
+                    <div className="text-xs text-slate-500">
+                      {downPaymentPercent}% down
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${Math.round(totalInterest).toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Total Interest</div>
+                    <div className="text-xs text-slate-500">
+                      Over {calculation.amortization_years} years
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-900 mb-2">
+                      ${Math.round(totalCost).toLocaleString()}
+                    </div>
+                    <div className="text-sm font-medium text-slate-600 mb-1">Total Cost</div>
+                    <div className="text-xs text-slate-500">
+                      Including all interest
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Property Summary */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Property Summary</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-600">Purchase Price:</span>
+                  <div className="font-semibold text-slate-900">${calculation.home_price.toLocaleString()}</div>
+                </div>
+                <div>
+                  <span className="text-slate-600">Down Payment:</span>
+                  <div className="font-semibold text-slate-900">${calculation.down_payment.toLocaleString()} ({downPaymentPercent}% down)</div>
+                </div>
+                <div>
+                  <span className="text-slate-600">Interest Rate:</span>
+                  <div className="font-semibold text-slate-900">{calculation.interest_rate}%</div>
+                </div>
+                <div>
+                  <span className="text-slate-600">Amortization:</span>
+                  <div className="font-semibold text-slate-900">{calculation.amortization_years} years</div>
+                </div>
+                <div>
+                  <span className="text-slate-600">Location:</span>
+                  <div className="font-semibold text-slate-900">
+                    {calculation.city === 'toronto' ? 'Toronto, ON' : 'Vancouver, BC'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-600">Payment Frequency:</span>
+                  <div className="font-semibold text-slate-900 capitalize">{calculation.payment_frequency}</div>
+                </div>
+                {calculation.is_first_time_buyer && (
+                  <div className="md:col-span-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ✓ First-time homebuyer benefits applied
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'closing' && (
+          <div className="space-y-8">
+            {/* Summary Cards */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-emerald-50 p-6 rounded-xl">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-600 mb-2">
+                    ${closingCosts.total.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-emerald-700">Total Estimated Closing Costs</div>
+                  <div className="text-xs text-emerald-600 mt-1">Fees and expenses at closing</div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-6 rounded-xl">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    ${(calculation.down_payment + closingCosts.total).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-blue-700">Cash Required at Closing</div>
+                  <div className="text-xs text-blue-600 mt-1">Down payment + closing costs</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Closing Cost Breakdown */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-6">Closing Cost Breakdown</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">
+                    {calculation.province === 'ontario' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.landTransferTax.toLocaleString()}
+                  </span>
+                </div>
+
+                {calculation.city === 'toronto' && (
+                  <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                    <span className="text-slate-700">Toronto Municipal Land Transfer Tax</span>
+                    <span className="font-semibold text-slate-900">
+                      ${closingCosts.additionalTax.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">Legal Fees & Disbursements</span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.legalFees.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">Title Insurance</span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.titleInsurance.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">Home Inspection</span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.homeInspection.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">Property Appraisal</span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.appraisal.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-slate-700">Survey Fee</span>
+                  <span className="font-semibold text-slate-900">
+                    ${closingCosts.surveyFee.toLocaleString()}
+                  </span>
+                </div>
+
+                {closingCosts.firstTimeBuyerRebate > 0 && (
+                  <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                    <span className="text-green-700">First-Time Buyer Rebate</span>
+                    <span className="font-semibold text-green-600">
+                      -${closingCosts.firstTimeBuyerRebate.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center py-4 bg-slate-50 px-4 rounded-lg">
+                  <span className="font-semibold text-slate-900">Total Closing Costs</span>
+                  <span className="text-xl font-bold text-slate-900">
+                    ${closingCosts.total.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'amortization' && (
+          <div className="space-y-8">
+            {/* Summary Cards */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-blue-50 p-6 rounded-xl">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    ${loanAmount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-blue-700">Total Principal</div>
+                  <div className="text-xs text-blue-600 mt-1">Amount borrowed</div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 p-6 rounded-xl">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-600 mb-2">
+                    ${Math.round(totalInterest).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-red-700">Total Interest</div>
+                  <div className="text-xs text-red-600 mt-1">Over {calculation.amortization_years} years</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Amortization Table */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Amortization Schedule</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-4 py-2 text-left font-medium text-slate-700">Year</th>
+                      <th className="px-4 py-2 text-right font-medium text-slate-700">Principal</th>
+                      <th className="px-4 py-2 text-right font-medium text-slate-700">Interest</th>
+                      <th className="px-4 py-2 text-right font-medium text-slate-700">Remaining Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {amortizationSchedule.map((year) => (
+                      <tr key={year.year} className="hover:bg-slate-50">
+                        <td className="px-4 py-2 text-slate-700">Year {year.year}</td>
+                        <td className="px-4 py-2 text-right text-slate-900 font-medium">${year.principal.toLocaleString()}</td>
+                        <td className="px-4 py-2 text-right text-slate-900 font-medium">${year.interest.toLocaleString()}</td>
+                        <td className="px-4 py-2 text-right text-slate-900 font-medium">${year.balance.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Comments Section */}
@@ -400,7 +616,7 @@ const SharedCalculation: React.FC = () => {
           to="/calculator"
           className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium font-sans transition-colors shadow-lg"
         >
-          <Calculator className="h-4 w-4" />
+          <Calculator className="h-4 w-4 mr-2" />
           <span>Start New Calculation</span>
         </Link>
       </div>
