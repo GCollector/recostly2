@@ -32,21 +32,21 @@ export const useAuth = () => {
 // Timeout constants
 const SIGN_IN_TIMEOUT = 10000; // 10 seconds
 const PROFILE_LOAD_TIMEOUT = 8000; // 8 seconds
-const SESSION_INIT_TIMEOUT = 10000; // 10 seconds (increased from 5 seconds)
+const SESSION_INIT_TIMEOUT = 10000; // 10 seconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to create a timeout promise
-  const createTimeoutPromise = (ms: number, operation: string) => {
+  // Helper function to create a timeout promise - using function declaration for hoisting
+  function createTimeoutPromise(ms: number, operation: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error(`${operation} timeout after ${ms}ms`));
       }, ms);
     });
-  };
+  }
 
   // Force sign out function
   const forceSignOut = async (reason: string) => {
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profile')
         .select('*')
         .eq('id', supabaseUser.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to handle no rows gracefully
 
       const timeoutPromise = createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile loading');
 
@@ -94,20 +94,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('❌ Profile fetch error:', error);
         
-        // If profile doesn't exist, create it
-        if (error.code === 'PGRST116') {
-          console.log('🆕 Creating new profile for user:', supabaseUser.email);
-          
-          const newProfile = {
-            id: supabaseUser.id,
-            email: supabaseUser.email || '',
-            name: supabaseUser.user_metadata?.name || 
-                  supabaseUser.user_metadata?.full_name || 
-                  supabaseUser.email?.split('@')[0] || 
-                  'User',
-            tier: 'basic' as const
-          };
+        // Log the error but don't throw - return null instead
+        console.warn('Profile fetch failed, user will remain signed in but without profile data');
+        return null;
+      }
 
+      // If no profile exists, try to create one
+      if (!profile) {
+        console.log('🆕 Creating new profile for user:', supabaseUser.email);
+        
+        const newProfile = {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          name: supabaseUser.user_metadata?.name || 
+                supabaseUser.user_metadata?.full_name || 
+                supabaseUser.email?.split('@')[0] || 
+                'User',
+          tier: 'basic' as const
+        };
+
+        try {
           // Race between profile creation and timeout
           const createPromise = supabase
             .from('profile')
@@ -124,19 +130,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (createError) {
             console.error('❌ Error creating profile:', createError);
-            throw new Error(`Profile creation failed: ${createError.message}`);
+            // Log the error but don't throw - return null instead
+            console.warn('Profile creation failed, user will remain signed in but without profile data');
+            return null;
           }
 
           if (createdProfile) {
             console.log('✅ Profile created successfully');
             return { ...createdProfile, supabaseUser };
           }
-        } else {
-          throw new Error(`Profile fetch failed: ${error.message}`);
+        } catch (createError) {
+          console.error('💥 Error creating profile:', createError);
+          // Log the error but don't throw - return null instead
+          console.warn('Profile creation failed due to error, user will remain signed in but without profile data');
+          return null;
         }
-        
-        return null;
-      } else if (profile) {
+      } else {
         console.log('✅ Profile loaded successfully');
         return { ...profile, supabaseUser };
       }
@@ -145,12 +154,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
       
-      // If it's a timeout error, force sign out
-      if (error instanceof Error && error.message.includes('timeout')) {
-        await forceSignOut(`Profile loading timeout: ${error.message}`);
-      }
-      
-      throw error;
+      // Don't force sign out on profile loading errors - just log and return null
+      console.warn('Profile loading failed, user will remain signed in but without profile data');
+      return null;
     }
   };
 
@@ -247,8 +253,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userProfile);
           } catch (profileError) {
             console.error('💥 Failed to load profile after sign in:', profileError);
-            // Force sign out if profile loading fails
-            await forceSignOut(`Profile loading failed after sign in: ${profileError instanceof Error ? profileError.message : 'Unknown error'}`);
+            // Don't force sign out - just set user to null and continue
+            setUser(null);
           } finally {
             setLoading(false);
           }
