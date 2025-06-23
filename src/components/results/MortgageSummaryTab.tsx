@@ -1,7 +1,8 @@
 import React from 'react';
-import { Calculator } from 'lucide-react';
+import { Calculator, CheckCircle } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { MortgageData } from '../../pages/Calculator';
+import { AffordabilityResults } from '../../types/premium';
 import NotesSection from '../shared/NotesSection';
 
 interface MortgageSummaryTabProps {
@@ -15,7 +16,8 @@ interface MortgageSummaryTabProps {
   downPaymentPercent: number;
   calculationId?: string;
   currentNotes?: Record<string, string>;
-  readonly?: boolean; // New prop for shared pages
+  readonly?: boolean;
+  affordabilityResults?: AffordabilityResults | null;
 }
 
 const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
@@ -29,7 +31,8 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
   downPaymentPercent,
   calculationId,
   currentNotes = {},
-  readonly = false
+  readonly = false,
+  affordabilityResults
 }) => {
   // Chart data
   const pieChartData = [
@@ -79,15 +82,36 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
     );
   };
 
-  // Calculate the percentage of the loan that is CMHC premium
   const hasCMHC = cmhcPremium > 0;
   const cmhcPercentage = hasCMHC ? ((cmhcPremium / (baseLoanAmount || loanAmount)) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-8">
+      {/* Affordability Results Banner */}
+      {affordabilityResults && (
+        <div className={`p-4 rounded-lg border ${
+          affordabilityResults.isWithinBudget 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="flex items-center">
+            <CheckCircle className={`h-5 w-5 mr-2 ${
+              affordabilityResults.isWithinBudget ? 'text-green-600' : 'text-amber-600'
+            }`} />
+            <span className={`font-medium ${
+              affordabilityResults.isWithinBudget ? 'text-green-800' : 'text-amber-800'
+            }`}>
+              {affordabilityResults.isWithinBudget 
+                ? 'Based on your income, this price is within budget ✅'
+                : 'This price may exceed recommended debt-to-income ratios'
+              }
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Featured Monthly Payment + Supporting Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Featured Monthly Payment Card */}
         <div className="lg:col-span-1">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border-2 border-blue-200 shadow-lg">
             <div className="flex items-center justify-center mb-4">
@@ -109,7 +133,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
           </div>
         </div>
 
-        {/* Supporting Information Cards */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div className="text-center">
@@ -163,7 +186,7 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
         </div>
       </div>
 
-      {/* CMHC Insurance Information (if applicable) */}
+      {/* CMHC Insurance Information */}
       {hasCMHC && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <h4 className="text-sm font-semibold text-amber-800 mb-2">CMHC Insurance Details</h4>
@@ -239,7 +262,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Total Cost Breakdown */}
         <div className="bg-white p-6 rounded-xl border border-slate-200">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Total Cost Breakdown</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -262,7 +284,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
             </PieChart>
           </ResponsiveContainer>
           
-          {/* Legend below chart */}
           <div className="flex justify-center items-center space-x-6 mt-4">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
@@ -279,7 +300,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
           </div>
         </div>
 
-        {/* Interest vs Principal */}
         <div className="bg-white p-6 rounded-xl border border-slate-200">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Interest vs Principal</h3>
           <ResponsiveContainer width="100%" height={300}>

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Calculator, Home, BarChart3, TrendingUp } from 'lucide-react';
+import { Calculator, Home, BarChart3, TrendingUp, Building } from 'lucide-react';
 
 interface Tab {
-  id: 'mortgage' | 'closing' | 'amortization' | 'investment';
+  id: 'mortgage' | 'closing' | 'amortization' | 'investment' | 'rentVsBuy';
   name: string;
   shortName: string;
   description: string;
@@ -11,16 +11,18 @@ interface Tab {
 
 interface ResultsTabNavigationProps {
   activeTab: string;
-  onTabChange: (tabId: 'mortgage' | 'closing' | 'amortization' | 'investment') => void;
+  onTabChange: (tabId: 'mortgage' | 'closing' | 'amortization' | 'investment' | 'rentVsBuy') => void;
   enableInvestmentAnalysis: boolean;
   enableClosingCosts: boolean;
+  enableRentVsBuy?: boolean;
 }
 
 const ResultsTabNavigation: React.FC<ResultsTabNavigationProps> = ({
   activeTab,
   onTabChange,
   enableInvestmentAnalysis,
-  enableClosingCosts
+  enableClosingCosts,
+  enableRentVsBuy = false
 }) => {
   const baseTabs: Tab[] = [
     { 
@@ -39,7 +41,6 @@ const ResultsTabNavigation: React.FC<ResultsTabNavigationProps> = ({
     }
   ];
   
-  // Add closing costs tab if enabled
   const closingCostsTab: Tab = { 
     id: 'closing', 
     name: 'Closing Costs', 
@@ -48,7 +49,6 @@ const ResultsTabNavigation: React.FC<ResultsTabNavigationProps> = ({
     icon: Home 
   };
   
-  // Add investment tab if enabled
   const investmentTab: Tab = { 
     id: 'investment', 
     name: 'Investment Analysis', 
@@ -56,25 +56,40 @@ const ResultsTabNavigation: React.FC<ResultsTabNavigationProps> = ({
     description: 'ROI and cash flow metrics',
     icon: TrendingUp 
   };
+
+  const rentVsBuyTab: Tab = {
+    id: 'rentVsBuy',
+    name: 'Rent vs Buy',
+    shortName: 'Rent vs Buy',
+    description: 'Long-term cost comparison',
+    icon: Building
+  };
   
-  // Build tabs array based on enabled sections
   let tabs = [...baseTabs];
   
-  // Insert closing costs tab after mortgage summary
   if (enableClosingCosts) {
     tabs.splice(1, 0, closingCostsTab);
   }
   
-  // Add investment tab at the end if enabled
   if (enableInvestmentAnalysis) {
     tabs.push(investmentTab);
   }
 
+  if (enableRentVsBuy) {
+    tabs.push(rentVsBuyTab);
+  }
+
+  const getGridCols = () => {
+    const tabCount = tabs.length;
+    if (tabCount === 5) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
+    if (tabCount === 4) return 'grid-cols-2 sm:grid-cols-4';
+    if (tabCount === 3) return 'grid-cols-3';
+    return 'grid-cols-2';
+  };
+
   return (
     <nav className="bg-white rounded-xl shadow-sm border border-slate-200 p-4" aria-label="Results tabs">
-      <div className={`grid gap-1 ${tabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 
-                                     tabs.length === 3 ? 'grid-cols-3' : 
-                                     'grid-cols-2'}`}>
+      <div className={`grid gap-1 ${getGridCols()}`}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (

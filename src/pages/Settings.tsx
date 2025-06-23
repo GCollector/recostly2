@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Save, Upload, Eye, User, Crown, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SubscriptionManager from '../components/SubscriptionManager';
+import ClosingCostPresets from '../components/premium/ClosingCostPresets';
 
 const Settings: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -11,7 +12,7 @@ const Settings: React.FC = () => {
   const [marketingCopy, setMarketingCopy] = useState(user?.marketing_copy || '');
   const [previewUrl, setPreviewUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'marketing'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'subscription' | 'marketing' | 'presets'>('profile');
 
   if (!user) {
     return (
@@ -67,7 +68,10 @@ const Settings: React.FC = () => {
   const tabs = [
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'subscription', name: 'Subscription', icon: CreditCard },
-    ...(user.tier === 'premium' ? [{ id: 'marketing', name: 'Marketing', icon: Crown }] : []),
+    ...(user.tier === 'premium' ? [
+      { id: 'marketing', name: 'Marketing', icon: Crown },
+      { id: 'presets', name: 'Closing Cost Presets', icon: Save }
+    ] : []),
   ] as const;
 
   return (
@@ -302,6 +306,12 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'presets' && user.tier === 'premium' && (
+          <div className="p-6">
+            <ClosingCostPresets />
           </div>
         )}
       </div>

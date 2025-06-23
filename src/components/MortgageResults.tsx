@@ -3,12 +3,15 @@ import { ArrowLeft, Info, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import { MortgageData } from '../pages/Calculator';
+import { AffordabilityResults } from '../types/premium';
 import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule, calculateInvestmentMetrics } from '../utils/mortgageCalculations';
+import type { Database } from '../lib/supabase';
 import ResultsTabNavigation from './results/ResultsTabNavigation';
 import MortgageSummaryTab from './results/MortgageSummaryTab';
 import ClosingCostsTab from './results/ClosingCostsTab';
 import AmortizationTab from './results/AmortizationTab';
 import InvestmentAnalysisTab from './results/InvestmentAnalysisTab';
+import RentVsBuyTab from './results/RentVsBuyTab';
 import ResultsActionButtons from './results/ResultsActionButtons';
 import ShareModal from './shared/ShareModal';
 import CommentsSection from './shared/CommentsSection';
@@ -25,6 +28,7 @@ interface MortgageResultsProps {
     cmhcPremium: number;
     totalLoanAmount: number;
   };
+  affordabilityResults?: AffordabilityResults | null;
 }
 
 const MortgageResults: React.FC<MortgageResultsProps> = ({ 
@@ -34,11 +38,12 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   currentNotes = {},
   currentComments = '',
   onCalculationSaved,
-  loanCalculation
+  loanCalculation,
+  affordabilityResults
 }) => {
   const { user } = useAuth();
   const { saveCalculation, calculations } = useCalculations();
-  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
+  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment' | 'rentVsBuy'>('mortgage');
   const [showShareModal, setShowShareModal] = useState(false);
   const [savedCalculationId, setSavedCalculationId] = useState<string>(calculationId || '');
   const [copied, setCopied] = useState(false);
@@ -96,19 +101,19 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
     setIsSaving(true);
     
     try {
-      // Prepare investment data if enabled
       const investmentData = data.enableInvestmentAnalysis ? {
         monthlyRent: data.monthlyRent,
         monthlyExpenses: data.monthlyExpenses
       } : null;
 
-      // Prepare notes with additional data
       const notesData = {
         ...currentNotes,
         investment_data: investmentData,
         showMarketingOnShare: data.showMarketingOnShare,
         enableInvestmentAnalysis: data.enableInvestmentAnalysis,
-        enableClosingCosts: data.enableClosingCosts
+        enableClosingCosts: data.enableClosingCosts,
+        enableAffordabilityEstimator: data.enableAffordabilityEstimator,
+        enableRentVsBuy: data.enableRentVsBuy
       };
       
       const calculationData = {
@@ -129,7 +134,6 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
       const id = await saveCalculation(calculationData);
       setSavedCalculationId(id);
       
-      // Notify parent component
       if (onCalculationSaved) {
         onCalculationSaved(id);
       }
@@ -180,7 +184,6 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
           ]
         });
       } else {
-        // This is an actual unexpected error
         setSaveMessage({
           type: 'warning',
           title: 'Unable to save calculation',
@@ -236,6 +239,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
             downPaymentPercent={downPaymentPercent}
             calculationId={savedCalculationId}
             currentNotes={currentNotes}
+            affordabilityResults={affordabilityResults}
           />
         );
 
@@ -291,6 +295,28 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
           </div>
         );
 
+      case 'rentVsBuy':
+        return data.enableRentVsBuy ? (
+          <RentVsBuyTab
+            homePrice={data.homePrice}
+            downPayment={data.downPayment}
+            monthlyPayment={monthlyPayment}
+            totalInterest={totalInterest}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
+          />
+        ) : (
+          <div className="p-8 text-center">
+            <div className="bg-purple-50 p-6 rounded-xl inline-block mx-auto">
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">Rent vs Buy Analysis Disabled</h3>
+              <p className="text-purple-700">
+                You have disabled the rent vs buy analysis for this calculation. 
+                Return to the input form and enable rent vs buy analysis to see this section.
+              </p>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -335,7 +361,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
           <span>Edit</span>
         </button>
         <h2 className="text-2xl font-bold text-slate-900">Results</h2>
-        <div className="w-24"></div> {/* Spacer for centering */}
+        <div className="w-24"></div>
       </div>
 
       {/* Tab Navigation */}
@@ -344,6 +370,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         onTabChange={setActiveTab}
         enableInvestmentAnalysis={data.enableInvestmentAnalysis}
         enableClosingCosts={data.enableClosingCosts}
+        enableRentVsBuy={data.enableRentVsBuy}
       />
 
       {/* Tab Content */}
@@ -351,7 +378,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         {renderTabContent()}
       </div>
 
-      {/* Premium Comments Section - Always visible when user is logged in */}
+      {/* Premium Comments Section */}
       {user && (
         <CommentsSection
           calculationId={savedCalculationId || 'temp'}

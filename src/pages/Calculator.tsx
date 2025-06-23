@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
+import AffordabilitySection from '../components/premium/AffordabilitySection';
 import { calculateClosingCosts, calculateTotalLoanAmount } from '../utils/mortgageCalculations';
+import { AffordabilityResults } from '../types/premium';
 
 export interface MortgageData {
   homePrice: number;
@@ -16,7 +19,9 @@ export interface MortgageData {
   isFirstTimeBuyer: boolean;
   enableInvestmentAnalysis: boolean;
   enableClosingCosts: boolean;
-  showMarketingOnShare: boolean; // New field for premium users
+  showMarketingOnShare: boolean;
+  enableAffordabilityEstimator: boolean; // New field
+  enableRentVsBuy: boolean; // New field
   monthlyRent?: number;
   monthlyExpenses?: {
     taxes: number;
@@ -38,11 +43,13 @@ export interface MortgageData {
 }
 
 const Calculator: React.FC = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [savedCalculationId, setSavedCalculationId] = useState<string>('');
   const [currentNotes, setCurrentNotes] = useState<Record<string, string>>({});
   const [currentComments, setCurrentComments] = useState<string>('');
+  const [affordabilityResults, setAffordabilityResults] = useState<AffordabilityResults | null>(null);
   
   // Initialize default closing costs based on property details
   const defaultClosingCosts = calculateClosingCosts(500000, 'ontario', 'toronto', false);
@@ -57,8 +64,10 @@ const Calculator: React.FC = () => {
     city: 'toronto',
     isFirstTimeBuyer: false,
     enableInvestmentAnalysis: false,
-    enableClosingCosts: true, // Default to enabled with reasonable values
-    showMarketingOnShare: true, // Default to show marketing content
+    enableClosingCosts: true,
+    showMarketingOnShare: true,
+    enableAffordabilityEstimator: false, // New field
+    enableRentVsBuy: false, // New field
     monthlyRent: 2500,
     monthlyExpenses: {
       taxes: 400,
@@ -82,16 +91,13 @@ const Calculator: React.FC = () => {
   // Check if we're coming from dashboard with saved calculation data
   useEffect(() => {
     if (location.state?.calculationData && location.state?.startAtStep) {
-      // Create a new object to avoid reference issues
       const calculationData = {
         ...location.state.calculationData
       };
       
-      // Process notes to extract section state
       if (location.state.notes) {
         const notes = location.state.notes;
         
-        // Extract section states from notes if they exist
         if (notes.enableInvestmentAnalysis !== undefined) {
           calculationData.enableInvestmentAnalysis = notes.enableInvestmentAnalysis;
         }
@@ -103,14 +109,23 @@ const Calculator: React.FC = () => {
         if (notes.showMarketingOnShare !== undefined) {
           calculationData.showMarketingOnShare = notes.showMarketingOnShare;
         }
+
+        if (notes.enableAffordabilityEstimator !== undefined) {
+          calculationData.enableAffordabilityEstimator = notes.enableAffordabilityEstimator;
+        }
+
+        if (notes.enableRentVsBuy !== undefined) {
+          calculationData.enableRentVsBuy = notes.enableRentVsBuy;
+        }
         
-        // Filter out control flags from notes to avoid showing them as actual notes
         const filteredNotes: Record<string, string> = {};
         Object.entries(notes).forEach(([key, value]) => {
           if (
             key !== 'enableInvestmentAnalysis' && 
             key !== 'enableClosingCosts' && 
             key !== 'showMarketingOnShare' && 
+            key !== 'enableAffordabilityEstimator' &&
+            key !== 'enableRentVsBuy' &&
             key !== 'investment_data' &&
             typeof value === 'string'
           ) {
@@ -124,7 +139,6 @@ const Calculator: React.FC = () => {
       setMortgageData(calculationData);
       setCurrentStep(location.state.startAtStep);
       
-      // If coming from a saved calculation, set the ID and existing comments
       if (location.state.calculationId) {
         setSavedCalculationId(location.state.calculationId);
         setCurrentComments(location.state.comments || '');
@@ -132,12 +146,10 @@ const Calculator: React.FC = () => {
     }
   }, [location.state]);
 
-  // Scroll to top when step changes - this is the hack that works
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentStep]);
 
-  // Update closing costs when property details change
   useEffect(() => {
     if (mortgageData.enableClosingCosts) {
       const updatedClosingCosts = calculateClosingCosts(
@@ -192,6 +204,10 @@ const Calculator: React.FC = () => {
     }));
   };
 
+  const handleAffordabilityCalculated = (results: AffordabilityResults) => {
+    setAffordabilityResults(results);
+  };
+
   const handleCalculateResults = () => {
     setCurrentStep(2);
   };
@@ -204,7 +220,6 @@ const Calculator: React.FC = () => {
     setSavedCalculationId(calculationId);
   };
 
-  // Calculate loan amounts including CMHC insurance
   const loanCalculation = calculateTotalLoanAmount(mortgageData.homePrice, mortgageData.downPayment);
 
   if (currentStep === 2) {
@@ -217,6 +232,7 @@ const Calculator: React.FC = () => {
         currentComments={currentComments}
         onCalculationSaved={handleCalculationSaved}
         loanCalculation={loanCalculation}
+        affordabilityResults={affordabilityResults}
       />
     );
   }
@@ -253,6 +269,17 @@ const Calculator: React.FC = () => {
       {/* Form Content */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
         <div className="p-8 space-y-8">
+          {/* Premium Affordability Estimator */}
+          {user?.tier === 'premium' && mortgageData.enableAffordabilityEstimator && (
+            <div className="border-t border-slate-200 pt-12">
+              <AffordabilitySection
+                data={mortgageData}
+                onInputChange={handleInputChange}
+                onAffordabilityCalculated={handleAffordabilityCalculated}
+              />
+            </div>
+          )}
+
           <MortgageInputForm
             data={mortgageData}
             onInputChange={handleInputChange}
