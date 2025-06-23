@@ -25,6 +25,55 @@ The Calculator page MUST follow this exact two-step process:
   - **Amortization** - Payment schedule with interactive charts
   - **Investment Analysis** - ROI, cash flow, cap rate (if enabled)
 
+## NEW: Currency Formatting Requirements
+
+### Real-Time Currency Formatting
+- **ALL money input fields** must display values with commas as the user types
+- **CurrencyInput component** must be used for all monetary inputs
+- **Format**: Numbers should be formatted with commas for thousands (e.g., 1,000,000)
+- **Prefix**: Dollar sign ($) should be shown as a prefix
+- **Suffix**: Percentage (%) should be shown as a suffix where appropriate
+- **Parsing**: Component must handle removing commas and converting to numbers for calculations
+- **Validation**: Only numeric input should be allowed
+- **Accessibility**: Full keyboard support including arrow keys, backspace, delete
+- **Responsive**: Works on all screen sizes and devices
+
+### CurrencyInput Features
+- Real-time formatting as user types
+- Support for prefix and suffix
+- Support for placeholder text
+- Support for disabled and readonly states
+- Support for min/max constraints
+- Proper focus and blur handling
+- Keyboard navigation support
+- Consistent styling with other form elements
+
+## NEW: Dynamic Closing Costs Requirements
+
+### Automatic Calculation
+- **Land transfer tax** must be automatically calculated based on:
+  - Property price
+  - Province (Ontario vs BC)
+  - City (Toronto vs Vancouver)
+- **Municipal tax** (Toronto only) must be automatically calculated
+- **First-time buyer rebate** must be automatically applied when eligible
+- **Readonly fields**: Tax fields that are automatically calculated should be readonly
+- **Visual distinction**: Readonly fields should have a different background color
+- **Explanatory text**: Small helper text should explain automatic calculations
+
+### Closing Costs Dependencies
+- **Property price changes** must trigger recalculation of land transfer tax
+- **Location changes** must trigger recalculation of applicable taxes
+- **First-time buyer status** must trigger recalculation of rebates
+- **Automatic updates**: Changes to dependent fields must happen in real-time
+- **Manual overrides**: Non-dependent fields remain editable
+
+### Closing Costs UI Requirements
+- **Readonly styling**: Gray background for auto-calculated fields
+- **Helper text**: Explain which fields are automatically calculated
+- **Total calculation**: Show running total of all closing costs
+- **Visual feedback**: Clearly indicate which fields are dependent on mortgage details
+
 ## NEW: Optional Sections System
 
 ### Two Optional Sections
@@ -327,6 +376,7 @@ const loggedInNavigation = [
 - `ResultsActionButtons.tsx` - Save and share buttons
 
 #### Shared Components (`src/components/shared/`)
+- `CurrencyInput.tsx` - Reusable currency input with formatting
 - `ShareModal.tsx` - Reusable modal for sharing
 - `NotesSection.tsx` - Premium notes functionality for each tab (supports readonly mode)
 - `CommentsSection.tsx` - Premium comments functionality for calculations (supports readonly mode)
@@ -418,6 +468,7 @@ src/
 │   │   ├── ResultsTabNavigation.tsx
 │   │   └── ResultsActionButtons.tsx
 │   ├── shared/
+│   │   ├── CurrencyInput.tsx - Reusable currency input with formatting
 │   │   ├── ShareModal.tsx
 │   │   ├── NotesSection.tsx (supports readonly mode, neutral styling)
 │   │   └── CommentsSection.tsx (supports readonly mode)
@@ -658,6 +709,9 @@ Any changes MUST pass these tests:
 - ✅ **CRITICAL**: Marketing control respected on shared pages
 - ✅ **CRITICAL**: Notes sections use neutral slate styling (not yellow/amber)
 - ✅ **CRITICAL**: Optional sections have proper visual separation
+- ✅ **CRITICAL**: All money fields use CurrencyInput with real-time formatting
+- ✅ **CRITICAL**: Closing costs automatically update based on property details
+- ✅ **CRITICAL**: Dependent closing cost fields are readonly with proper styling
 
 ## NEW: Chart Data Requirements
 
@@ -719,6 +773,9 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 25. **CRITICAL**: Verify marketing control works correctly
 26. **CRITICAL**: Confirm notes sections use neutral styling
 27. **CRITICAL**: Verify optional sections have proper visual separation
+28. **CRITICAL**: Verify all money fields use CurrencyInput component
+29. **CRITICAL**: Test automatic closing cost updates based on property details
+30. **CRITICAL**: Confirm dependent closing cost fields are readonly
 
 ## NEW: Database Integration Requirements
 
@@ -749,26 +806,32 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 ## Change Log
 
 ### Recent Updates:
-1. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
-2. **Visual Separation**: Added clear visual separation between optional sections
-3. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
-4. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
-5. **Notes Styling**: Changed from amber/yellow to neutral slate styling
-6. **Marketing Control Logic**: Viewers can no longer hide marketing content
-7. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
-8. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
-9. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
-10. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
-11. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
-12. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
-13. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
-14. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
-15. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
-16. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
-17. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
-18. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
-19. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
-20. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
+1. **Currency Formatting**: Added real-time comma formatting for all money fields
+2. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
+3. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
+4. **CurrencyInput Component**: Created reusable component for all monetary inputs
+5. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
+6. **Helper Text**: Added explanatory text for automatically calculated fields
+7. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
+8. **Visual Separation**: Added clear visual separation between optional sections
+9. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
+10. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
+11. **Notes Styling**: Changed from amber/yellow to neutral slate styling
+12. **Marketing Control Logic**: Viewers can no longer hide marketing content
+13. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
+14. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
+15. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
+16. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
+17. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
+18. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
+19. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
+20. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
+21. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
+22. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
+23. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
+24. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+25. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
+26. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -789,3 +852,5 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - **CRITICAL**: Enhanced marketing content positioning for better visibility
 - **CRITICAL**: Changed notes styling to neutral slate instead of yellow/amber
 - **CRITICAL**: Added proper visual separation between optional sections
+- **CRITICAL**: Implemented real-time currency formatting for all money fields
+- **CRITICAL**: Made closing costs dynamically update based on property details

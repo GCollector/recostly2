@@ -3,6 +3,7 @@ import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft } from 'lucide-reac
 import { useLocation } from 'react-router-dom';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
+import { calculateClosingCosts } from '../utils/mortgageCalculations';
 
 export interface MortgageData {
   homePrice: number;
@@ -42,6 +43,10 @@ const Calculator: React.FC = () => {
   const [savedCalculationId, setSavedCalculationId] = useState<string>('');
   const [currentNotes, setCurrentNotes] = useState<Record<string, string>>({});
   const [currentComments, setCurrentComments] = useState<string>('');
+  
+  // Initialize default closing costs based on property details
+  const defaultClosingCosts = calculateClosingCosts(500000, 'ontario', 'toronto', false);
+  
   const [mortgageData, setMortgageData] = useState<MortgageData>({
     homePrice: 500000,
     downPayment: 100000,
@@ -63,14 +68,14 @@ const Calculator: React.FC = () => {
       other: 100
     },
     closingCosts: {
-      landTransferTax: 8475,
-      additionalTax: 8475, // Toronto municipal tax
-      legalFees: 2000,
-      titleInsurance: 400,
-      homeInspection: 500,
-      appraisal: 400,
-      surveyFee: 1000,
-      firstTimeBuyerRebate: 0
+      landTransferTax: defaultClosingCosts.landTransferTax,
+      additionalTax: defaultClosingCosts.additionalTax,
+      legalFees: defaultClosingCosts.legalFees,
+      titleInsurance: defaultClosingCosts.titleInsurance,
+      homeInspection: defaultClosingCosts.homeInspection,
+      appraisal: defaultClosingCosts.appraisal,
+      surveyFee: defaultClosingCosts.surveyFee,
+      firstTimeBuyerRebate: defaultClosingCosts.firstTimeBuyerRebate
     }
   });
 
@@ -93,6 +98,34 @@ const Calculator: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentStep]);
+
+  // Update closing costs when property details change
+  useEffect(() => {
+    if (mortgageData.enableClosingCosts) {
+      const updatedClosingCosts = calculateClosingCosts(
+        mortgageData.homePrice,
+        mortgageData.province,
+        mortgageData.city,
+        mortgageData.isFirstTimeBuyer
+      );
+      
+      setMortgageData(prev => ({
+        ...prev,
+        closingCosts: {
+          ...prev.closingCosts!,
+          landTransferTax: updatedClosingCosts.landTransferTax,
+          additionalTax: updatedClosingCosts.additionalTax,
+          firstTimeBuyerRebate: updatedClosingCosts.firstTimeBuyerRebate
+        }
+      }));
+    }
+  }, [
+    mortgageData.homePrice, 
+    mortgageData.province, 
+    mortgageData.city, 
+    mortgageData.isFirstTimeBuyer, 
+    mortgageData.enableClosingCosts
+  ]);
 
   const handleInputChange = (field: keyof MortgageData, value: any) => {
     setMortgageData(prev => ({

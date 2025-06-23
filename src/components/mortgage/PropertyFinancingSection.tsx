@@ -1,5 +1,6 @@
 import React from 'react';
 import { MortgageData } from '../../pages/Calculator';
+import CurrencyInput from '../shared/CurrencyInput';
 
 interface PropertyFinancingSectionProps {
   data: MortgageData;
@@ -20,35 +21,25 @@ const PropertyFinancingSection: React.FC<PropertyFinancingSectionProps> = ({
           <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
             Home Price
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-            <input
-              type="number"
-              value={data.homePrice}
-              onChange={(e) => onInputChange('homePrice', Number(e.target.value))}
-              className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
-              placeholder="500,000"
-            />
-          </div>
+          <CurrencyInput
+            value={data.homePrice}
+            onChange={(value) => onInputChange('homePrice', value)}
+            prefix="$"
+            placeholder="500,000"
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
             Down Payment
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-            <input
-              type="number"
-              value={data.downPayment}
-              onChange={(e) => onInputChange('downPayment', Number(e.target.value))}
-              className="w-full pl-8 pr-16 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
-              placeholder="100,000"
-            />
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-sans text-slate-500">
-              {downPaymentPercent}%
-            </span>
-          </div>
+          <CurrencyInput
+            value={data.downPayment}
+            onChange={(value) => onInputChange('downPayment', value)}
+            prefix="$"
+            suffix={`${downPaymentPercent}%`}
+            placeholder="100,000"
+          />
         </div>
 
         <div>

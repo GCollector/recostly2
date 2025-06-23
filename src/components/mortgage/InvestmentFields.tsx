@@ -1,5 +1,6 @@
 import React from 'react';
 import { MortgageData } from '../../pages/Calculator';
+import CurrencyInput from '../shared/CurrencyInput';
 
 interface InvestmentFieldsProps {
   data: MortgageData;
@@ -19,16 +20,12 @@ const InvestmentFields: React.FC<InvestmentFieldsProps> = ({
           <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
             Expected Monthly Rent
           </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-            <input
-              type="number"
-              value={data.monthlyRent}
-              onChange={(e) => onInputChange('monthlyRent', Number(e.target.value))}
-              className="w-full pl-8 pr-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-              placeholder="2,500"
-            />
-          </div>
+          <CurrencyInput
+            value={data.monthlyRent || 0}
+            onChange={(value) => onInputChange('monthlyRent', value)}
+            prefix="$"
+            placeholder="2,500"
+          />
         </div>
       </div>
 
@@ -39,80 +36,60 @@ const InvestmentFields: React.FC<InvestmentFieldsProps> = ({
             <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
               Property Taxes
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                value={data.monthlyExpenses?.taxes}
-                onChange={(e) => onExpenseChange('taxes', Number(e.target.value))}
-                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-                placeholder="400"
-              />
-            </div>
+            <CurrencyInput
+              value={data.monthlyExpenses?.taxes || 0}
+              onChange={(value) => onExpenseChange('taxes', value)}
+              prefix="$"
+              placeholder="400"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
               Insurance
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                value={data.monthlyExpenses?.insurance}
-                onChange={(e) => onExpenseChange('insurance', Number(e.target.value))}
-                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-                placeholder="150"
-              />
-            </div>
+            <CurrencyInput
+              value={data.monthlyExpenses?.insurance || 0}
+              onChange={(value) => onExpenseChange('insurance', value)}
+              prefix="$"
+              placeholder="150"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
               Condo Fees
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                value={data.monthlyExpenses?.condoFees}
-                onChange={(e) => onExpenseChange('condoFees', Number(e.target.value))}
-                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-                placeholder="300"
-              />
-            </div>
+            <CurrencyInput
+              value={data.monthlyExpenses?.condoFees || 0}
+              onChange={(value) => onExpenseChange('condoFees', value)}
+              prefix="$"
+              placeholder="300"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
               Maintenance
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                value={data.monthlyExpenses?.maintenance}
-                onChange={(e) => onExpenseChange('maintenance', Number(e.target.value))}
-                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-                placeholder="200"
-              />
-            </div>
+            <CurrencyInput
+              value={data.monthlyExpenses?.maintenance || 0}
+              onChange={(value) => onExpenseChange('maintenance', value)}
+              prefix="$"
+              placeholder="200"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
               Other Expenses
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
-              <input
-                type="number"
-                value={data.monthlyExpenses?.other}
-                onChange={(e) => onExpenseChange('other', Number(e.target.value))}
-                className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-sans bg-white"
-                placeholder="100"
-              />
-            </div>
+            <CurrencyInput
+              value={data.monthlyExpenses?.other || 0}
+              onChange={(value) => onExpenseChange('other', value)}
+              prefix="$"
+              placeholder="100"
+            />
           </div>
         </div>
       </div>
