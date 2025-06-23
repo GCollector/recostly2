@@ -22,6 +22,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
 
+  // Scroll to top on route change - this is the proper place for it
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (!loading && user && (location.pathname === '/login' || location.pathname === '/signup')) {

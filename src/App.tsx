@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CalculationProvider } from './contexts/CalculationContext';
 import Layout from './components/Layout';
@@ -11,19 +11,6 @@ import Pricing from './pages/Pricing';
 import SharedCalculation from './pages/SharedCalculation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-
-// Scroll restoration component that handles route changes properly
-const ScrollRestoration: React.FC = () => {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    // Restore scroll position to top on route change
-    // This mimics the default browser behavior for page navigation
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
-};
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,7 +61,6 @@ function App() {
     <AuthProvider>
       <CalculationProvider>
         <Router>
-          <ScrollRestoration />
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
