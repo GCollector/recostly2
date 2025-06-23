@@ -11,6 +11,7 @@ const Dashboard: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [cloneLoading, setCloneLoading] = useState<string | null>(null);
   const [cloneError, setCloneError] = useState<string>('');
+  const [cloneSuccess, setCloneSuccess] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -93,45 +94,17 @@ const Dashboard: React.FC = () => {
   const handleClone = async (calculationId: string) => {
     setCloneLoading(calculationId);
     setCloneError('');
+    setCloneSuccess('');
     
     try {
       const newCalculationId = await cloneCalculation(calculationId);
       
-      // Navigate to the cloned calculation for editing
-      const originalCalc = calculations.find(calc => calc.id === calculationId);
-      if (originalCalc) {
-        navigate('/calculator', {
-          state: {
-            calculationData: {
-              homePrice: originalCalc.home_price,
-              downPayment: originalCalc.down_payment,
-              interestRate: originalCalc.interest_rate,
-              amortizationYears: originalCalc.amortization_years,
-              paymentFrequency: originalCalc.payment_frequency,
-              province: originalCalc.province,
-              city: originalCalc.city,
-              isFirstTimeBuyer: originalCalc.is_first_time_buyer,
-              enableInvestmentAnalysis: originalCalc.notes?.enableInvestmentAnalysis || false,
-              enableClosingCosts: originalCalc.notes?.enableClosingCosts !== false,
-              showMarketingOnShare: originalCalc.notes?.showMarketingOnShare !== false,
-              enableAffordabilityEstimator: originalCalc.notes?.enableAffordabilityEstimator || false,
-              enableRentVsBuy: originalCalc.notes?.enableRentVsBuy || false,
-              monthlyRent: originalCalc.notes?.investment_data?.monthlyRent || 2500,
-              monthlyExpenses: originalCalc.notes?.investment_data?.monthlyExpenses || {
-                taxes: 400,
-                insurance: 150,
-                condoFees: 300,
-                maintenance: 200,
-                other: 100
-              }
-            },
-            startAtStep: 1, // Start at input form for editing
-            calculationId: newCalculationId,
-            notes: originalCalc.notes || {},
-            comments: originalCalc.comments || ''
-          }
-        });
-      }
+      // Show success message and stay on dashboard
+      setCloneSuccess('Calculation cloned successfully! You can now edit the new copy.');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setCloneSuccess(''), 5000);
+      
     } catch (error: any) {
       console.error('Error cloning calculation:', error);
       
@@ -174,6 +147,25 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center">
             <Crown className="h-5 w-5 mr-2" />
             <span>Subscription updated successfully! Your new features are now available.</span>
+          </div>
+        </div>
+      )}
+
+      {/* Clone Success Message */}
+      {cloneSuccess && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          <div className="flex items-start">
+            <Copy className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium mb-1">Clone Successful!</p>
+              <p className="text-sm">{cloneSuccess}</p>
+            </div>
+            <button
+              onClick={() => setCloneSuccess('')}
+              className="text-green-400 hover:text-green-600"
+            >
+              ×
+            </button>
           </div>
         </div>
       )}

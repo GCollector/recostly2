@@ -91,12 +91,25 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     try {
-      if (calculationId) {
-        // Update existing calculation
+      // If calculationId is provided, always update the existing calculation
+      if (calculationId && calculationId !== 'temp') {
+        console.log('Updating existing calculation:', calculationId);
+        
         const { data, error } = await supabase
           .from('mortgage_calculation')
           .update({
-            ...calculation,
+            home_price: calculation.home_price,
+            down_payment: calculation.down_payment,
+            interest_rate: calculation.interest_rate,
+            amortization_years: calculation.amortization_years,
+            payment_frequency: calculation.payment_frequency,
+            province: calculation.province,
+            city: calculation.city,
+            is_first_time_buyer: calculation.is_first_time_buyer,
+            monthly_payment: calculation.monthly_payment,
+            total_interest: calculation.total_interest,
+            notes: calculation.notes,
+            comments: calculation.comments,
             updated_at: new Date().toISOString()
           })
           .eq('id', calculationId)
@@ -105,10 +118,12 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           .single();
 
         if (error) {
+          console.error('Update error:', error);
           throw new Error('Failed to update calculation: ' + error.message);
         }
 
         if (data) {
+          console.log('Successfully updated calculation:', data.id);
           // Update the calculation in our local state
           setCalculations(prev => 
             prev.map(calc => calc.id === calculationId ? data : calc)
@@ -119,6 +134,8 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw new Error('Failed to update calculation - no data returned');
       } else {
         // Create new calculation - check save limits first
+        console.log('Creating new calculation');
+        
         if (user.tier === 'free' && calculations.length >= 1) {
           const error = new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
           (error as any).type = 'SAVE_LIMIT_REACHED';
@@ -126,7 +143,18 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
 
         const insertData = {
-          ...calculation,
+          home_price: calculation.home_price,
+          down_payment: calculation.down_payment,
+          interest_rate: calculation.interest_rate,
+          amortization_years: calculation.amortization_years,
+          payment_frequency: calculation.payment_frequency,
+          province: calculation.province,
+          city: calculation.city,
+          is_first_time_buyer: calculation.is_first_time_buyer,
+          monthly_payment: calculation.monthly_payment,
+          total_interest: calculation.total_interest,
+          notes: calculation.notes,
+          comments: calculation.comments,
           user_id: user.id,
         };
         
@@ -146,6 +174,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
 
         if (data) {
+          console.log('Successfully created calculation:', data.id);
           setCalculations(prev => [data, ...prev]);
           return data.id;
         }
@@ -153,6 +182,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw new Error('Failed to save calculation - no data returned');
       }
     } catch (error) {
+      console.error('Save calculation error:', error);
       throw error;
     }
   };
@@ -184,7 +214,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw new Error('Calculation not found');
       }
 
-      // Create a copy with new timestamp and modified name
+      // Create a copy with new timestamp
       const clonedData = {
         home_price: originalCalc.home_price,
         down_payment: originalCalc.down_payment,
@@ -217,6 +247,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
 
       if (data) {
+        // Add to the beginning of the list (most recent first)
         setCalculations(prev => [data, ...prev]);
         return data.id;
       }
