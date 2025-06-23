@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import { MortgageData } from '../pages/Calculator';
@@ -19,12 +19,13 @@ interface MortgageResultsProps {
 
 const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   const { user } = useAuth();
-  const { saveCalculation } = useCalculations();
+  const { saveCalculation, calculations } = useCalculations();
   const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
   const [showShareModal, setShowShareModal] = useState(false);
   const [calculationId, setCalculationId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   // Calculate mortgage values
   const loanAmount = data.homePrice - data.downPayment;
@@ -46,7 +47,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
     : null;
 
   const handleSave = async () => {
+    setSaveError('');
     setIsSaving(true);
+    
     try {
       const calculationData = {
         home_price: data.homePrice,
@@ -65,10 +68,11 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       
       const id = await saveCalculation(calculationData);
       setCalculationId(id);
+      setSaveError('');
       setShowShareModal(true);
     } catch (error) {
       console.error('Error saving calculation:', error);
-      alert('Failed to save calculation. Please try again.');
+      setSaveError(error instanceof Error ? error.message : 'Failed to save calculation. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -194,6 +198,36 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
         {renderTabContent()}
       </div>
+
+      {/* Error Display */}
+      {saveError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">Unable to save calculation</p>
+            <p className="text-sm mt-1">{saveError}</p>
+            {saveError.includes('Free users can only save 1 calculation') && user?.tier === 'basic' && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium">Options:</p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => window.location.href = '/pricing'}
+                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
+                  >
+                    Upgrade to Basic ($9/month)
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="text-sm bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded transition-colors"
+                  >
+                    Manage Saved Calculations
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <ResultsActionButtons

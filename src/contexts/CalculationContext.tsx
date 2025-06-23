@@ -78,6 +78,11 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       throw new Error('Please create an account to save calculations.');
     }
 
+    // Client-side validation for free users (tier = 'basic' in database means free user)
+    if (user.tier === 'basic' && calculations.length >= 1) {
+      throw new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+    }
+
     try {
       const insertData = {
         ...calculation,
@@ -91,6 +96,10 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
+        // Check for specific server-side validation errors
+        if (error.message?.includes('save limit') || error.message?.includes('Free users can only save')) {
+          throw new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
+        }
         throw new Error('Failed to save calculation: ' + error.message);
       }
 

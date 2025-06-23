@@ -23,6 +23,35 @@ The Calculator page MUST follow this exact two-step process:
   - **Amortization** - Payment schedule with interactive charts
   - **Investment Analysis** - ROI, cash flow, cap rate (if enabled)
 
+## NEW: User Tier System and Save Limits
+
+### Tier Definitions
+- **Public (unregistered users)**: Cannot save calculations, must create an account
+- **Free registered user**: Can save maximum of 1 calculation. They should be informed of this wherever necessary. Encouraged to buy basic membership or delete existing calculation to save a new one.
+- **Basic tier** ($9/month): Can save unlimited calculations
+- **Premium tier** ($29/month): Can save unlimited calculations plus access to notes and comments
+
+### Save Limit Implementation
+- Server-side validation in database trigger function
+- Client-side validation in CalculationContext
+- Clear error messages for users hitting limits
+- Upgrade prompts for free users
+- Delete existing calculation option for free users
+
+### Database Trigger Requirements
+```sql
+-- Free users (tier = 'basic' in database) can only save 1 calculation
+IF user_tier = 'basic' AND calculation_count >= 1 THEN
+  RAISE EXCEPTION 'Free users can only save 1 calculation. Upgrade to save unlimited calculations.';
+END IF;
+```
+
+### Client-side Error Handling
+- Show clear error messages when save limits are reached
+- Provide upgrade options
+- Allow deletion of existing calculations for free users
+- Inform users about tier limitations upfront
+
 ## NEW: Database Naming Convention
 
 ### Table Naming Requirements
@@ -156,6 +185,7 @@ The Calculator page MUST follow this exact two-step process:
 - Featured monthly payment card layout
 - Responsive tab design
 - Component modularity
+- Tier-based save limits
 
 ❌ **NEVER** change:
 - Font colors for consistency (all supporting amounts in slate-900)
@@ -164,6 +194,7 @@ The Calculator page MUST follow this exact two-step process:
 - Step indicator active/inactive states
 - Singular table naming convention
 - Edit button text (must be "Edit", not "Back" or "Back to Input")
+- User tier system and save limits
 
 ## Required File Structure
 
@@ -302,6 +333,8 @@ Any changes MUST pass these tests:
 - ✅ All components are under 300 lines
 - ✅ Components can be tested in isolation
 - ✅ Database uses singular table names
+- ✅ Save limits work correctly for each tier
+- ✅ Error messages are clear and actionable
 
 ## NEW: Chart Data Requirements
 
@@ -335,6 +368,8 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 8. Ensure components remain modular and under size limits
 9. Verify database operations use singular table names
 10. Confirm Edit button shows "Edit" text only
+11. Test tier-based save limits work correctly
+12. Verify error messages are clear and helpful
 
 ## NEW: Database Integration Requirements
 
@@ -344,32 +379,38 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Proper error handling and loading states
 - Share modal with copy-to-clipboard functionality
 - All database operations MUST use singular table names
+- Tier-based save limits enforced both client and server-side
 
 ### Data Persistence
 - Form data preserved when navigating between steps
 - Investment analysis state maintained
 - Calculation results stored with proper structure
 - Database queries MUST target singular table names
+- Save limits respected and clearly communicated to users
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, and "Edit" button text are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, and "Edit" button text are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
-2. **Database Naming Convention**: Added requirement for singular table names across all database operations
-3. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
-4. **Modular Design**: Established clear file structure and component organization principles
-5. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
-6. **Testing Isolation**: Added requirements for component-level testing
-7. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
-8. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
-9. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
-10. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
-11. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
-12. **Chart Data Fixes**: Corrected pie chart percentages and data validation
-13. **Mobile Optimization**: Enhanced responsive design across all components
-14. **Testing Framework**: Added comprehensive structure validation tests
+1. **User Tier System**: Added comprehensive tier definitions and save limit requirements
+2. **Save Limit Implementation**: Both client-side and server-side validation
+3. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
+4. **Database Triggers**: Server-side enforcement of save limits based on user tier
+5. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
+6. **Database Naming Convention**: Added requirement for singular table names across all database operations
+7. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
+8. **Modular Design**: Established clear file structure and component organization principles
+9. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
+10. **Testing Isolation**: Added requirements for component-level testing
+11. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
+12. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
+13. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
+14. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
+15. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
+16. **Chart Data Fixes**: Corrected pie chart percentages and data validation
+17. **Mobile Optimization**: Enhanced responsive design across all components
+18. **Testing Framework**: Added comprehensive structure validation tests
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -380,3 +421,4 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Enforced component modularity
 - Established singular table naming convention
 - Standardized Edit button text to "Edit" only
+- Implemented proper tier-based save limits
