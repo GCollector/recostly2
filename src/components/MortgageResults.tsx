@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import { MortgageData } from '../pages/Calculator';
@@ -144,16 +144,43 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   return (
     <div className="space-y-8">
       {/* Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
+          Canadian Mortgage Calculator
+        </h1>
+        <p className="text-lg font-sans text-slate-600 max-w-3xl mx-auto">
+          Your calculation results with detailed analysis and breakdown.
+        </p>
+      </div>
+
+      {/* Step Indicator */}
+      <div className="flex items-center justify-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-400 text-white text-sm font-medium">
+            1
+          </span>
+          <span className="text-sm font-medium font-sans text-slate-600">Input Details</span>
+        </div>
+        <ArrowRight className="h-4 w-4 text-slate-400" />
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
+            2
+          </span>
+          <span className="text-sm font-medium font-sans text-slate-900">View Results</span>
+        </div>
+      </div>
+
+      {/* Back Button and Results Header */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
           className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back</span>
+          <span>Back to Input</span>
         </button>
-        <h1 className="text-2xl font-bold text-slate-900">Results</h1>
-        <div className="w-20"></div> {/* Spacer for centering */}
+        <h2 className="text-2xl font-bold text-slate-900">Results</h2>
+        <div className="w-24"></div> {/* Spacer for centering */}
       </div>
 
       {/* Tab Navigation */}
