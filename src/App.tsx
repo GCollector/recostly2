@@ -12,11 +12,13 @@ import SharedCalculation from './pages/SharedCalculation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
-// Scroll to top component
-const ScrollToTop: React.FC = () => {
+// Scroll restoration component that handles route changes properly
+const ScrollRestoration: React.FC = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // Restore scroll position to top on route change
+    // This mimics the default browser behavior for page navigation
     window.scrollTo(0, 0);
   }, [pathname]);
 
@@ -72,7 +74,7 @@ function App() {
     <AuthProvider>
       <CalculationProvider>
         <Router>
-          <ScrollToTop />
+          <ScrollRestoration />
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
