@@ -52,6 +52,66 @@ END IF;
 - Allow deletion of existing calculations for free users
 - Inform users about tier limitations upfront
 
+## NEW: Premium Notes and Comments System
+
+### Notes Feature (Premium Only)
+- **Private Notes**: Available in each results tab (Mortgage Summary, Closing Costs, Amortization, Investment Analysis)
+- **Section-specific**: Each tab has its own notes section
+- **Premium Gating**: Non-premium users see upgrade prompts
+- **Visual Design**: Amber gradient background with Crown icon
+- **Functionality**:
+  - Add/Edit/Save notes for each section
+  - Notes are private to the user
+  - Preserved when calculation is saved
+  - Rich text editing with proper formatting
+
+### Comments Feature (Premium Only)
+- **Shareable Comments**: Visible to anyone viewing shared calculation
+- **Global Comments**: Apply to entire calculation, not section-specific
+- **Premium Gating**: Non-premium users see upgrade prompts
+- **Visual Design**: Blue gradient background with Crown icon
+- **Functionality**:
+  - Add/Edit/Save comments for entire calculation
+  - Comments appear on shared calculation pages
+  - Perfect for explaining assumptions to clients
+  - Professional presentation
+
+### Notes/Comments Integration
+- **Always Visible**: Notes and comments sections appear for all logged-in users
+- **Contextual Display**: Show appropriate upgrade prompts for non-premium users
+- **Save Integration**: Notes and comments saved with calculation data
+- **Dashboard Indicators**: Show badges when calculations have notes/comments
+
+## NEW: Navigation System Updates
+
+### Home Page Behavior
+- **Logged-out users**: See marketing home page at `/`
+- **Logged-in users**: Automatically redirected from `/` to `/dashboard`
+- **Seamless Experience**: No loading screens or flickers during redirect
+
+### Header Navigation Changes
+- **Removed "Dashboard" link** from header navigation
+- **"Home" serves dual purpose**:
+  - For logged-out users: Takes to marketing home page
+  - For logged-in users: Takes to dashboard
+- **Active State Logic**: Properly highlights "Home" when user is on dashboard
+- **Mobile Navigation**: Same logic applied to mobile menu
+
+### Navigation Structure
+```typescript
+// Logged-out users
+const loggedOutNavigation = [
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Calculator', href: '/calculator', icon: Calculator },
+];
+
+// Logged-in users  
+const loggedInNavigation = [
+  { name: 'Home', href: '/dashboard', icon: Home }, // Points to dashboard
+  { name: 'Calculator', href: '/calculator', icon: Calculator },
+];
+```
+
 ## NEW: Database Naming Convention
 
 ### Table Naming Requirements
@@ -128,6 +188,13 @@ END IF;
 - **Responsive**: All charts in ResponsiveContainer
 - **Colors**: Consistent color scheme (emerald, blue, red)
 
+#### Notes and Comments Design
+- **Notes Sections**: Amber gradient background (`from-amber-50 to-orange-50`)
+- **Comments Section**: Blue gradient background (`from-blue-50 to-indigo-50`)
+- **Premium Indicators**: Crown icons and "Premium Feature" labels
+- **Upgrade Prompts**: Lock icons with clear upgrade calls-to-action
+- **Edit States**: Proper form controls with save/cancel buttons
+
 ## NEW: Component Architecture Requirements
 
 ### Modular Component Structure
@@ -146,15 +213,17 @@ END IF;
 - `InvestmentFields.tsx` - Investment-specific fields
 
 #### Results Components (`src/components/results/`)
-- `MortgageSummaryTab.tsx` - Featured payment + charts + summary
-- `ClosingCostsTab.tsx` - Closing costs breakdown
-- `AmortizationTab.tsx` - Amortization schedule with charts
-- `InvestmentAnalysisTab.tsx` - Investment metrics
+- `MortgageSummaryTab.tsx` - Featured payment + charts + summary + notes
+- `ClosingCostsTab.tsx` - Closing costs breakdown + notes
+- `AmortizationTab.tsx` - Amortization schedule with charts + notes
+- `InvestmentAnalysisTab.tsx` - Investment metrics + notes
 - `ResultsTabNavigation.tsx` - Tab navigation component
 - `ResultsActionButtons.tsx` - Save and share buttons
 
 #### Shared Components (`src/components/shared/`)
 - `ShareModal.tsx` - Reusable modal for sharing
+- `NotesSection.tsx` - Premium notes functionality for each tab
+- `CommentsSection.tsx` - Premium comments functionality for calculations
 - Other reusable UI components as needed
 
 #### Utilities (`src/utils/`)
@@ -176,6 +245,7 @@ END IF;
 - Multiple calculator components on one page
 - Old single-form calculator structure
 - Monolithic components over 300 lines
+- Dashboard link in header navigation
 
 ❌ **NEVER** remove:
 - Step indicator with proper styling
@@ -186,6 +256,8 @@ END IF;
 - Responsive tab design
 - Component modularity
 - Tier-based save limits
+- Notes and comments functionality
+- Home → Dashboard redirect for logged-in users
 
 ❌ **NEVER** change:
 - Font colors for consistency (all supporting amounts in slate-900)
@@ -195,6 +267,8 @@ END IF;
 - Singular table naming convention
 - Edit button text (must be "Edit", not "Back" or "Back to Input")
 - User tier system and save limits
+- Premium gating for notes and comments
+- Navigation behavior for logged-in vs logged-out users
 
 ## Required File Structure
 
@@ -217,7 +291,9 @@ src/
 │   │   ├── ResultsTabNavigation.tsx
 │   │   └── ResultsActionButtons.tsx
 │   ├── shared/
-│   │   └── ShareModal.tsx
+│   │   ├── ShareModal.tsx
+│   │   ├── NotesSection.tsx
+│   │   └── CommentsSection.tsx
 │   └── MortgageResults.tsx - Results display with tabs
 ├── utils/
 │   └── mortgageCalculations.ts
@@ -255,6 +331,8 @@ export interface MortgageData {
 - Foreign key references MUST use singular table names
 - Index names MUST reference singular table names
 - Migration files MUST follow singular naming convention
+- Notes stored as JSONB object with section keys
+- Comments stored as text field
 
 ### Investment Analysis Requirements
 - Toggle switch with emerald color scheme
@@ -272,12 +350,14 @@ export interface MortgageData {
 - Step indicator: Maintains readability on small screens
 - Featured payment card: Scales appropriately
 - Supporting cards: 2x2 grid on mobile, maintains spacing
+- Notes/comments: Full-width on mobile with proper touch targets
 
 ### Desktop Enhancements
 - Tab descriptions visible on large screens
 - Full section names and detailed layouts
 - Optimal chart sizing and spacing
 - Enhanced hover states and transitions
+- Notes/comments: Side-by-side layouts where appropriate
 
 ## NEW: Shared Calculation Page Requirements
 
@@ -287,6 +367,7 @@ export interface MortgageData {
 - No ability to edit the calculation
 - Clear "Create Your Own" link to start a new calculation
 - Proper display of all calculation details and charts
+- Comments visible to all viewers (if added by premium user)
 
 ### Marketing Content for Premium Users
 - Premium users can add marketing content to shared calculations
@@ -305,6 +386,9 @@ The design MUST match these specifications:
 6. **Supporting Cards**: Consistent slate-900 text for all amounts
 7. **Charts**: Proper color scheme and responsive containers
 8. **Edit Button**: Simple "Edit" text with ArrowLeft icon
+9. **Notes Sections**: Amber gradient with Crown icons and premium gating
+10. **Comments Section**: Blue gradient with Crown icons and premium gating
+11. **Navigation**: Home redirects to dashboard for logged-in users
 
 ## Code Structure Requirements
 
@@ -312,6 +396,9 @@ The design MUST match these specifications:
 // Calculator.tsx MUST have:
 const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 const [mortgageData, setMortgageData] = useState<MortgageData>({...});
+const [savedCalculationId, setSavedCalculationId] = useState<string>('');
+const [currentNotes, setCurrentNotes] = useState<Record<string, string>>({});
+const [currentComments, setCurrentComments] = useState<string>('');
 
 // Step 1: Input form
 if (currentStep === 1) {
@@ -327,7 +414,14 @@ if (currentStep === 1) {
 
 // Step 2: Results
 if (currentStep === 2) {
-  return <MortgageResults data={mortgageData} onBack={handleBackToForm} />;
+  return <MortgageResults 
+    data={mortgageData} 
+    onBack={handleBackToForm}
+    calculationId={savedCalculationId}
+    currentNotes={currentNotes}
+    currentComments={currentComments}
+    onCalculationSaved={handleCalculationSaved}
+  />;
 }
 ```
 
@@ -352,6 +446,12 @@ Any changes MUST pass these tests:
 - ✅ Error messages are clear and actionable
 - ✅ Shared calculation page displays correctly
 - ✅ Marketing content shows/hides correctly on shared pages
+- ✅ Notes sections appear in all result tabs for logged-in users
+- ✅ Comments section appears for logged-in users
+- ✅ Premium gating works correctly for notes and comments
+- ✅ Home redirects to dashboard for logged-in users
+- ✅ Navigation active states work correctly
+- ✅ Dashboard indicators show when calculations have notes/comments
 
 ## NEW: Chart Data Requirements
 
@@ -388,6 +488,10 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 11. Test tier-based save limits work correctly
 12. Verify error messages are clear and helpful
 13. Test shared calculation page functionality
+14. Verify notes and comments functionality works correctly
+15. Test premium gating for notes and comments
+16. Confirm navigation behavior for logged-in vs logged-out users
+17. Test dashboard redirect functionality
 
 ## NEW: Database Integration Requirements
 
@@ -398,6 +502,7 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Share modal with copy-to-clipboard functionality
 - All database operations MUST use singular table names
 - Tier-based save limits enforced both client and server-side
+- Notes and comments saved with calculation data
 
 ### Data Persistence
 - Form data preserved when navigating between steps
@@ -405,32 +510,41 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Calculation results stored with proper structure
 - Database queries MUST target singular table names
 - Save limits respected and clearly communicated to users
+- Notes and comments preserved across sessions
+- Dashboard shows indicators for calculations with notes/comments
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, and "Edit" button text are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, and navigation behavior are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **User Tier System**: Updated tier definitions to use 'free', 'basic', and 'premium'
-2. **Save Limit Implementation**: Both client-side and server-side validation for free users
-3. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
-4. **Database Triggers**: Server-side enforcement of save limits based on user tier
-5. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
-6. **Database Naming Convention**: Added requirement for singular table names across all database operations
-7. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
-8. **Modular Design**: Established clear file structure and component organization principles
-9. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
-10. **Testing Isolation**: Added requirements for component-level testing
-11. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
-12. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
-13. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
-14. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
-15. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
-16. **Chart Data Fixes**: Corrected pie chart percentages and data validation
-17. **Mobile Optimization**: Enhanced responsive design across all components
-18. **Testing Framework**: Added comprehensive structure validation tests
-19. **Shared Calculation Page**: Added requirements for shared calculation display
-20. **Marketing Content**: Added ability for premium users to customize shared calculation pages
+1. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+2. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
+3. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
+4. **Dashboard Enhancements**: Added indicators showing which calculations have notes/comments
+5. **Component Integration**: Notes and comments integrated into all result tab components
+6. **Premium Gating**: Proper upgrade prompts and feature gating for non-premium users
+7. **Visual Design**: Amber gradient for notes, blue gradient for comments, Crown icons for premium features
+8. **User Tier System**: Updated tier definitions to use 'free', 'basic', and 'premium'
+9. **Save Limit Implementation**: Both client-side and server-side validation for free users
+10. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
+11. **Database Triggers**: Server-side enforcement of save limits based on user tier
+12. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
+13. **Database Naming Convention**: Added requirement for singular table names across all database operations
+14. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
+15. **Modular Design**: Established clear file structure and component organization principles
+16. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
+17. **Testing Isolation**: Added requirements for component-level testing
+18. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
+19. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
+20. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
+21. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
+22. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
+23. **Chart Data Fixes**: Corrected pie chart percentages and data validation
+24. **Mobile Optimization**: Enhanced responsive design across all components
+25. **Testing Framework**: Added comprehensive structure validation tests
+26. **Shared Calculation Page**: Added requirements for shared calculation display
+27. **Marketing Content**: Added ability for premium users to customize shared calculation pages
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -443,3 +557,5 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Standardized Edit button text to "Edit" only
 - Implemented proper tier-based save limits
 - Enhanced shared calculation functionality
+- Added premium notes and comments without breaking existing functionality
+- Maintained navigation consistency while improving user experience
