@@ -75,34 +75,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const saveCalculation = async (calculation: Omit<MortgageCalculation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      try {
-        const { data, error } = await supabase
-          .from('mortgage_calculation')
-          .insert({
-            ...calculation,
-            user_id: null,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          throw new Error('Failed to create shareable calculation: ' + error.message);
-        }
-
-        if (data) {
-          saveToLocalStorage(calculation);
-          return data.id;
-        }
-
-        throw new Error('Failed to create shareable calculation');
-      } catch (error) {
-        throw error;
-      }
-    }
-
-    // Server-side validation for free users
-    if (user.tier === 'basic' && calculations.length >= 1) {
-      throw new Error('Free users can only save 1 calculation. Upgrade to save unlimited calculations.');
+      throw new Error('Please create an account to save calculations.');
     }
 
     try {
@@ -118,10 +91,6 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .single();
 
       if (error) {
-        // Check for specific server-side validation errors
-        if (error.message?.includes('save limit')) {
-          throw new Error('Free users can only save 1 calculation. Upgrade to save unlimited calculations.');
-        }
         throw new Error('Failed to save calculation: ' + error.message);
       }
 
