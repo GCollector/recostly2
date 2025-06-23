@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Calculator, TrendingUp, Shield, Star, Calendar, Eye, Share2, CreditCard } from 'lucide-react';
 import { Home as HomeIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,36 @@ import { useCalculations } from '../contexts/CalculationContext';
 const HomePage: React.FC = () => {
   const { user } = useAuth();
   const { calculations } = useCalculations();
+  const navigate = useNavigate();
+
+  const handleViewCalculation = (calc: any) => {
+    // Navigate to calculator with the saved calculation data
+    // We'll pass the calculation data via state so it can be loaded in step 2
+    navigate('/calculator', { 
+      state: { 
+        calculationData: {
+          homePrice: calc.home_price,
+          downPayment: calc.down_payment,
+          interestRate: calc.interest_rate,
+          amortizationYears: calc.amortization_years,
+          paymentFrequency: calc.payment_frequency,
+          province: calc.province,
+          city: calc.city,
+          isFirstTimeBuyer: calc.is_first_time_buyer,
+          enableInvestmentAnalysis: false, // Default to false, can be enhanced later
+          monthlyRent: 2500, // Default values
+          monthlyExpenses: {
+            taxes: 400,
+            insurance: 150,
+            condoFees: 300,
+            maintenance: 200,
+            other: 100
+          }
+        },
+        startAtStep: 2 // Tell calculator to start at step 2 (results)
+      }
+    });
+  };
 
   const handleShare = async (calculationId: string) => {
     const shareUrl = `${window.location.origin}/shared/${calculationId}`;
@@ -116,9 +146,12 @@ const HomePage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
-                        <h3 className="text-lg font-medium font-heading text-slate-900">
+                        <button
+                          onClick={() => handleViewCalculation(calc)}
+                          className="text-lg font-medium font-heading text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                        >
                           ${calc.home_price.toLocaleString()} Home
-                        </h3>
+                        </button>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium font-sans ${
                           calc.city === 'toronto' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
                         }`}>
@@ -140,13 +173,13 @@ const HomePage: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <Link
-                        to={`/shared/${calc.id}`}
+                      <button
+                        onClick={() => handleViewCalculation(calc)}
                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white"
-                        title="View Details"
+                        title="View Results"
                       >
                         <Eye className="h-4 w-4" />
-                      </Link>
+                      </button>
                       <button
                         onClick={() => handleShare(calc.id)}
                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white"
