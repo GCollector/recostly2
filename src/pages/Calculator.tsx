@@ -14,6 +14,8 @@ export interface MortgageData {
   city: 'toronto' | 'vancouver';
   isFirstTimeBuyer: boolean;
   enableInvestmentAnalysis: boolean;
+  enableClosingCosts: boolean;
+  showMarketingOnShare: boolean; // New field for premium users
   monthlyRent?: number;
   monthlyExpenses?: {
     taxes: number;
@@ -21,6 +23,16 @@ export interface MortgageData {
     condoFees: number;
     maintenance: number;
     other: number;
+  };
+  closingCosts?: {
+    landTransferTax: number;
+    additionalTax: number;
+    legalFees: number;
+    titleInsurance: number;
+    homeInspection: number;
+    appraisal: number;
+    surveyFee: number;
+    firstTimeBuyerRebate: number;
   };
 }
 
@@ -40,6 +52,8 @@ const Calculator: React.FC = () => {
     city: 'toronto',
     isFirstTimeBuyer: false,
     enableInvestmentAnalysis: false,
+    enableClosingCosts: true, // Default to enabled with reasonable values
+    showMarketingOnShare: true, // Default to show marketing content
     monthlyRent: 2500,
     monthlyExpenses: {
       taxes: 400,
@@ -47,6 +61,16 @@ const Calculator: React.FC = () => {
       condoFees: 300,
       maintenance: 200,
       other: 100
+    },
+    closingCosts: {
+      landTransferTax: 8475,
+      additionalTax: 8475, // Toronto municipal tax
+      legalFees: 2000,
+      titleInsurance: 400,
+      homeInspection: 500,
+      appraisal: 400,
+      surveyFee: 1000,
+      firstTimeBuyerRebate: 0
     }
   });
 
@@ -87,6 +111,16 @@ const Calculator: React.FC = () => {
     }));
   };
 
+  const handleClosingCostChange = (field: keyof NonNullable<MortgageData['closingCosts']>, value: number) => {
+    setMortgageData(prev => ({
+      ...prev,
+      closingCosts: {
+        ...prev.closingCosts!,
+        [field]: value
+      }
+    }));
+  };
+
   const handleCalculateResults = () => {
     setCurrentStep(2);
   };
@@ -120,7 +154,7 @@ const Calculator: React.FC = () => {
           Canadian Mortgage Calculator
         </h1>
         <p className="text-lg font-sans text-slate-600 max-w-3xl mx-auto">
-          Professional mortgage calculations with optional investment analysis for Canadian real estate.
+          Professional mortgage calculations with optional investment analysis and closing costs for Canadian real estate.
         </p>
       </div>
 
@@ -148,6 +182,7 @@ const Calculator: React.FC = () => {
             data={mortgageData}
             onInputChange={handleInputChange}
             onExpenseChange={handleExpenseChange}
+            onClosingCostChange={handleClosingCostChange}
           />
 
           {/* Calculate Button */}

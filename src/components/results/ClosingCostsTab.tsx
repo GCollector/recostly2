@@ -4,7 +4,7 @@ import NotesSection from '../shared/NotesSection';
 
 interface ClosingCostsTabProps {
   data: MortgageData;
-  closingCosts: {
+  closingCosts?: {
     landTransferTax: number;
     additionalTax: number;
     legalFees: number;
@@ -17,7 +17,7 @@ interface ClosingCostsTabProps {
   };
   calculationId?: string;
   currentNotes?: Record<string, string>;
-  readonly?: boolean; // New prop for shared pages
+  readonly?: boolean;
 }
 
 const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({ 
@@ -27,6 +27,29 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
   currentNotes = {},
   readonly = false
 }) => {
+  // Use custom closing costs if available, otherwise calculate defaults
+  const finalClosingCosts = closingCosts || {
+    landTransferTax: data.closingCosts?.landTransferTax || 8475,
+    additionalTax: data.closingCosts?.additionalTax || (data.city === 'toronto' ? 8475 : 0),
+    legalFees: data.closingCosts?.legalFees || 2000,
+    titleInsurance: data.closingCosts?.titleInsurance || 400,
+    homeInspection: data.closingCosts?.homeInspection || 500,
+    appraisal: data.closingCosts?.appraisal || 400,
+    surveyFee: data.closingCosts?.surveyFee || 1000,
+    firstTimeBuyerRebate: data.closingCosts?.firstTimeBuyerRebate || (data.isFirstTimeBuyer ? 4000 : 0),
+    total: 0
+  };
+
+  // Calculate total
+  finalClosingCosts.total = finalClosingCosts.landTransferTax + 
+    finalClosingCosts.additionalTax + 
+    finalClosingCosts.legalFees + 
+    finalClosingCosts.titleInsurance + 
+    finalClosingCosts.homeInspection + 
+    finalClosingCosts.appraisal + 
+    finalClosingCosts.surveyFee - 
+    finalClosingCosts.firstTimeBuyerRebate;
+
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
@@ -34,7 +57,7 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
         <div className="bg-emerald-50 p-6 rounded-xl">
           <div className="text-center">
             <div className="text-3xl font-bold text-emerald-600 mb-2">
-              ${closingCosts.total.toLocaleString()}
+              ${finalClosingCosts.total.toLocaleString()}
             </div>
             <div className="text-sm text-emerald-700">Total Estimated Closing Costs</div>
             <div className="text-xs text-emerald-600 mt-1">Fees and expenses at closing</div>
@@ -44,7 +67,7 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
         <div className="bg-blue-50 p-6 rounded-xl">
           <div className="text-center">
             <div className="text-3xl font-bold text-blue-600 mb-2">
-              ${(data.downPayment + closingCosts.total).toLocaleString()}
+              ${(data.downPayment + finalClosingCosts.total).toLocaleString()}
             </div>
             <div className="text-sm text-blue-700">Cash Required at Closing</div>
             <div className="text-xs text-blue-600 mt-1">Down payment + closing costs</div>
@@ -52,7 +75,7 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section - Always visible for logged in users */}
+      {/* Premium Notes Section */}
       {!readonly && (
         <NotesSection
           calculationId={calculationId || 'temp'}
@@ -74,7 +97,7 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
       )}
 
       {/* Closing Cost Breakdown */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200">
+      <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
         <h3 className="text-lg font-semibold text-slate-900 mb-6">Closing Cost Breakdown</h3>
         <div className="space-y-4">
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
@@ -82,15 +105,15 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
               {data.province === 'ontario' ? 'Ontario Land Transfer Tax' : 'BC Property Transfer Tax'}
             </span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.landTransferTax.toLocaleString()}
+              ${finalClosingCosts.landTransferTax.toLocaleString()}
             </span>
           </div>
 
-          {data.city === 'toronto' && (
+          {data.city === 'toronto' && finalClosingCosts.additionalTax > 0 && (
             <div className="flex justify-between items-center py-3 border-b border-slate-200">
               <span className="text-slate-700">Toronto Municipal Land Transfer Tax</span>
               <span className="font-semibold text-slate-900">
-                ${closingCosts.additionalTax.toLocaleString()}
+                ${finalClosingCosts.additionalTax.toLocaleString()}
               </span>
             </div>
           )}
@@ -98,51 +121,51 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
             <span className="text-slate-700">Legal Fees & Disbursements</span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.legalFees.toLocaleString()}
+              ${finalClosingCosts.legalFees.toLocaleString()}
             </span>
           </div>
 
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
             <span className="text-slate-700">Title Insurance</span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.titleInsurance.toLocaleString()}
+              ${finalClosingCosts.titleInsurance.toLocaleString()}
             </span>
           </div>
 
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
             <span className="text-slate-700">Home Inspection</span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.homeInspection.toLocaleString()}
+              ${finalClosingCosts.homeInspection.toLocaleString()}
             </span>
           </div>
 
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
             <span className="text-slate-700">Property Appraisal</span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.appraisal.toLocaleString()}
+              ${finalClosingCosts.appraisal.toLocaleString()}
             </span>
           </div>
 
           <div className="flex justify-between items-center py-3 border-b border-slate-200">
             <span className="text-slate-700">Survey Fee</span>
             <span className="font-semibold text-slate-900">
-              ${closingCosts.surveyFee.toLocaleString()}
+              ${finalClosingCosts.surveyFee.toLocaleString()}
             </span>
           </div>
 
-          {closingCosts.firstTimeBuyerRebate > 0 && (
+          {finalClosingCosts.firstTimeBuyerRebate > 0 && (
             <div className="flex justify-between items-center py-3 border-b border-slate-200">
               <span className="text-green-700">First-Time Buyer Rebate</span>
               <span className="font-semibold text-green-600">
-                -${closingCosts.firstTimeBuyerRebate.toLocaleString()}
+                -${finalClosingCosts.firstTimeBuyerRebate.toLocaleString()}
               </span>
             </div>
           )}
 
-          <div className="flex justify-between items-center py-4 bg-slate-50 px-4 rounded-lg">
+          <div className="flex justify-between items-center py-4 bg-slate-100 px-4 rounded-lg">
             <span className="font-semibold text-slate-900">Total Closing Costs</span>
             <span className="text-xl font-bold text-slate-900">
-              ${closingCosts.total.toLocaleString()}
+              ${finalClosingCosts.total.toLocaleString()}
             </span>
           </div>
         </div>

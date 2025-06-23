@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Info, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Info, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
 import { MortgageData } from '../pages/Calculator';
@@ -53,7 +53,26 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   const downPaymentPercent = Math.round((data.downPayment / data.homePrice) * 100);
 
   // Calculate closing costs
-  const closingCosts = calculateClosingCosts(data.homePrice, data.province, data.city, data.isFirstTimeBuyer);
+  const closingCosts = data.enableClosingCosts && data.closingCosts ? 
+    {
+      landTransferTax: data.closingCosts.landTransferTax,
+      additionalTax: data.closingCosts.additionalTax,
+      legalFees: data.closingCosts.legalFees,
+      titleInsurance: data.closingCosts.titleInsurance,
+      homeInspection: data.closingCosts.homeInspection,
+      appraisal: data.closingCosts.appraisal,
+      surveyFee: data.closingCosts.surveyFee,
+      firstTimeBuyerRebate: data.closingCosts.firstTimeBuyerRebate,
+      total: data.closingCosts.landTransferTax + 
+             data.closingCosts.additionalTax + 
+             data.closingCosts.legalFees + 
+             data.closingCosts.titleInsurance + 
+             data.closingCosts.homeInspection + 
+             data.closingCosts.appraisal + 
+             data.closingCosts.surveyFee - 
+             data.closingCosts.firstTimeBuyerRebate
+    } : 
+    calculateClosingCosts(data.homePrice, data.province, data.city, data.isFirstTimeBuyer);
 
   // Generate amortization schedule
   const amortizationSchedule = generateAmortizationSchedule(loanAmount, monthlyPayment, monthlyRate, data.amortizationYears);
@@ -68,6 +87,19 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
     setIsSaving(true);
     
     try {
+      // Prepare investment data if enabled
+      const investmentData = data.enableInvestmentAnalysis ? {
+        monthlyRent: data.monthlyRent,
+        monthlyExpenses: data.monthlyExpenses
+      } : null;
+
+      // Prepare notes with additional data
+      const notesData = {
+        ...currentNotes,
+        investment_data: investmentData,
+        showMarketingOnShare: data.showMarketingOnShare
+      };
+      
       const calculationData = {
         home_price: data.homePrice,
         down_payment: data.downPayment,
@@ -79,7 +111,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         is_first_time_buyer: data.isFirstTimeBuyer,
         monthly_payment: monthlyPayment,
         total_interest: totalInterest,
-        notes: currentNotes,
+        notes: notesData,
         comments: currentComments
       };
       
@@ -251,7 +283,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
           </span>
           <span className="text-sm font-medium font-sans text-slate-600">Input Details</span>
         </div>
-        <ArrowRight className="h-4 w-4 text-slate-400" />
+        <ArrowLeft className="h-4 w-4 text-slate-400" />
         <div className="flex items-center space-x-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
             2

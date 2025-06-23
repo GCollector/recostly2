@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calculator, Home, MapPin, Percent, Calendar, MessageCircle, User, AlertTriangle } from 'lucide-react';
+import { Calculator, Calendar, MessageCircle, User, AlertTriangle } from 'lucide-react';
 import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
 import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule } from '../utils/mortgageCalculations';
@@ -25,7 +25,6 @@ const SharedCalculation: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
-  const [showMarketingContent, setShowMarketingContent] = useState(true);
 
   useEffect(() => {
     const fetchCalculation = async () => {
@@ -185,6 +184,9 @@ const SharedCalculation: React.FC = () => {
 
   const enableInvestmentAnalysis = !!investmentMetrics;
 
+  // Check if marketing should be shown (default to true if not specified)
+  const showMarketingContent = calculation.notes?.showMarketingOnShare !== false;
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'mortgage':
@@ -199,7 +201,9 @@ const SharedCalculation: React.FC = () => {
               province: calculation.province,
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
-              enableInvestmentAnalysis: false
+              enableInvestmentAnalysis: false,
+              enableClosingCosts: true,
+              showMarketingOnShare: true
             }}
             monthlyPayment={monthlyPayment}
             loanAmount={loanAmount}
@@ -224,7 +228,9 @@ const SharedCalculation: React.FC = () => {
               province: calculation.province,
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
-              enableInvestmentAnalysis: false
+              enableInvestmentAnalysis: false,
+              enableClosingCosts: true,
+              showMarketingOnShare: true
             }}
             closingCosts={closingCosts}
             calculationId={calculation.id}
@@ -259,6 +265,8 @@ const SharedCalculation: React.FC = () => {
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
               enableInvestmentAnalysis: true,
+              enableClosingCosts: true,
+              showMarketingOnShare: true,
               monthlyRent: calculation.notes?.investment_data?.monthlyRent,
               monthlyExpenses: calculation.notes?.investment_data?.monthlyExpenses
             }}
@@ -290,74 +298,61 @@ const SharedCalculation: React.FC = () => {
         </div>
       </div>
 
-      {/* Professional Services Section - Moved above tabs for better marketing */}
-      {owner && owner.tier === 'premium' && (owner.marketing_image || owner.marketing_copy) && showMarketingContent && (
+      {/* Professional Services Section - Only show if premium user and enabled */}
+      {owner && owner.tier === 'premium' && showMarketingContent && (owner.marketing_image || owner.marketing_copy) && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-semibold font-heading text-slate-900">Professional Services</h3>
-            <button
-              onClick={() => setShowMarketingContent(false)}
-              className="text-slate-400 hover:text-slate-600 text-sm"
-            >
-              Hide
-            </button>
-          </div>
-          <div className="border-t border-slate-200 pt-6">
-            <div className="text-center space-y-4">
-              {owner.marketing_image ? (
-                <img
-                  src={owner.marketing_image}
-                  alt="Professional"
-                  className="w-20 h-20 object-cover rounded-full mx-auto"
-                />
+          <div className="text-center space-y-4">
+            {owner.marketing_image ? (
+              <img
+                src={owner.marketing_image}
+                alt="Professional"
+                className="w-20 h-20 object-cover rounded-full mx-auto"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
+                <User className="h-10 w-10 text-white" />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold font-heading text-slate-900">{owner.name}</h3>
+              {owner.marketing_copy ? (
+                <p className="font-sans text-slate-600 max-w-2xl mx-auto whitespace-pre-wrap">
+                  {owner.marketing_copy}
+                </p>
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
-                  <User className="h-10 w-10 text-white" />
-                </div>
+                <p className="font-sans text-slate-600 max-w-2xl mx-auto">
+                  Professional mortgage and real estate services. Contact me for personalized assistance with your home buying journey.
+                </p>
               )}
-              
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold font-heading text-slate-900">{owner.name}</h3>
-                {owner.marketing_copy ? (
-                  <p className="font-sans text-slate-600 max-w-2xl mx-auto whitespace-pre-wrap">
-                    {owner.marketing_copy}
-                  </p>
-                ) : (
-                  <p className="font-sans text-slate-600 max-w-2xl mx-auto">
-                    Professional mortgage and real estate services. Contact me for personalized assistance with your home buying journey.
-                  </p>
-                )}
-                <div className="text-sm font-sans text-slate-500">
-                  <span>📧 {owner.email}</span>
-                </div>
+              <div className="text-sm font-sans text-slate-500">
+                <span>📧 {owner.email}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Default Marketing Content for Non-Premium Users */}
-      {(!owner || owner.tier !== 'premium' || (!owner.marketing_image && !owner.marketing_copy) || !showMarketingContent) && (
+      {/* Default Marketing Content for Non-Premium Users or when marketing is disabled */}
+      {(!owner || owner.tier !== 'premium' || !showMarketingContent || (!owner.marketing_image && !owner.marketing_copy)) && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-          <div className="border-t border-slate-200 pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
-                <Calculator className="h-10 w-10 text-white" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold font-heading text-slate-900">Professional Mortgage Calculator</h3>
-                <p className="font-sans text-slate-600 max-w-2xl mx-auto">
-                  Get expert guidance on your mortgage journey. Our professional mortgage calculator 
-                  helps Canadian homebuyers navigate the complex world of real estate financing with 
-                  accurate calculations and detailed breakdowns.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm font-sans text-slate-600">
-                  <span>🏠 Canadian Real Estate Focus</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>📊 Professional Grade Calculations</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>🔒 Secure & Private</span>
-                </div>
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center">
+              <Calculator className="h-10 w-10 text-white" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold font-heading text-slate-900">Professional Mortgage Calculator</h3>
+              <p className="font-sans text-slate-600 max-w-2xl mx-auto">
+                Get expert guidance on your mortgage journey. Our professional mortgage calculator 
+                helps Canadian homebuyers navigate the complex world of real estate financing with 
+                accurate calculations and detailed breakdowns.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-sm font-sans text-slate-600">
+                <span>🏠 Canadian Real Estate Focus</span>
+                <span className="hidden sm:inline">•</span>
+                <span>📊 Professional Grade Calculations</span>
+                <span className="hidden sm:inline">•</span>
+                <span>🔒 Secure & Private</span>
               </div>
             </div>
           </div>

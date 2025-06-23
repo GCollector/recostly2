@@ -9,7 +9,7 @@ interface NotesSectionProps {
   sectionTitle: string;
   currentNotes?: string;
   className?: string;
-  readonly?: boolean; // New prop for shared pages
+  readonly?: boolean;
 }
 
 const NotesSection: React.FC<NotesSectionProps> = ({
@@ -59,10 +59,10 @@ const NotesSection: React.FC<NotesSectionProps> = ({
 
   if (!user && !readonly) return null;
 
-  // Readonly styling for shared pages
+  // Neutral styling instead of yellow/amber
   const backgroundClass = readonly 
-    ? 'bg-gradient-to-br from-amber-25 to-orange-25 border border-amber-200' 
-    : 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200';
+    ? 'bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-300' 
+    : 'bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-300';
 
   return (
     <div className={`${backgroundClass} rounded-xl p-6 shadow-lg ${className}`}>
@@ -70,8 +70,8 @@ const NotesSection: React.FC<NotesSectionProps> = ({
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
             readonly 
-              ? 'bg-gradient-to-r from-amber-400 to-orange-400' 
-              : 'bg-gradient-to-r from-amber-500 to-orange-500'
+              ? 'bg-gradient-to-r from-slate-500 to-slate-600' 
+              : 'bg-gradient-to-r from-slate-600 to-slate-700'
           }`}>
             {readonly ? (
               <Eye className="h-5 w-5 text-white" />
@@ -80,19 +80,19 @@ const NotesSection: React.FC<NotesSectionProps> = ({
             )}
           </div>
           <div>
-            <h3 className="text-lg font-semibold font-heading text-amber-900">
+            <h3 className="text-lg font-semibold font-heading text-slate-900">
               {sectionTitle} Notes
             </h3>
             <div className="flex items-center space-x-2">
               {readonly ? (
                 <>
-                  <Eye className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-700">View Only</span>
+                  <Eye className="h-4 w-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">View Only</span>
                 </>
               ) : (
                 <>
-                  <Crown className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-700">Premium Feature</span>
+                  <Crown className="h-4 w-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">Premium Feature</span>
                 </>
               )}
             </div>
@@ -102,7 +102,7 @@ const NotesSection: React.FC<NotesSectionProps> = ({
         {!readonly && isPremium && !isEditing && calculationId !== 'temp' && (
           <button
             onClick={() => setIsEditing(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
+            className="flex items-center space-x-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
           >
             <Edit3 className="h-4 w-4" />
             <span>{hasNotes ? 'Edit Notes' : 'Add Notes'}</span>
@@ -112,47 +112,47 @@ const NotesSection: React.FC<NotesSectionProps> = ({
 
       {readonly && hasNotes ? (
         // Readonly display for shared pages
-        <div className="bg-white/80 backdrop-blur-sm border border-amber-300 rounded-lg p-4">
-          <div className="prose prose-amber max-w-none">
-            <div className="whitespace-pre-wrap text-amber-900 font-sans leading-relaxed">
+        <div className="bg-white/80 backdrop-blur-sm border border-slate-400 rounded-lg p-4">
+          <div className="prose prose-slate max-w-none">
+            <div className="whitespace-pre-wrap text-slate-900 font-sans leading-relaxed">
               {notes}
             </div>
           </div>
         </div>
       ) : !readonly && !isPremium ? (
-        <div className="bg-white/70 backdrop-blur-sm border border-amber-300 rounded-lg p-6 text-center">
-          <Lock className="h-12 w-12 text-amber-600 mx-auto mb-4" />
-          <h4 className="text-lg font-semibold font-heading text-amber-900 mb-2">
+        <div className="bg-white/70 backdrop-blur-sm border border-slate-400 rounded-lg p-6 text-center">
+          <Lock className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+          <h4 className="text-lg font-semibold font-heading text-slate-900 mb-2">
             Premium Feature
           </h4>
-          <p className="text-amber-800 mb-4">
+          <p className="text-slate-800 mb-4">
             Add private notes to each section of your calculations. Perfect for tracking 
             assumptions, reminders, and important details.
           </p>
           <button
             onClick={() => window.location.href = '/pricing'}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Upgrade to Premium
           </button>
         </div>
       ) : !readonly && calculationId === 'temp' ? (
-        <div className="bg-white/70 backdrop-blur-sm border border-amber-300 rounded-lg p-6 text-center">
-          <MessageSquare className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-          <p className="text-amber-800 mb-4">
+        <div className="bg-white/70 backdrop-blur-sm border border-slate-400 rounded-lg p-6 text-center">
+          <MessageSquare className="h-8 w-8 text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-800 mb-4">
             Save your calculation first to add private notes to this section.
           </p>
         </div>
       ) : !readonly && isEditing ? (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-amber-900 mb-2">
+            <label className="block text-sm font-medium text-slate-900 mb-2">
               Your private notes for {sectionTitle.toLowerCase()}:
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full h-32 p-4 border-2 border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none font-sans bg-white/90 backdrop-blur-sm"
+              className="w-full h-32 p-4 border-2 border-slate-400 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent resize-none font-sans bg-white/90 backdrop-blur-sm"
               placeholder={`Add your private notes about ${sectionTitle.toLowerCase()}... 
 
 Examples:
@@ -189,17 +189,17 @@ Examples:
           </div>
         </div>
       ) : !readonly && hasNotes ? (
-        <div className="bg-white/90 backdrop-blur-sm border border-amber-300 rounded-lg p-4">
-          <div className="prose prose-amber max-w-none">
-            <div className="whitespace-pre-wrap text-amber-900 font-sans leading-relaxed">
+        <div className="bg-white/90 backdrop-blur-sm border border-slate-400 rounded-lg p-4">
+          <div className="prose prose-slate max-w-none">
+            <div className="whitespace-pre-wrap text-slate-900 font-sans leading-relaxed">
               {notes}
             </div>
           </div>
         </div>
       ) : !readonly ? (
-        <div className="bg-white/70 backdrop-blur-sm border border-amber-300 rounded-lg p-6 text-center">
-          <MessageSquare className="h-8 w-8 text-amber-600 mx-auto mb-3" />
-          <p className="text-amber-800 mb-4">
+        <div className="bg-white/70 backdrop-blur-sm border border-slate-400 rounded-lg p-6 text-center">
+          <MessageSquare className="h-8 w-8 text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-800 mb-4">
             No notes added yet. Click "Add Notes" to include your private thoughts and reminders for this section.
           </p>
         </div>

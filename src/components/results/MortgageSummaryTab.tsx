@@ -153,7 +153,7 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section - Always visible for logged in users */}
+      {/* Premium Notes Section */}
       {!readonly && (
         <NotesSection
           calculationId={calculationId || 'temp'}
