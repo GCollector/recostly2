@@ -106,8 +106,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         monthlyExpenses: data.monthlyExpenses
       } : null;
 
+      // CRITICAL FIX: Include ALL current notes when saving
       const notesData = {
-        ...currentNotes,
+        ...currentNotes, // Include all existing notes
         investment_data: investmentData,
         showMarketingOnShare: data.showMarketingOnShare,
         enableInvestmentAnalysis: data.enableInvestmentAnalysis,
@@ -127,11 +128,12 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         is_first_time_buyer: data.isFirstTimeBuyer,
         monthly_payment: monthlyPayment,
         total_interest: totalInterest,
-        notes: notesData,
+        notes: notesData, // This now includes all notes
         comments: currentComments
       };
       
-      const id = await saveCalculation(calculationData);
+      // Pass the existing calculationId to ensure update instead of create
+      const id = await saveCalculation(calculationData, savedCalculationId || calculationId);
       setSavedCalculationId(id);
       
       if (onCalculationSaved) {
@@ -364,6 +366,16 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         <div className="w-24"></div>
       </div>
 
+      {/* Summary Section - Renamed from "Shareable Comments" and moved above tabs */}
+      {user && (
+        <CommentsSection
+          calculationId={savedCalculationId || 'temp'}
+          currentComments={currentComments}
+          title="Summary"
+          description="Add a summary that will be visible to viewers of your shared calculation"
+        />
+      )}
+
       {/* Tab Navigation */}
       <ResultsTabNavigation
         activeTab={activeTab}
@@ -377,14 +389,6 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
         {renderTabContent()}
       </div>
-
-      {/* Premium Comments Section */}
-      {user && (
-        <CommentsSection
-          calculationId={savedCalculationId || 'temp'}
-          currentComments={currentComments}
-        />
-      )}
 
       {/* Save Message Display */}
       {saveMessage && (

@@ -5,7 +5,6 @@ import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
 import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule, calculateTotalLoanAmount } from '../utils/mortgageCalculations';
 import type { Database } from '../lib/supabase';
-import NotesSection from '../components/shared/NotesSection';
 import CommentsSection from '../components/shared/CommentsSection';
 import ResultsTabNavigation from '../components/results/ResultsTabNavigation';
 import MortgageSummaryTab from '../components/results/MortgageSummaryTab';
@@ -41,10 +40,8 @@ const SharedCalculation: React.FC = () => {
       try {
         console.log('Fetching calculation with ID:', id);
         
-        // Try to get calculation from context first
         let calc = await getCalculationAsync(id);
         
-        // If not found in context, try direct database query
         if (!calc) {
           console.log('Not found in context, querying database directly...');
           const { data, error: dbError } = await supabase
@@ -76,7 +73,6 @@ const SharedCalculation: React.FC = () => {
         console.log('Calculation found:', calc);
         setCalculation(calc);
 
-        // If calculation has an owner, fetch their profile for marketing content
         if (calc.user_id) {
           console.log('Fetching owner profile for user:', calc.user_id);
           const { data: profile, error: profileError } = await supabase
@@ -141,15 +137,12 @@ const SharedCalculation: React.FC = () => {
     );
   }
 
-  // Determine if sections are enabled
-  const enableClosingCosts = calculation.notes?.enableClosingCosts !== false; // Default to true if not specified
+  const enableClosingCosts = calculation.notes?.enableClosingCosts !== false;
   const enableInvestmentAnalysis = !!calculation.notes?.enableInvestmentAnalysis || !!calculation.notes?.investment_data;
   const enableRentVsBuy = !!calculation.notes?.enableRentVsBuy;
 
-  // Calculate loan amounts including CMHC insurance
   const loanCalculation = calculateTotalLoanAmount(calculation.home_price, calculation.down_payment);
   
-  // Calculate derived values for display
   const baseLoanAmount = loanCalculation.baseLoanAmount;
   const cmhcPremium = loanCalculation.cmhcPremium;
   const loanAmount = loanCalculation.totalLoanAmount;
@@ -160,7 +153,6 @@ const SharedCalculation: React.FC = () => {
   const totalInterest = calculation.total_interest;
   const downPaymentPercent = Math.round((calculation.down_payment / calculation.home_price) * 100);
 
-  // Calculate closing costs
   const closingCosts = calculateClosingCosts(
     calculation.home_price, 
     calculation.province, 
@@ -168,7 +160,6 @@ const SharedCalculation: React.FC = () => {
     calculation.is_first_time_buyer
   );
 
-  // Generate amortization schedule
   const amortizationSchedule = generateAmortizationSchedule(
     loanAmount, 
     monthlyPayment, 
@@ -176,7 +167,6 @@ const SharedCalculation: React.FC = () => {
     calculation.amortization_years
   );
 
-  // Calculate investment metrics if data exists
   const investmentMetrics = calculation.notes && 
     typeof calculation.notes === 'object' && 
     calculation.notes.investment_data ? 
@@ -194,10 +184,8 @@ const SharedCalculation: React.FC = () => {
       }
     ) : null;
 
-  // Check if marketing should be shown (default to true if not specified)
   const showMarketingContent = calculation.notes?.showMarketingOnShare !== false;
 
-  // Filter out control flags from notes to avoid showing them as actual notes
   const filteredNotes: Record<string, string> = {};
   if (calculation.notes) {
     Object.entries(calculation.notes).forEach(([key, value]) => {
@@ -408,6 +396,17 @@ const SharedCalculation: React.FC = () => {
         </div>
       )}
 
+      {/* Summary Section (renamed from Comments) */}
+      {calculation.comments && (
+        <CommentsSection
+          calculationId={calculation.id}
+          currentComments={calculation.comments}
+          readonly={true}
+          title="Summary"
+          description="Calculation summary"
+        />
+      )}
+
       {/* Tab Navigation */}
       <ResultsTabNavigation
         activeTab={activeTab}
@@ -421,15 +420,6 @@ const SharedCalculation: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[600px]">
         {renderTabContent()}
       </div>
-
-      {/* Readonly Comments Section - Only show if comments exist */}
-      {calculation.comments && (
-        <CommentsSection
-          calculationId={calculation.id}
-          currentComments={calculation.comments}
-          readonly={true}
-        />
-      )}
     </div>
   );
 };

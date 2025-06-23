@@ -7,14 +7,18 @@ interface CommentsSectionProps {
   calculationId: string;
   currentComments?: string;
   className?: string;
-  readonly?: boolean; // New prop for shared pages
+  readonly?: boolean;
+  title?: string; // New prop for custom title
+  description?: string; // New prop for custom description
 }
 
 const CommentsSection: React.FC<CommentsSectionProps> = ({
   calculationId,
   currentComments = '',
   className = '',
-  readonly = false
+  readonly = false,
+  title = 'Shareable Comments', // Default title
+  description = 'Add comments that will be visible to viewers of your shared calculation'
 }) => {
   const { user } = useAuth();
   const { updateCalculationComments } = useCalculations();
@@ -29,8 +33,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const handleSave = async () => {
     if (!user || !isPremium || readonly) return;
 
-    // If we're working with a temporary calculation (not yet saved)
-    // just update the local state and don't try to save to the database
     if (calculationId === 'temp') {
       setIsEditing(false);
       return;
@@ -55,14 +57,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     setError('');
   };
 
-  // Don't show comments section on shared pages if no comments exist
   if (readonly && !hasComments) {
     return null;
   }
 
   if (!user && !readonly) return null;
 
-  // Readonly styling for shared pages
   const backgroundClass = readonly 
     ? 'bg-gradient-to-br from-blue-25 to-indigo-25 border border-blue-200' 
     : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200';
@@ -84,7 +84,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           </div>
           <div>
             <h3 className="text-base font-semibold font-heading text-blue-900">
-              {readonly ? 'Comments' : 'Shareable Comments'}
+              {readonly ? title : title}
             </h3>
             <div className="flex items-center space-x-2">
               {readonly ? (
@@ -114,7 +114,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       </div>
 
       {readonly && hasComments ? (
-        // Readonly display for shared pages
         <div className="bg-white/80 backdrop-blur-sm border border-blue-300 rounded-lg p-3 mt-2">
           <div className="prose prose-blue max-w-none">
             <div className="whitespace-pre-wrap text-blue-900 font-sans leading-relaxed text-sm">
@@ -126,7 +125,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         <div className="bg-white/70 backdrop-blur-sm border border-blue-300 rounded-lg p-3 text-center mt-2">
           <Lock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
           <p className="text-blue-800 text-sm mb-2">
-            Add shareable comments with a Premium subscription.
+            Add {title.toLowerCase()} with a Premium subscription.
           </p>
           <button
             onClick={() => window.location.href = '/pricing'}
@@ -142,7 +141,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               className="w-full h-24 p-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-sans bg-white/90 backdrop-blur-sm text-sm"
-              placeholder="Add comments that will be visible to viewers of your shared calculation..."
+              placeholder={description}
             />
           </div>
 
@@ -183,7 +182,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         <div className="bg-white/70 backdrop-blur-sm border border-blue-300 rounded-lg p-3 text-center mt-2">
           <MessageCircle className="h-6 w-6 text-blue-600 mx-auto mb-1" />
           <p className="text-blue-800 text-sm">
-            Click "Add" to include shareable comments.
+            Click "Add" to include {title.toLowerCase()}.
           </p>
         </div>
       ) : null}
