@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
 
@@ -24,6 +25,7 @@ export interface MortgageData {
 }
 
 const Calculator: React.FC = () => {
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [mortgageData, setMortgageData] = useState<MortgageData>({
     homePrice: 500000,
@@ -44,6 +46,14 @@ const Calculator: React.FC = () => {
       other: 100
     }
   });
+
+  // Check if we're coming from dashboard with saved calculation data
+  useEffect(() => {
+    if (location.state?.calculationData && location.state?.startAtStep) {
+      setMortgageData(location.state.calculationData);
+      setCurrentStep(location.state.startAtStep);
+    }
+  }, [location.state]);
 
   // Scroll to top when step changes - this is the hack that works
   useEffect(() => {

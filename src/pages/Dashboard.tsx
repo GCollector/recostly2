@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Calculator, Trash2, Share2, Eye, Calendar, Crown, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
@@ -9,6 +9,7 @@ const Dashboard: React.FC = () => {
   const { calculations, deleteCalculation } = useCalculations();
   const [searchParams] = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -31,6 +32,35 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+
+  const handleViewCalculation = (calc: any) => {
+    // Navigate to calculator with the saved calculation data
+    // We'll pass the calculation data via state so it can be loaded in step 2
+    navigate('/calculator', { 
+      state: { 
+        calculationData: {
+          homePrice: calc.home_price,
+          downPayment: calc.down_payment,
+          interestRate: calc.interest_rate,
+          amortizationYears: calc.amortization_years,
+          paymentFrequency: calc.payment_frequency,
+          province: calc.province,
+          city: calc.city,
+          isFirstTimeBuyer: calc.is_first_time_buyer,
+          enableInvestmentAnalysis: false, // Default to false, can be enhanced later
+          monthlyRent: 2500, // Default values
+          monthlyExpenses: {
+            taxes: 400,
+            insurance: 150,
+            condoFees: 300,
+            maintenance: 200,
+            other: 100
+          }
+        },
+        startAtStep: 2 // Tell calculator to start at step 2 (results)
+      }
+    });
+  };
 
   const handleShare = async (calculationId: string) => {
     const shareUrl = `${window.location.origin}/shared/${calculationId}`;
@@ -146,9 +176,12 @@ const Dashboard: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="text-base md:text-lg font-medium text-gray-900 truncate">
+                        <button
+                          onClick={() => handleViewCalculation(calc)}
+                          className="text-base md:text-lg font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer truncate"
+                        >
                           ${calc.home_price.toLocaleString()} Home
-                        </h3>
+                        </button>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           calc.city === 'toronto' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
                         }`}>
@@ -170,12 +203,19 @@ const Dashboard: React.FC = () => {
                     
                     {/* Action Buttons */}
                     <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                      <Link
-                        to={`/shared/${calc.id}`}
+                      <button
+                        onClick={() => handleViewCalculation(calc)}
                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
-                        title="View Details"
+                        title="View Results"
                       >
                         <Eye className="h-4 w-4" />
+                      </button>
+                      <Link
+                        to={`/shared/${calc.id}`}
+                        className="p-2 text-gray-400 hover:text-green-600 transition-colors rounded-lg hover:bg-green-50"
+                        title="View Shared Page"
+                      >
+                        <Calculator className="h-4 w-4" />
                       </Link>
                       <button
                         onClick={() => handleShare(calc.id)}
