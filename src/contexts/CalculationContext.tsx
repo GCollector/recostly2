@@ -277,4 +277,3 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </CalculationContext.Provider>
   );
 };
-</invoke>
