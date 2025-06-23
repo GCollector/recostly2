@@ -151,15 +151,13 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section */}
-      {calculationId && (
-        <NotesSection
-          calculationId={calculationId}
-          section="mortgage"
-          sectionTitle="Mortgage Summary"
-          currentNotes={currentNotes.mortgage}
-        />
-      )}
+      {/* Premium Notes Section - Always visible for logged in users */}
+      <NotesSection
+        calculationId={calculationId || 'temp'}
+        section="mortgage"
+        sectionTitle="Mortgage Summary"
+        currentNotes={currentNotes.mortgage}
+      />
 
       {/* Property Summary */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

@@ -50,15 +50,13 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section */}
-      {calculationId && (
-        <NotesSection
-          calculationId={calculationId}
-          section="closing"
-          sectionTitle="Closing Costs"
-          currentNotes={currentNotes.closing}
-        />
-      )}
+      {/* Premium Notes Section - Always visible for logged in users */}
+      <NotesSection
+        calculationId={calculationId || 'temp'}
+        section="closing"
+        sectionTitle="Closing Costs"
+        currentNotes={currentNotes.closing}
+      />
 
       {/* Closing Cost Breakdown */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

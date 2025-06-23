@@ -285,10 +285,10 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         {renderTabContent()}
       </div>
 
-      {/* Premium Comments Section - Always visible when calculation is saved */}
-      {savedCalculationId && (
+      {/* Premium Comments Section - Always visible when user is logged in */}
+      {user && (
         <CommentsSection
-          calculationId={savedCalculationId}
+          calculationId={savedCalculationId || 'temp'}
           currentComments={currentComments}
         />
       )}

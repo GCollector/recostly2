@@ -63,15 +63,13 @@ const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section */}
-      {calculationId && (
-        <NotesSection
-          calculationId={calculationId}
-          section="investment"
-          sectionTitle="Investment Analysis"
-          currentNotes={currentNotes.investment}
-        />
-      )}
+      {/* Premium Notes Section - Always visible for logged in users */}
+      <NotesSection
+        calculationId={calculationId || 'temp'}
+        section="investment"
+        sectionTitle="Investment Analysis"
+        currentNotes={currentNotes.investment}
+      />
 
       {/* Investment Analysis */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

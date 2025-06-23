@@ -29,7 +29,7 @@ const NotesSection: React.FC<NotesSectionProps> = ({
   const hasNotes = notes.trim().length > 0;
 
   const handleSave = async () => {
-    if (!user || !isPremium) return;
+    if (!user || !isPremium || calculationId === 'temp') return;
 
     setIsSaving(true);
     setError('');
@@ -70,7 +70,7 @@ const NotesSection: React.FC<NotesSectionProps> = ({
           </div>
         </div>
 
-        {isPremium && !isEditing && (
+        {isPremium && !isEditing && calculationId !== 'temp' && (
           <button
             onClick={() => setIsEditing(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
@@ -97,6 +97,13 @@ const NotesSection: React.FC<NotesSectionProps> = ({
           >
             Upgrade to Premium
           </button>
+        </div>
+      ) : calculationId === 'temp' ? (
+        <div className="bg-white/70 backdrop-blur-sm border border-amber-300 rounded-lg p-6 text-center">
+          <MessageSquare className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+          <p className="text-amber-800 mb-4">
+            Save your calculation first to add private notes to this section.
+          </p>
         </div>
       ) : isEditing ? (
         <div className="space-y-4">

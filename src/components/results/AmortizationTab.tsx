@@ -62,15 +62,13 @@ const AmortizationTab: React.FC<AmortizationTabProps> = ({
         </div>
       </div>
 
-      {/* Premium Notes Section */}
-      {calculationId && (
-        <NotesSection
-          calculationId={calculationId}
-          section="amortization"
-          sectionTitle="Amortization"
-          currentNotes={currentNotes.amortization}
-        />
-      )}
+      {/* Premium Notes Section - Always visible for logged in users */}
+      <NotesSection
+        calculationId={calculationId || 'temp'}
+        section="amortization"
+        sectionTitle="Amortization"
+        currentNotes={currentNotes.amortization}
+      />
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-8">
