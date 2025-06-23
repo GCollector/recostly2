@@ -17,14 +17,14 @@ const InvestmentAnalysisSection: React.FC<InvestmentAnalysisSectionProps> = ({
 }) => {
   return (
     <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-200">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+            <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <div>
             <h3 className="text-lg font-semibold font-heading text-slate-900">Investment Property Analysis</h3>
-            <p className="text-sm font-sans text-slate-600">Turn your home purchase into a profitable investment opportunity</p>
+            <p className="text-sm font-sans text-slate-600 mt-1">Turn your home purchase into a profitable investment opportunity</p>
           </div>
         </div>
         

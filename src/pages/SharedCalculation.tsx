@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calculator, Calendar, MessageCircle, User, AlertTriangle } from 'lucide-react';
+import { Calculator, Calendar, User, AlertTriangle } from 'lucide-react';
 import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
-import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule } from '../utils/mortgageCalculations';
+import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule, calculateTotalLoanAmount } from '../utils/mortgageCalculations';
 import type { Database } from '../lib/supabase';
 import NotesSection from '../components/shared/NotesSection';
 import CommentsSection from '../components/shared/CommentsSection';
@@ -140,8 +140,15 @@ const SharedCalculation: React.FC = () => {
     );
   }
 
+  // Determine if closing costs and investment analysis are enabled
+  const enableClosingCosts = calculation.notes?.enableClosingCosts !== false; // Default to true if not specified
+  const enableInvestmentAnalysis = !!calculation.notes?.investment_data;
+
+  // Calculate loan amounts including CMHC insurance
+  const loanCalculation = calculateTotalLoanAmount(calculation.home_price, calculation.down_payment);
+  
   // Calculate derived values for display
-  const loanAmount = calculation.home_price - calculation.down_payment;
+  const loanAmount = loanCalculation.totalLoanAmount;
   const monthlyRate = calculation.interest_rate / 100 / 12;
   const monthlyPayment = calculation.monthly_payment;
   const totalCost = monthlyPayment * calculation.amortization_years * 12 + calculation.down_payment;
@@ -182,8 +189,6 @@ const SharedCalculation: React.FC = () => {
       }
     ) : null;
 
-  const enableInvestmentAnalysis = !!investmentMetrics;
-
   // Check if marketing should be shown (default to true if not specified)
   const showMarketingContent = calculation.notes?.showMarketingOnShare !== false;
 
@@ -201,8 +206,8 @@ const SharedCalculation: React.FC = () => {
               province: calculation.province,
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
-              enableInvestmentAnalysis: false,
-              enableClosingCosts: true,
+              enableInvestmentAnalysis: enableInvestmentAnalysis,
+              enableClosingCosts: enableClosingCosts,
               showMarketingOnShare: true
             }}
             monthlyPayment={monthlyPayment}
@@ -228,8 +233,8 @@ const SharedCalculation: React.FC = () => {
               province: calculation.province,
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
-              enableInvestmentAnalysis: false,
-              enableClosingCosts: true,
+              enableInvestmentAnalysis: enableInvestmentAnalysis,
+              enableClosingCosts: enableClosingCosts,
               showMarketingOnShare: true
             }}
             closingCosts={closingCosts}
@@ -265,7 +270,7 @@ const SharedCalculation: React.FC = () => {
               city: calculation.city,
               isFirstTimeBuyer: calculation.is_first_time_buyer,
               enableInvestmentAnalysis: true,
-              enableClosingCosts: true,
+              enableClosingCosts: enableClosingCosts,
               showMarketingOnShare: true,
               monthlyRent: calculation.notes?.investment_data?.monthlyRent,
               monthlyExpenses: calculation.notes?.investment_data?.monthlyExpenses
@@ -364,6 +369,7 @@ const SharedCalculation: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         enableInvestmentAnalysis={enableInvestmentAnalysis}
+        enableClosingCosts={enableClosingCosts}
       />
 
       {/* Tab Content with Interactive Charts */}

@@ -13,14 +13,14 @@ const MarketingControlSection: React.FC<MarketingControlSectionProps> = ({
 }) => {
   return (
     <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
-            <Crown className="h-5 w-5 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center shadow-sm">
+            <Crown className="h-6 w-6 text-white" />
           </div>
           <div>
             <h3 className="text-lg font-semibold font-heading text-slate-900">Marketing Control</h3>
-            <p className="text-sm font-sans text-slate-600">Control how your professional services appear on shared calculations</p>
+            <p className="text-sm font-sans text-slate-600 mt-1">Control how your professional services appear on shared calculations</p>
           </div>
         </div>
         

@@ -3,7 +3,7 @@ import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft } from 'lucide-reac
 import { useLocation } from 'react-router-dom';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
-import { calculateClosingCosts } from '../utils/mortgageCalculations';
+import { calculateClosingCosts, calculateTotalLoanAmount } from '../utils/mortgageCalculations';
 
 export interface MortgageData {
   homePrice: number;
@@ -166,6 +166,9 @@ const Calculator: React.FC = () => {
     setSavedCalculationId(calculationId);
   };
 
+  // Calculate loan amounts including CMHC insurance
+  const loanCalculation = calculateTotalLoanAmount(mortgageData.homePrice, mortgageData.downPayment);
+
   if (currentStep === 2) {
     return (
       <MortgageResults 
@@ -175,6 +178,7 @@ const Calculator: React.FC = () => {
         currentNotes={currentNotes}
         currentComments={currentComments}
         onCalculationSaved={handleCalculationSaved}
+        loanCalculation={loanCalculation}
       />
     );
   }
@@ -187,7 +191,7 @@ const Calculator: React.FC = () => {
           Canadian Mortgage Calculator
         </h1>
         <p className="text-lg font-sans text-slate-600 max-w-3xl mx-auto">
-          Professional mortgage calculations with optional investment analysis and closing costs for Canadian real estate.
+          Professional mortgage calculations with CMHC insurance, optional investment analysis and closing costs for Canadian real estate.
         </p>
       </div>
 
@@ -216,6 +220,7 @@ const Calculator: React.FC = () => {
             onInputChange={handleInputChange}
             onExpenseChange={handleExpenseChange}
             onClosingCostChange={handleClosingCostChange}
+            loanCalculation={loanCalculation}
           />
 
           {/* Calculate Button */}

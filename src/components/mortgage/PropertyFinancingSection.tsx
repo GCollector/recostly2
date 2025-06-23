@@ -1,21 +1,29 @@
 import React from 'react';
 import { MortgageData } from '../../pages/Calculator';
+import { calculateCMHCInsurance } from '../../utils/mortgageCalculations';
 import CurrencyInput from '../shared/CurrencyInput';
 
 interface PropertyFinancingSectionProps {
   data: MortgageData;
   onInputChange: (field: keyof MortgageData, value: any) => void;
+  loanCalculation?: {
+    baseLoanAmount: number;
+    cmhcPremium: number;
+    totalLoanAmount: number;
+  };
 }
 
 const PropertyFinancingSection: React.FC<PropertyFinancingSectionProps> = ({
   data,
-  onInputChange
+  onInputChange,
+  loanCalculation
 }) => {
   const downPaymentPercent = Math.round((data.downPayment / data.homePrice) * 100);
+  const cmhcInsurance = calculateCMHCInsurance(data.homePrice, data.downPayment);
 
   return (
     <div>
-      <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4">Property & Financing</h3>
+      <h3 className="text-lg font-semibold font-heading text-slate-900 mb-6">Property & Financing</h3>
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium font-sans text-slate-700 mb-2">
@@ -126,6 +134,19 @@ const PropertyFinancingSection: React.FC<PropertyFinancingSectionProps> = ({
           </label>
         </div>
       </div>
+
+      {/* CMHC Insurance Information */}
+      {cmhcInsurance.isRequired && (
+        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-amber-800 mb-2">CMHC Insurance Required</h4>
+          <div className="text-sm text-amber-700 space-y-1">
+            <p>Down payment is {downPaymentPercent}% (less than 20%), so CMHC insurance is required.</p>
+            <p><strong>Insurance Premium:</strong> ${cmhcInsurance.premium.toLocaleString()} ({(cmhcInsurance.rate * 100).toFixed(1)}% of loan amount)</p>
+            <p><strong>Base Loan Amount:</strong> ${loanCalculation?.baseLoanAmount.toLocaleString()}</p>
+            <p><strong>Total Loan Amount:</strong> ${loanCalculation?.totalLoanAmount.toLocaleString()} (includes CMHC premium)</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

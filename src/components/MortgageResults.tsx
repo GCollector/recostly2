@@ -20,6 +20,11 @@ interface MortgageResultsProps {
   currentNotes?: Record<string, string>;
   currentComments?: string;
   onCalculationSaved?: (calculationId: string) => void;
+  loanCalculation?: {
+    baseLoanAmount: number;
+    cmhcPremium: number;
+    totalLoanAmount: number;
+  };
 }
 
 const MortgageResults: React.FC<MortgageResultsProps> = ({ 
@@ -28,7 +33,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   calculationId, 
   currentNotes = {},
   currentComments = '',
-  onCalculationSaved
+  onCalculationSaved,
+  loanCalculation
 }) => {
   const { user } = useAuth();
   const { saveCalculation, calculations } = useCalculations();
@@ -45,7 +51,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   } | null>(null);
 
   // Calculate mortgage values
-  const loanAmount = data.homePrice - data.downPayment;
+  const loanAmount = loanCalculation ? loanCalculation.totalLoanAmount : (data.homePrice - data.downPayment);
   const monthlyRate = data.interestRate / 100 / 12;
   const monthlyPayment = calculateMonthlyPayment(loanAmount, data.interestRate, data.amortizationYears);
   const totalCost = monthlyPayment * data.amortizationYears * 12 + data.downPayment;
@@ -227,13 +233,23 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         );
 
       case 'closing':
-        return (
+        return data.enableClosingCosts ? (
           <ClosingCostsTab
             data={data}
             closingCosts={closingCosts}
             calculationId={savedCalculationId}
             currentNotes={currentNotes}
           />
+        ) : (
+          <div className="p-8 text-center">
+            <div className="bg-blue-50 p-6 rounded-xl inline-block mx-auto">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">Closing Costs Analysis Disabled</h3>
+              <p className="text-blue-700">
+                You have disabled the closing costs analysis for this calculation. 
+                Return to the input form and enable closing costs to see this section.
+              </p>
+            </div>
+          </div>
         );
 
       case 'amortization':
@@ -310,6 +326,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         activeTab={activeTab}
         onTabChange={setActiveTab}
         enableInvestmentAnalysis={data.enableInvestmentAnalysis}
+        enableClosingCosts={data.enableClosingCosts}
       />
 
       {/* Tab Content */}

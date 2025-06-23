@@ -14,6 +14,51 @@ export const calculateMonthlyPayment = (
          (Math.pow(1 + monthlyRate, totalPayments) - 1);
 };
 
+export const calculateCMHCInsurance = (
+  homePrice: number,
+  downPayment: number
+): { premium: number; rate: number; isRequired: boolean } => {
+  const downPaymentPercent = (downPayment / homePrice) * 100;
+  
+  // CMHC insurance is required when down payment is less than 20%
+  if (downPaymentPercent >= 20) {
+    return { premium: 0, rate: 0, isRequired: false };
+  }
+  
+  // CMHC insurance rates based on down payment percentage
+  let rate = 0;
+  if (downPaymentPercent >= 15) {
+    rate = 0.028; // 2.8%
+  } else if (downPaymentPercent >= 10) {
+    rate = 0.031; // 3.1%
+  } else if (downPaymentPercent >= 5) {
+    rate = 0.04; // 4.0%
+  } else {
+    // Less than 5% down payment is not allowed
+    rate = 0.04;
+  }
+  
+  const loanAmount = homePrice - downPayment;
+  const premium = loanAmount * rate;
+  
+  return { premium, rate, isRequired: true };
+};
+
+export const calculateTotalLoanAmount = (
+  homePrice: number,
+  downPayment: number
+): { baseLoanAmount: number; cmhcPremium: number; totalLoanAmount: number } => {
+  const baseLoanAmount = homePrice - downPayment;
+  const cmhcInsurance = calculateCMHCInsurance(homePrice, downPayment);
+  const totalLoanAmount = baseLoanAmount + cmhcInsurance.premium;
+  
+  return {
+    baseLoanAmount,
+    cmhcPremium: cmhcInsurance.premium,
+    totalLoanAmount
+  };
+};
+
 export const calculateClosingCosts = (
   homePrice: number,
   province: 'ontario' | 'bc',

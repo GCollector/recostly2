@@ -12,13 +12,19 @@ interface MortgageInputFormProps {
   onInputChange: (field: keyof MortgageData, value: any) => void;
   onExpenseChange: (field: keyof NonNullable<MortgageData['monthlyExpenses']>, value: number) => void;
   onClosingCostChange: (field: keyof NonNullable<MortgageData['closingCosts']>, value: number) => void;
+  loanCalculation?: {
+    baseLoanAmount: number;
+    cmhcPremium: number;
+    totalLoanAmount: number;
+  };
 }
 
 const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
   data,
   onInputChange,
   onExpenseChange,
-  onClosingCostChange
+  onClosingCostChange,
+  loanCalculation
 }) => {
   const { user } = useAuth();
 
@@ -27,20 +33,21 @@ const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
       {/* Mortgage Details Section */}
       <div>
         <h2 className="text-2xl font-semibold font-heading text-slate-900 mb-4">Mortgage Details</h2>
-        <p className="text-slate-600 font-sans mb-6">Enter your property and financing information</p>
+        <p className="text-slate-600 font-sans mb-8">Enter your property and financing information</p>
         
         <div className="space-y-8">
           <PropertyFinancingSection 
             data={data}
             onInputChange={onInputChange}
+            loanCalculation={loanCalculation}
           />
         </div>
       </div>
 
-      {/* Optional Sections with Visual Separation */}
-      <div className="space-y-12">
+      {/* Optional Sections with Visual Separation and Better Spacing */}
+      <div className="space-y-16">
         {/* Closing Costs Analysis */}
-        <div className="border-t border-slate-200 pt-8">
+        <div className="border-t border-slate-200 pt-12">
           <ClosingCostsSection
             data={data}
             onInputChange={onInputChange}
@@ -49,7 +56,7 @@ const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
         </div>
 
         {/* Investment Property Analysis */}
-        <div className="border-t border-slate-200 pt-8">
+        <div className="border-t border-slate-200 pt-12">
           <InvestmentAnalysisSection
             data={data}
             onInputChange={onInputChange}
@@ -59,7 +66,7 @@ const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
 
         {/* Premium Marketing Control */}
         {user?.tier === 'premium' && (
-          <div className="border-t border-slate-200 pt-8">
+          <div className="border-t border-slate-200 pt-12">
             <MarketingControlSection
               data={data}
               onInputChange={onInputChange}

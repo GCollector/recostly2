@@ -21,9 +21,9 @@ The Calculator page MUST follow this exact two-step process:
 - **Edit** button to return to Step 1 (NOT "Back to Input" or "Back")
 - Tab-based results with responsive design:
   - **Mortgage Summary** - Featured monthly payment + supporting cards + charts
-  - **Closing Costs** - Detailed provincial/municipal tax breakdown
+  - **Closing Costs** - Detailed provincial/municipal tax breakdown (only shown if enabled in Step 1)
   - **Amortization** - Payment schedule with interactive charts
-  - **Investment Analysis** - ROI, cash flow, cap rate (if enabled)
+  - **Investment Analysis** - ROI, cash flow, cap rate (only shown if enabled in Step 1)
 
 ## NEW: Currency Formatting Requirements
 
@@ -47,6 +47,29 @@ The Calculator page MUST follow this exact two-step process:
 - Proper focus and blur handling
 - Keyboard navigation support
 - Consistent styling with other form elements
+
+## NEW: CMHC Insurance Requirements
+
+### CMHC Insurance Calculation
+- **Automatically calculate CMHC insurance** when down payment is less than 20%
+- **Display CMHC information** in the Property & Financing section
+- **Include CMHC premium** in the total loan amount for payment calculations
+- **Show warning** about CMHC insurance requirement
+- **Display premium rate** based on down payment percentage
+- **Update mortgage payment** to include CMHC premium in loan amount
+
+### CMHC Insurance Rates
+- **Down payment 15-19.99%**: 2.8% of loan amount
+- **Down payment 10-14.99%**: 3.1% of loan amount
+- **Down payment 5-9.99%**: 4.0% of loan amount
+- **Down payment < 5%**: Not allowed (minimum 5% required)
+
+### CMHC UI Requirements
+- **Warning box** with amber background when CMHC is required
+- **Clear explanation** of why CMHC is required
+- **Show premium amount** and percentage
+- **Show base loan amount** vs total loan amount (with CMHC)
+- **Update all calculations** to use the total loan amount including CMHC
 
 ## NEW: Dynamic Closing Costs Requirements
 
@@ -85,11 +108,19 @@ The Calculator page MUST follow this exact two-step process:
 - Clear visual hierarchy with proper spacing
 - Gradient backgrounds to distinguish sections
 - Toggle switches for enable/disable functionality
+- **Improved spacing** between section header elements
+- **Responsive layout** for section headers (stacks on mobile)
 
 ### Default Values
 - **Closing Costs**: Reasonable defaults based on location and property price
 - **Investment Analysis**: Standard rental market values for the selected city
 - **Marketing Control**: Show marketing content by default for premium users
+
+### Section State Persistence
+- **Remember section state** between steps (enabled/disabled)
+- **Only show tabs** for enabled sections in results
+- **Show message** when trying to access disabled section tab
+- **Preserve section state** when navigating back to input form
 
 ## NEW: Premium Marketing Control
 
@@ -178,6 +209,7 @@ END IF;
 - **Interactive Charts**: MUST include all interactive charts from main calculator
 - **Professional Services Above Tabs**: Marketing content positioned above tab navigation for better visibility
 - **Marketing Control Respected**: Only show marketing if premium user enabled it
+- **Section State Respected**: Only show tabs for sections that were enabled in the original calculation
 
 ### Shared Page Layout Structure
 1. **Header**: Title, property price, creation date
@@ -285,9 +317,11 @@ const loggedInNavigation = [
 - **Closing Costs Section**: `bg-gradient-to-r from-blue-50 to-indigo-50` with blue border
 - **Investment Analysis Section**: `bg-gradient-to-r from-emerald-50 to-blue-50` with emerald border
 - **Marketing Control Section**: `bg-gradient-to-r from-amber-50 to-orange-50` with amber border
-- **Visual Separation**: `border-t border-slate-200 pt-8` between sections
+- **Visual Separation**: `border-t border-slate-200 pt-12` between sections
 - **Toggle Switches**: Custom styled with section-appropriate colors when active
 - **Icons**: Appropriate icons in gradient circles for each section
+- **Section Headers**: Improved spacing between icon, text, and toggle
+- **Responsive Layout**: Stack header elements on mobile, side-by-side on desktop
 
 ### Results Page Design
 
@@ -299,10 +333,11 @@ const loggedInNavigation = [
 #### Tab Navigation
 - **Container**: `bg-white rounded-xl shadow-sm border border-slate-200 p-4`
 - **Grid Layout**: 
-  - 3 columns by default: `grid-cols-3`
-  - 4 columns when investment enabled: `grid-cols-2 sm:grid-cols-4`
+  - Dynamic columns based on enabled sections
+  - Responsive grid that adapts to number of tabs
 - **Active Tab**: `bg-blue-100 text-blue-700`
 - **Tab Content**: Icons, full names (hidden on mobile), short names (mobile only), descriptions (desktop only)
+- **Only show tabs** for sections that were enabled in Step 1
 
 #### Mortgage Summary Layout
 - **Featured Payment Card**: 
@@ -338,7 +373,7 @@ const loggedInNavigation = [
 - **Readonly Comments**: Muted blue background (`from-blue-25 to-indigo-25`) with eye icon
 - **No Edit Controls**: Remove all buttons and form elements
 - **Clear Indicators**: "View Only" text and appropriate icons
-- **Professional Appearance**: Maintain visual hierarchy while showing readonly state
+- **Professional Appearance**: Maintain visual hierarchy while clearly showing readonly state
 
 #### Shared Page Marketing Enhancement
 - **Professional Services Above Tabs**: Marketing content positioned prominently above tab navigation
@@ -524,6 +559,7 @@ export interface MortgageData {
 - Notes stored as JSONB object with section keys
 - Comments stored as text field
 - Marketing control stored in notes as `showMarketingOnShare` boolean
+- Section state (enabled/disabled) stored in notes
 
 ### Optional Sections Requirements
 - **Closing Costs**: Blue gradient background, enabled by default with reasonable values
@@ -532,6 +568,7 @@ export interface MortgageData {
 - **Visual Separation**: Clear borders and spacing between sections
 - **Toggle Switches**: Section-appropriate colors when active
 - **Default Values**: Reasonable defaults for all optional fields
+- **Section State Persistence**: Remember which sections were enabled/disabled
 
 ## NEW: Responsive Design Requirements
 
@@ -544,6 +581,7 @@ export interface MortgageData {
 - Notes/comments: Full-width on mobile with proper touch targets
 - Charts: Responsive containers with proper mobile sizing
 - Optional sections: Stack vertically on mobile with proper spacing
+- Section headers: Stack on mobile, side-by-side on desktop
 
 ### Desktop Enhancements
 - Tab descriptions visible on large screens
@@ -553,6 +591,7 @@ export interface MortgageData {
 - Notes/comments: Side-by-side layouts where appropriate
 - Marketing content: Enhanced visibility and professional presentation
 - Optional sections: Proper grid layouts with visual hierarchy
+- Section headers: Horizontal layout with proper spacing
 
 ## NEW: Shared Calculation Page Requirements
 
@@ -564,9 +603,10 @@ export interface MortgageData {
 - **Proper display** of all calculation details and charts
 - **Comments visibility**: Show shareable comments if added by premium user (readonly)
 - **Notes privacy**: Private notes are NEVER shown on shared pages
-- **Interactive charts**: MUST include all charts with full interactivity
+- **Interactive charts**: MUST include all interactive charts with full interactivity
 - **Professional services above tabs**: Marketing content positioned prominently (if enabled)
 - **Marketing control respected**: Only show marketing if premium user enabled it
+- **Section state respected**: Only show tabs for sections that were enabled in the original calculation
 
 ### Chart Requirements for Shared Pages
 - **All interactive charts**: Pie charts, bar charts, line charts must be included
@@ -617,6 +657,8 @@ The design MUST match these specifications:
 14. **Interactive Charts**: All charts functional on shared pages with tooltips and legends
 15. **Marketing Above Tabs**: Professional services section positioned prominently above tab navigation
 16. **Visual Separation**: Clear borders and spacing between optional sections
+17. **Section Headers**: Proper spacing between icon, text, and toggle
+18. **CMHC Insurance**: Warning box with details when required
 
 ## Code Structure Requirements
 
@@ -657,6 +699,7 @@ if (currentStep === 2) {
     currentNotes={currentNotes}
     currentComments={currentComments}
     onCalculationSaved={handleCalculationSaved}
+    loanCalculation={loanCalculation}
   />;
 }
 
@@ -668,6 +711,7 @@ if (currentStep === 2) {
 // 5. Readonly notes/comments sections
 // 6. NO "Create Your Own" elements anywhere
 // 7. Marketing control respected (only show if premium user enabled it)
+// 8. Only show tabs for sections that were enabled in the original calculation
 ```
 
 ## NEW: Testing Requirements
@@ -684,6 +728,7 @@ Any changes MUST pass these tests:
 - ✅ Charts render without errors
 - ✅ Edit button returns to input form and shows "Edit" text only
 - ✅ Investment analysis tab appears when enabled
+- ✅ Closing costs tab appears only when enabled
 - ✅ Mobile responsive design works correctly
 - ✅ All components are under 300 lines
 - ✅ Components can be tested in isolation
@@ -712,6 +757,9 @@ Any changes MUST pass these tests:
 - ✅ **CRITICAL**: All money fields use CurrencyInput with real-time formatting
 - ✅ **CRITICAL**: Closing costs automatically update based on property details
 - ✅ **CRITICAL**: Dependent closing cost fields are readonly with proper styling
+- ✅ **CRITICAL**: CMHC insurance is calculated and displayed when required
+- ✅ **CRITICAL**: Section state (enabled/disabled) is preserved between steps
+- ✅ **CRITICAL**: Section headers have proper spacing and responsive layout
 
 ## NEW: Chart Data Requirements
 
@@ -776,6 +824,9 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 28. **CRITICAL**: Verify all money fields use CurrencyInput component
 29. **CRITICAL**: Test automatic closing cost updates based on property details
 30. **CRITICAL**: Confirm dependent closing cost fields are readonly
+31. **CRITICAL**: Verify CMHC insurance is calculated correctly
+32. **CRITICAL**: Test section state persistence between steps
+33. **CRITICAL**: Verify section headers have proper spacing
 
 ## NEW: Database Integration Requirements
 
@@ -788,6 +839,7 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - Tier-based save limits enforced both client and server-side
 - Notes and comments saved with calculation data
 - Marketing control preference saved with calculation data
+- Section state (enabled/disabled) saved with calculation data
 
 ### Data Persistence
 - Form data preserved when navigating between steps
@@ -800,38 +852,44 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - Shared pages display readonly content appropriately
 - Chart data properly stored and retrieved for shared pages
 - Marketing control preference respected on shared pages
+- Section state (enabled/disabled) preserved and respected
 
 **REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, navigation behavior, readonly shared page behavior, interactive charts on shared pages, professional services positioning above tabs, neutral notes styling, and optional sections with proper visual separation are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Currency Formatting**: Added real-time comma formatting for all money fields
-2. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
-3. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
-4. **CurrencyInput Component**: Created reusable component for all monetary inputs
-5. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
-6. **Helper Text**: Added explanatory text for automatically calculated fields
-7. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
-8. **Visual Separation**: Added clear visual separation between optional sections
-9. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
-10. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
-11. **Notes Styling**: Changed from amber/yellow to neutral slate styling
-12. **Marketing Control Logic**: Viewers can no longer hide marketing content
-13. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
-14. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
-15. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
-16. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
-17. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
-18. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
-19. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
-20. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
-21. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
-22. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
-23. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
-24. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
-25. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
-26. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
+1. **CMHC Insurance**: Added CMHC insurance calculation and display when down payment is less than 20%
+2. **Section State Persistence**: Ensured section state (enabled/disabled) is preserved between steps
+3. **Section Header Spacing**: Improved spacing in optional section headers
+4. **Responsive Section Headers**: Made section headers stack on mobile, side-by-side on desktop
+5. **Conditional Tabs**: Only show tabs for sections that were enabled in Step 1
+6. **Currency Formatting**: Added real-time comma formatting for all money fields
+7. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
+8. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
+9. **CurrencyInput Component**: Created reusable component for all monetary inputs
+10. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
+11. **Helper Text**: Added explanatory text for automatically calculated fields
+12. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
+13. **Visual Separation**: Added clear visual separation between optional sections
+14. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
+15. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
+16. **Notes Styling**: Changed from amber/yellow to neutral slate styling
+17. **Marketing Control Logic**: Viewers can no longer hide marketing content
+18. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
+19. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
+20. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
+21. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
+22. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
+23. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
+24. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
+25. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
+26. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
+27. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
+28. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
+29. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+30. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
+31. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -854,3 +912,6 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - **CRITICAL**: Added proper visual separation between optional sections
 - **CRITICAL**: Implemented real-time currency formatting for all money fields
 - **CRITICAL**: Made closing costs dynamically update based on property details
+- **CRITICAL**: Added CMHC insurance calculation and display
+- **CRITICAL**: Ensured section state persistence between steps
+- **CRITICAL**: Improved section header spacing and responsive layout
