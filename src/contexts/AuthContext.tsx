@@ -34,10 +34,11 @@ const debugLog = (message: string, data?: any) => {
   console.log(`🔍 [AUTH DEBUG] ${message}`, data || '');
 };
 
-// More generous timeout constants
-const OPERATION_TIMEOUT = 15000; // 15 seconds for all operations
-const PROFILE_RETRY_DELAY = 1000; // 1 second between retries
-const MAX_RETRIES = 3;
+// Optimized timeout constants for better network handling
+const QUICK_TIMEOUT = 3000; // 3 seconds for quick operations
+const STANDARD_TIMEOUT = 8000; // 8 seconds for standard operations
+const PROFILE_RETRY_DELAY = 500; // 500ms between retries
+const MAX_RETRIES = 2; // Reduced retries for faster recovery
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -53,27 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }
 
-  // Enhanced profile loading with comprehensive debugging and retry logic
+  // Simplified profile loading that skips connection tests and focuses on the actual query
   const loadUserProfile = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
     debugLog(`Loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
     
     try {
-      // Test database connection first
-      debugLog('Testing database connection...');
-      const connectionTest = supabase
-        .from('profile')
-        .select('count')
-        .limit(1);
-
-      const testResult = await Promise.race([
-        connectionTest,
-        createTimeoutPromise(5000, 'Database connection test')
-      ]);
-
-      debugLog('Database connection test result:', testResult);
-
-      // Now try to fetch the profile
-      debugLog('Fetching user profile...');
+      // Skip connection test and go directly to profile fetch with shorter timeout
+      debugLog('Fetching user profile directly...');
       const profileQuery = supabase
         .from('profile')
         .select('*')
@@ -82,21 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const profileResult = await Promise.race([
         profileQuery,
-        createTimeoutPromise(OPERATION_TIMEOUT, 'Profile fetch')
+        createTimeoutPromise(QUICK_TIMEOUT, 'Profile fetch')
       ]);
 
       const { data: profile, error } = profileResult as any;
 
-      debugLog('Profile fetch result:', { profile, error });
+      debugLog('Profile fetch result:', { hasProfile: !!profile, error: error?.message });
 
       if (error) {
-        debugLog('Profile fetch error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-
         // Handle specific error cases
         if (error.code === 'PGRST116' || error.message?.includes('No rows found') || !profile) {
           debugLog('Profile not found, attempting to create...');
@@ -122,19 +102,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const createResult = await Promise.race([
               createQuery,
-              createTimeoutPromise(OPERATION_TIMEOUT, 'Profile creation')
+              createTimeoutPromise(STANDARD_TIMEOUT, 'Profile creation')
             ]);
 
             const { data: createdProfile, error: createError } = createResult as any;
 
-            debugLog('Profile creation result:', { createdProfile, createError });
-
             if (createError) {
-              debugLog('Profile creation error details:', {
-                code: createError.code,
-                message: createError.message,
-                details: createError.details
-              });
+              debugLog('Profile creation error:', createError.message);
 
               // If creation fails due to conflict, try to fetch again
               if (createError.code === '23505' || createError.message?.includes('duplicate')) {
@@ -149,14 +123,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             if (createdProfile) {
-              debugLog('Profile created successfully:', createdProfile);
+              debugLog('Profile created successfully');
               return { ...createdProfile, supabaseUser };
             }
           } catch (createError: any) {
-            debugLog('Profile creation failed:', createError);
+            debugLog('Profile creation failed:', createError.message);
             
             // Retry logic for creation failures
-            if (retryCount < MAX_RETRIES) {
+            if (retryCount < MAX_RETRIES && !createError.message?.includes('timeout')) {
               debugLog(`Retrying profile creation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
               await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
               return loadUserProfile(supabaseUser, retryCount + 1);
@@ -165,8 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw createError;
           }
         } else {
-          // For other errors, implement retry logic
-          if (retryCount < MAX_RETRIES && !error.message?.includes('timeout')) {
+          // For timeout and other errors, implement retry logic
+          if (retryCount < MAX_RETRIES) {
             debugLog(`Retrying profile fetch due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
             await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
             return loadUserProfile(supabaseUser, retryCount + 1);
@@ -175,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw error;
         }
       } else if (profile) {
-        debugLog('Profile loaded successfully:', profile);
+        debugLog('Profile loaded successfully');
         return { ...profile, supabaseUser };
       }
       
@@ -184,25 +158,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       debugLog('Error in loadUserProfile:', {
         message: error.message,
-        stack: error.stack,
         retryCount
       });
       
       // Retry logic for network/timeout errors
-      if (retryCount < MAX_RETRIES) {
-        debugLog(`Retrying profile load due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+      if (retryCount < MAX_RETRIES && error.message?.includes('timeout')) {
+        debugLog(`Retrying profile load due to timeout (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
         await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
         return loadUserProfile(supabaseUser, retryCount + 1);
       }
       
-      // After all retries failed, log final error but don't throw
+      // After all retries failed, continue without profile but don't crash
       debugLog('Profile loading failed after all retries, continuing without profile data');
-      console.warn('Profile loading failed after all retries:', error);
-      return null;
+      console.warn('Profile loading failed after all retries:', error.message);
+      
+      // Return a minimal user object to prevent app crash
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        name: supabaseUser.user_metadata?.name || 
+              supabaseUser.user_metadata?.full_name || 
+              supabaseUser.email?.split('@')[0] || 
+              'User',
+        tier: 'basic' as const,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        subscription_status: null,
+        marketing_image: null,
+        marketing_copy: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        supabaseUser
+      };
     }
   };
 
-  // Initialize authentication with comprehensive debugging
+  // Simplified authentication initialization
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout;
@@ -211,30 +202,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         debugLog('Starting authentication initialization...');
         
-        // Set a fallback timeout
+        // Set a reasonable timeout for the entire initialization
         initTimeout = setTimeout(() => {
           if (mounted) {
-            debugLog('Auth initialization timeout reached, continuing with no session');
+            debugLog('Auth initialization timeout reached, continuing with session only');
             setLoading(false);
           }
-        }, OPERATION_TIMEOUT);
+        }, STANDARD_TIMEOUT);
         
-        // Test Supabase connection first
-        debugLog('Testing Supabase connection...');
-        const healthCheck = supabase.from('profile').select('count').limit(1);
-        
-        try {
-          const healthResult = await Promise.race([
-            healthCheck,
-            createTimeoutPromise(5000, 'Supabase health check')
-          ]);
-          debugLog('Supabase health check passed:', healthResult);
-        } catch (healthError) {
-          debugLog('Supabase health check failed:', healthError);
-          // Continue anyway, might be a temporary issue
-        }
-
-        // Get current session
+        // Get current session with shorter timeout
         debugLog('Getting current session...');
         const sessionQuery = supabase.auth.getSession();
         
@@ -242,10 +218,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           sessionResult = await Promise.race([
             sessionQuery,
-            createTimeoutPromise(OPERATION_TIMEOUT, 'Session fetch')
+            createTimeoutPromise(QUICK_TIMEOUT, 'Session fetch')
           ]);
         } catch (sessionError: any) {
-          debugLog('Session fetch error:', sessionError);
+          debugLog('Session fetch error:', sessionError.message);
           
           if (!mounted) return;
           clearTimeout(initTimeout);
@@ -269,15 +245,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         debugLog('Session fetch result:', { 
           hasSession: !!currentSession, 
           userEmail: currentSession?.user?.email,
-          error 
+          error: error?.message 
         });
         
         if (error) {
-          debugLog('Session fetch error details:', {
-            message: error.message,
-            status: error.status,
-            statusText: error.statusText
-          });
+          debugLog('Session fetch error details:', error.message);
           setLoading(false);
           return;
         }
@@ -292,10 +264,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(userProfile);
               debugLog('Profile loaded and user set:', !!userProfile);
             }
-          } catch (profileError) {
-            debugLog('Failed to load profile during initialization:', profileError);
+          } catch (profileError: any) {
+            debugLog('Failed to load profile during initialization:', profileError.message);
             if (mounted) {
-              setUser(null);
+              // Set a minimal user object instead of null to prevent app crash
+              setUser({
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: currentSession.user.user_metadata?.name || 'User',
+                tier: 'basic' as const,
+                stripe_customer_id: null,
+                stripe_subscription_id: null,
+                subscription_status: null,
+                marketing_image: null,
+                marketing_copy: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                supabaseUser: currentSession.user
+              });
             }
           }
         } else {
@@ -308,10 +294,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           debugLog('Auth initialization completed');
         }
       } catch (error: any) {
-        debugLog('Auth initialization error:', {
-          message: error.message,
-          stack: error.stack
-        });
+        debugLog('Auth initialization error:', error.message);
         
         if (mounted) {
           clearTimeout(initTimeout);
@@ -332,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Set up auth state listener with enhanced debugging
+  // Optimized auth state listener
   useEffect(() => {
     debugLog('Setting up auth state listener...');
 
@@ -354,9 +337,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userProfile = await loadUserProfile(newSession.user);
             setUser(userProfile);
             debugLog('Profile loaded after sign in:', !!userProfile);
-          } catch (profileError) {
-            debugLog('Failed to load profile after sign in:', profileError);
-            setUser(null);
+          } catch (profileError: any) {
+            debugLog('Failed to load profile after sign in:', profileError.message);
+            // Set minimal user object instead of null
+            setUser({
+              id: newSession.user.id,
+              email: newSession.user.email || '',
+              name: newSession.user.user_metadata?.name || 'User',
+              tier: 'basic' as const,
+              stripe_customer_id: null,
+              stripe_subscription_id: null,
+              subscription_status: null,
+              marketing_image: null,
+              marketing_copy: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              supabaseUser: newSession.user
+            });
           } finally {
             setLoading(false);
           }
@@ -372,8 +369,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
               const userProfile = await loadUserProfile(newSession.user);
               setUser(userProfile);
-            } catch (profileError) {
-              debugLog('Failed to load profile after token refresh:', profileError);
+            } catch (profileError: any) {
+              debugLog('Failed to load profile after token refresh:', profileError.message);
             }
           }
         }
@@ -384,7 +381,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       debugLog('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, [user]); // Include user in dependencies to handle token refresh properly
+  }, [user]);
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
@@ -397,7 +394,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const result = await Promise.race([
         signInQuery,
-        createTimeoutPromise(OPERATION_TIMEOUT, 'Sign in')
+        createTimeoutPromise(STANDARD_TIMEOUT, 'Sign in')
       ]);
 
       const { data, error } = result as any;
@@ -405,15 +402,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       debugLog('Sign in result:', { 
         hasUser: !!data?.user, 
         userEmail: data?.user?.email,
-        error 
+        error: error?.message 
       });
 
       if (error) {
-        debugLog('Sign in error details:', {
-          message: error.message,
-          status: error.status,
-          statusText: error.statusText
-        });
+        debugLog('Sign in error details:', error.message);
         throw error;
       }
 
@@ -421,10 +414,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // The auth state change listener will handle loading the profile
       
     } catch (error: any) {
-      debugLog('Sign in failed:', {
-        message: error.message,
-        stack: error.stack
-      });
+      debugLog('Sign in failed:', error.message);
       throw error;
     }
   };
@@ -445,7 +435,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const result = await Promise.race([
         signUpQuery,
-        createTimeoutPromise(OPERATION_TIMEOUT, 'Sign up')
+        createTimeoutPromise(STANDARD_TIMEOUT, 'Sign up')
       ]);
 
       const { data, error } = result as any;
@@ -454,15 +444,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hasUser: !!data?.user, 
         userEmail: data?.user?.email,
         needsConfirmation: !data?.session,
-        error 
+        error: error?.message 
       });
 
       if (error) {
-        debugLog('Sign up error details:', {
-          message: error.message,
-          status: error.status,
-          statusText: error.statusText
-        });
+        debugLog('Sign up error details:', error.message);
         throw error;
       }
 
@@ -470,10 +456,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // The auth state change listener will handle loading the profile
       
     } catch (error: any) {
-      debugLog('Sign up failed:', {
-        message: error.message,
-        stack: error.stack
-      });
+      debugLog('Sign up failed:', error.message);
       throw error;
     }
   };
@@ -487,14 +470,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const result = await Promise.race([
           signOutQuery,
-          createTimeoutPromise(5000, 'Sign out')
+          createTimeoutPromise(QUICK_TIMEOUT, 'Sign out')
         ]);
 
         const { error } = result as any;
-        debugLog('Sign out result:', { error });
+        debugLog('Sign out result:', { error: error?.message });
 
         if (error && !error.message?.includes('timeout')) {
-          debugLog('Sign out error:', error);
+          debugLog('Sign out error:', error.message);
         }
       } catch (timeoutError) {
         debugLog('Sign out timeout, forcing local cleanup');
@@ -508,10 +491,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       debugLog('Sign out completed');
       
     } catch (error: any) {
-      debugLog('Sign out error:', {
-        message: error.message,
-        stack: error.stack
-      });
+      debugLog('Sign out error:', error.message);
       
       // Force clear state even on error
       setUser(null);
@@ -538,19 +518,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const result = await Promise.race([
         updateQuery,
-        createTimeoutPromise(OPERATION_TIMEOUT, 'Profile update')
+        createTimeoutPromise(STANDARD_TIMEOUT, 'Profile update')
       ]);
 
       const { data, error } = result as any;
 
-      debugLog('Profile update result:', { data, error });
+      debugLog('Profile update result:', { hasData: !!data, error: error?.message });
 
       if (error) {
-        debugLog('Profile update error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details
-        });
+        debugLog('Profile update error details:', error.message);
         
         if (error.message?.includes('timeout')) {
           throw new Error('Profile update timed out. Please try again.');
@@ -563,10 +539,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         debugLog('Profile updated successfully');
       }
     } catch (error: any) {
-      debugLog('Profile update failed:', {
-        message: error.message,
-        stack: error.stack
-      });
+      debugLog('Profile update failed:', error.message);
       throw error;
     }
   };
