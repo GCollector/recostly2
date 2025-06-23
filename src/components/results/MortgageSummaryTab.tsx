@@ -2,6 +2,7 @@ import React from 'react';
 import { Calculator } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { MortgageData } from '../../pages/Calculator';
+import NotesSection from '../shared/NotesSection';
 
 interface MortgageSummaryTabProps {
   data: MortgageData;
@@ -10,6 +11,8 @@ interface MortgageSummaryTabProps {
   totalInterest: number;
   totalCost: number;
   downPaymentPercent: number;
+  calculationId?: string;
+  currentNotes?: Record<string, string>;
 }
 
 const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
@@ -18,7 +21,9 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
   loanAmount,
   totalInterest,
   totalCost,
-  downPaymentPercent
+  downPaymentPercent,
+  calculationId,
+  currentNotes = {}
 }) => {
   // Chart data
   const pieChartData = [
@@ -146,6 +151,16 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
         </div>
       </div>
 
+      {/* Premium Notes Section */}
+      {calculationId && (
+        <NotesSection
+          calculationId={calculationId}
+          section="mortgage"
+          sectionTitle="Mortgage Summary"
+          currentNotes={currentNotes.mortgage}
+        />
+      )}
+
       {/* Property Summary */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Property Summary</h3>
@@ -244,6 +259,15 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
               <Bar dataKey="interest" fill="#EF4444" name="Interest" />
             </BarChart>
           </ResponsiveContainer>
+          
+          {/* Interest percentage display */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-slate-600">
+              Interest represents <span className="font-semibold text-slate-900">
+                {Math.round((totalInterest / (totalInterest + loanAmount)) * 100)}%
+              </span> of your total payments
+            </p>
+          </div>
         </div>
       </div>
     </div>

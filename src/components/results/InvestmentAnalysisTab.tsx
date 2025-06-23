@@ -1,5 +1,6 @@
 import React from 'react';
 import { MortgageData } from '../../pages/Calculator';
+import NotesSection from '../shared/NotesSection';
 
 interface InvestmentAnalysisTabProps {
   data: MortgageData;
@@ -11,9 +12,16 @@ interface InvestmentAnalysisTabProps {
     totalMonthlyExpenses: number;
     netOperatingIncome: number;
   } | null;
+  calculationId?: string;
+  currentNotes?: Record<string, string>;
 }
 
-const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({ data, investmentMetrics }) => {
+const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({ 
+  data, 
+  investmentMetrics, 
+  calculationId, 
+  currentNotes = {} 
+}) => {
   if (!investmentMetrics) return null;
 
   return (
@@ -54,6 +62,16 @@ const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({ data, inv
           </div>
         </div>
       </div>
+
+      {/* Premium Notes Section */}
+      {calculationId && (
+        <NotesSection
+          calculationId={calculationId}
+          section="investment"
+          sectionTitle="Investment Analysis"
+          currentNotes={currentNotes.investment}
+        />
+      )}
 
       {/* Investment Analysis */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

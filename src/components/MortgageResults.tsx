@@ -11,18 +11,28 @@ import AmortizationTab from './results/AmortizationTab';
 import InvestmentAnalysisTab from './results/InvestmentAnalysisTab';
 import ResultsActionButtons from './results/ResultsActionButtons';
 import ShareModal from './shared/ShareModal';
+import CommentsSection from './shared/CommentsSection';
 
 interface MortgageResultsProps {
   data: MortgageData;
   onBack: () => void;
+  calculationId?: string;
+  currentNotes?: Record<string, string>;
+  currentComments?: string;
 }
 
-const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
+const MortgageResults: React.FC<MortgageResultsProps> = ({ 
+  data, 
+  onBack, 
+  calculationId, 
+  currentNotes = {},
+  currentComments = ''
+}) => {
   const { user } = useAuth();
   const { saveCalculation, calculations } = useCalculations();
   const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
   const [showShareModal, setShowShareModal] = useState(false);
-  const [calculationId, setCalculationId] = useState<string>('');
+  const [savedCalculationId, setSavedCalculationId] = useState<string>(calculationId || '');
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{
@@ -72,7 +82,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
       };
       
       const id = await saveCalculation(calculationData);
-      setCalculationId(id);
+      setSavedCalculationId(id);
       setSaveMessage({
         type: 'success',
         title: 'Calculation saved successfully!',
@@ -139,7 +149,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   };
 
   const handleShare = async () => {
-    if (calculationId) {
+    if (savedCalculationId) {
       setShowShareModal(true);
       return;
     }
@@ -147,9 +157,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   };
 
   const handleCopyLink = async () => {
-    if (!calculationId) return;
+    if (!savedCalculationId) return;
     
-    const shareUrl = `${window.location.origin}/shared/${calculationId}`;
+    const shareUrl = `${window.location.origin}/shared/${savedCalculationId}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -171,6 +181,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
             totalInterest={totalInterest}
             totalCost={totalCost}
             downPaymentPercent={downPaymentPercent}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
           />
         );
 
@@ -179,6 +191,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
           <ClosingCostsTab
             data={data}
             closingCosts={closingCosts}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
           />
         );
 
@@ -189,6 +203,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
             totalInterest={totalInterest}
             amortizationYears={data.amortizationYears}
             amortizationSchedule={amortizationSchedule}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
           />
         );
 
@@ -197,6 +213,8 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
           <InvestmentAnalysisTab
             data={data}
             investmentMetrics={investmentMetrics}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
           />
         );
 
@@ -259,6 +277,14 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
         {renderTabContent()}
       </div>
 
+      {/* Premium Comments Section */}
+      {savedCalculationId && (
+        <CommentsSection
+          calculationId={savedCalculationId}
+          currentComments={currentComments}
+        />
+      )}
+
       {/* Save Message Display */}
       {saveMessage && (
         <div className={`border rounded-lg p-4 flex items-start ${
@@ -319,9 +345,9 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
 
       {/* Share Modal */}
       <ShareModal
-        isOpen={showShareModal && !!calculationId}
+        isOpen={showShareModal && !!savedCalculationId}
         onClose={() => setShowShareModal(false)}
-        calculationId={calculationId}
+        calculationId={savedCalculationId}
         onCopyLink={handleCopyLink}
         copied={copied}
       />

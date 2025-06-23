@@ -1,5 +1,6 @@
 import React from 'react';
 import { MortgageData } from '../../pages/Calculator';
+import NotesSection from '../shared/NotesSection';
 
 interface ClosingCostsTabProps {
   data: MortgageData;
@@ -14,9 +15,16 @@ interface ClosingCostsTabProps {
     firstTimeBuyerRebate: number;
     total: number;
   };
+  calculationId?: string;
+  currentNotes?: Record<string, string>;
 }
 
-const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({ data, closingCosts }) => {
+const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({ 
+  data, 
+  closingCosts, 
+  calculationId, 
+  currentNotes = {} 
+}) => {
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
@@ -41,6 +49,16 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({ data, closingCosts })
           </div>
         </div>
       </div>
+
+      {/* Premium Notes Section */}
+      {calculationId && (
+        <NotesSection
+          calculationId={calculationId}
+          section="closing"
+          sectionTitle="Closing Costs"
+          currentNotes={currentNotes.closing}
+        />
+      )}
 
       {/* Closing Cost Breakdown */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

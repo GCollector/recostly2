@@ -1,5 +1,6 @@
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from 'recharts';
+import NotesSection from '../shared/NotesSection';
 
 interface AmortizationTabProps {
   loanAmount: number;
@@ -12,13 +13,17 @@ interface AmortizationTabProps {
     balance: number;
     cumulativeInterest: number;
   }>;
+  calculationId?: string;
+  currentNotes?: Record<string, string>;
 }
 
 const AmortizationTab: React.FC<AmortizationTabProps> = ({
   loanAmount,
   totalInterest,
   amortizationYears,
-  amortizationSchedule
+  amortizationSchedule,
+  calculationId,
+  currentNotes = {}
 }) => {
   const amortizationChartData = amortizationSchedule.map(year => ({
     year: `Year ${year.year}`,
@@ -56,6 +61,16 @@ const AmortizationTab: React.FC<AmortizationTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Premium Notes Section */}
+      {calculationId && (
+        <NotesSection
+          calculationId={calculationId}
+          section="amortization"
+          sectionTitle="Amortization"
+          currentNotes={currentNotes.amortization}
+        />
+      )}
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-8">
