@@ -176,7 +176,7 @@ const HomePage: React.FC = () => {
                       <button
                         onClick={() => handleViewCalculation(calc)}
                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white"
-                        title="View Results"
+                        title="View Details"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
@@ -207,52 +207,6 @@ const HomePage: React.FC = () => {
               </Link>
             </div>
           )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            {
-              title: 'Mortgage Calculator',
-              description: 'Calculate payments and amortization schedules',
-              icon: Calculator,
-              gradient: 'from-blue-600 to-purple-600',
-              href: '/calculator'
-            },
-            {
-              title: 'Closing Costs',
-              description: 'Calculate province-specific closing costs',
-              icon: HomeIcon,
-              gradient: 'from-emerald-500 to-teal-500',
-              href: '/calculator'
-            },
-            {
-              title: 'Investment Analysis',
-              description: 'Analyze rental property investments',
-              icon: TrendingUp,
-              gradient: 'from-amber-500 to-orange-500',
-              href: '/calculator'
-            },
-            {
-              title: 'Upgrade Plan',
-              description: 'Unlock premium features and tools',
-              icon: Shield,
-              gradient: 'from-rose-500 to-pink-500',
-              href: '/pricing'
-            }
-          ].map((action) => (
-            <Link
-              key={action.title}
-              to={action.href}
-              className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 transform hover:scale-105 group"
-            >
-              <div className={`w-12 h-12 bg-gradient-to-r ${action.gradient} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200 shadow-sm`}>
-                <action.icon className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold font-heading text-slate-900 mb-2">{action.title}</h3>
-              <p className="font-sans text-slate-600">{action.description}</p>
-            </Link>
-          ))}
         </div>
       </div>
     );
