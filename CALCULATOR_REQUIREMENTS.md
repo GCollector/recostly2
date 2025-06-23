@@ -82,6 +82,29 @@ END IF;
 - **Save Integration**: Notes and comments saved with calculation data
 - **Dashboard Indicators**: Show badges when calculations have notes/comments
 
+## NEW: Shared Calculation Page Requirements
+
+### Shared Page Display Rules
+- **No Edit Capabilities**: All notes and comments are readonly on shared pages
+- **Visual Distinction**: Readonly styling to clearly indicate view-only mode
+- **No Navigation Elements**: Remove "Create Your Own" buttons and links
+- **Clean Presentation**: Focus entirely on calculation results and content
+- **Comments Visibility**: Show shareable comments if added by premium user
+- **Notes Privacy**: Private notes are NEVER shown on shared pages
+
+### Readonly Notes/Comments Styling
+- **Notes Sections**: Display with muted amber background and "View Only" indicator
+- **Comments Section**: Display with muted blue background and "View Only" indicator
+- **No Edit Controls**: Remove all edit buttons, save buttons, and form controls
+- **Lock Icons**: Use lock or eye icons to indicate readonly state
+- **Professional Layout**: Maintain visual hierarchy while clearly showing readonly state
+
+### Removed Elements on Shared Pages
+- **Top Navigation**: No "Create Your Own" button in header area
+- **Bottom CTA**: Remove entire "Create Your Own Calculation" section at bottom
+- **Edit Controls**: No edit buttons or form controls for notes/comments
+- **Action Buttons**: No save, share, or edit buttons (except for marketing content hide/show)
+
 ## NEW: Navigation System Updates
 
 ### Home Page Behavior
@@ -194,6 +217,14 @@ const loggedInNavigation = [
 - **Premium Indicators**: Crown icons and "Premium Feature" labels
 - **Upgrade Prompts**: Lock icons with clear upgrade calls-to-action
 - **Edit States**: Proper form controls with save/cancel buttons
+- **Readonly States**: Muted backgrounds with eye/lock icons for shared pages
+
+#### Shared Page Readonly Design
+- **Readonly Notes**: Muted amber background (`from-amber-25 to-orange-25`) with eye icon
+- **Readonly Comments**: Muted blue background (`from-blue-25 to-indigo-25`) with eye icon
+- **No Edit Controls**: Remove all buttons and form elements
+- **Clear Indicators**: "View Only" text and appropriate icons
+- **Professional Appearance**: Maintain visual hierarchy while showing readonly state
 
 ## NEW: Component Architecture Requirements
 
@@ -222,8 +253,8 @@ const loggedInNavigation = [
 
 #### Shared Components (`src/components/shared/`)
 - `ShareModal.tsx` - Reusable modal for sharing
-- `NotesSection.tsx` - Premium notes functionality for each tab
-- `CommentsSection.tsx` - Premium comments functionality for calculations
+- `NotesSection.tsx` - Premium notes functionality for each tab (supports readonly mode)
+- `CommentsSection.tsx` - Premium comments functionality for calculations (supports readonly mode)
 - Other reusable UI components as needed
 
 #### Utilities (`src/utils/`)
@@ -236,6 +267,7 @@ const loggedInNavigation = [
 - **Loading States**: Components should show appropriate loading states
 - **Accessibility**: All components must be accessible (ARIA labels, keyboard navigation)
 - **Testing**: Each component should be testable in isolation
+- **Readonly Support**: Notes and Comments components must support readonly mode for shared pages
 
 ## FORBIDDEN CHANGES
 
@@ -246,6 +278,8 @@ const loggedInNavigation = [
 - Old single-form calculator structure
 - Monolithic components over 300 lines
 - Dashboard link in header navigation
+- Editable notes/comments on shared pages
+- "Create Your Own" elements on shared pages
 
 ❌ **NEVER** remove:
 - Step indicator with proper styling
@@ -258,6 +292,7 @@ const loggedInNavigation = [
 - Tier-based save limits
 - Notes and comments functionality
 - Home → Dashboard redirect for logged-in users
+- Readonly state for shared page notes/comments
 
 ❌ **NEVER** change:
 - Font colors for consistency (all supporting amounts in slate-900)
@@ -269,6 +304,7 @@ const loggedInNavigation = [
 - User tier system and save limits
 - Premium gating for notes and comments
 - Navigation behavior for logged-in vs logged-out users
+- Readonly behavior on shared calculation pages
 
 ## Required File Structure
 
@@ -292,8 +328,8 @@ src/
 │   │   └── ResultsActionButtons.tsx
 │   ├── shared/
 │   │   ├── ShareModal.tsx
-│   │   ├── NotesSection.tsx
-│   │   └── CommentsSection.tsx
+│   │   ├── NotesSection.tsx (supports readonly mode)
+│   │   └── CommentsSection.tsx (supports readonly mode)
 │   └── MortgageResults.tsx - Results display with tabs
 ├── utils/
 │   └── mortgageCalculations.ts
@@ -362,18 +398,34 @@ export interface MortgageData {
 ## NEW: Shared Calculation Page Requirements
 
 ### Shared Calculation Display
-- No step indicator on shared calculation page
-- Same tab-based results display as step 2 of the calculator
-- No ability to edit the calculation
-- Clear "Create Your Own" link to start a new calculation
-- Proper display of all calculation details and charts
-- Comments visible to all viewers (if added by premium user)
+- **No step indicator** on shared calculation page
+- **Same tab-based results display** as step 2 of the calculator
+- **No ability to edit** the calculation or any content
+- **NO "Create Your Own" elements** anywhere on the page
+- **Proper display** of all calculation details and charts
+- **Comments visibility**: Show shareable comments if added by premium user (readonly)
+- **Notes privacy**: Private notes are NEVER shown on shared pages
+
+### Readonly Notes/Comments Display
+- **Notes sections**: Show with readonly styling if they exist, but typically hidden on shared pages
+- **Comments section**: Show with readonly styling and "View Only" indicator
+- **No edit controls**: Remove all edit buttons, save buttons, and form controls
+- **Professional presentation**: Maintain visual hierarchy while clearly indicating readonly state
+- **Clear indicators**: Use eye icons and "View Only" text to show readonly state
+
+### Removed Elements on Shared Pages
+- **All "Create Your Own" buttons and links**: Completely removed from header and footer
+- **Edit controls**: No edit buttons or form controls anywhere
+- **Action buttons**: No save, share, or edit buttons
+- **Navigation elements**: Minimal navigation, focus on content display
+- **Call-to-action sections**: Remove bottom CTA section entirely
 
 ### Marketing Content for Premium Users
-- Premium users can add marketing content to shared calculations
-- Marketing content includes profile image and custom text
-- Marketing content is shown by default but can be hidden by viewers
-- Non-premium users see generic calculator branding
+- **Premium users can add marketing content** to shared calculations
+- **Marketing content includes** profile image and custom text
+- **Marketing content is shown by default** but can be hidden by viewers
+- **Non-premium users see** generic calculator branding
+- **Hide/show toggle**: Only control available to viewers
 
 ## Visual Reference Requirements
 
@@ -389,6 +441,8 @@ The design MUST match these specifications:
 9. **Notes Sections**: Amber gradient with Crown icons and premium gating
 10. **Comments Section**: Blue gradient with Crown icons and premium gating
 11. **Navigation**: Home redirects to dashboard for logged-in users
+12. **Shared Page**: Clean, readonly presentation with no "Create Your Own" elements
+13. **Readonly Styling**: Muted backgrounds and eye icons for readonly content
 
 ## Code Structure Requirements
 
@@ -423,6 +477,10 @@ if (currentStep === 2) {
     onCalculationSaved={handleCalculationSaved}
   />;
 }
+
+// SharedCalculation.tsx MUST have readonly prop support:
+<NotesSection readonly={true} />
+<CommentsSection readonly={true} />
 ```
 
 ## NEW: Testing Requirements
@@ -452,6 +510,9 @@ Any changes MUST pass these tests:
 - ✅ Home redirects to dashboard for logged-in users
 - ✅ Navigation active states work correctly
 - ✅ Dashboard indicators show when calculations have notes/comments
+- ✅ Shared page shows readonly notes/comments correctly
+- ✅ Shared page has no "Create Your Own" elements
+- ✅ Shared page has no edit controls for any content
 
 ## NEW: Chart Data Requirements
 
@@ -474,7 +535,7 @@ Any changes MUST pass these tests:
 
 ## Regression Prevention
 
-Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
+Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalculation.tsx:
 1. Read this requirements document completely
 2. Verify the change maintains the two-step structure
 3. Check that visual design requirements are preserved
@@ -492,6 +553,9 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 15. Test premium gating for notes and comments
 16. Confirm navigation behavior for logged-in vs logged-out users
 17. Test dashboard redirect functionality
+18. Verify shared page readonly behavior
+19. Confirm no "Create Your Own" elements on shared pages
+20. Test readonly styling for notes and comments
 
 ## NEW: Database Integration Requirements
 
@@ -512,39 +576,33 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Save limits respected and clearly communicated to users
 - Notes and comments preserved across sessions
 - Dashboard shows indicators for calculations with notes/comments
+- Shared pages display readonly content appropriately
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, and navigation behavior are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, navigation behavior, and readonly shared page behavior are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
-2. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
-3. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
-4. **Dashboard Enhancements**: Added indicators showing which calculations have notes/comments
-5. **Component Integration**: Notes and comments integrated into all result tab components
-6. **Premium Gating**: Proper upgrade prompts and feature gating for non-premium users
-7. **Visual Design**: Amber gradient for notes, blue gradient for comments, Crown icons for premium features
-8. **User Tier System**: Updated tier definitions to use 'free', 'basic', and 'premium'
-9. **Save Limit Implementation**: Both client-side and server-side validation for free users
-10. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
-11. **Database Triggers**: Server-side enforcement of save limits based on user tier
-12. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
-13. **Database Naming Convention**: Added requirement for singular table names across all database operations
-14. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
-15. **Modular Design**: Established clear file structure and component organization principles
-16. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
-17. **Testing Isolation**: Added requirements for component-level testing
-18. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
-19. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
-20. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
-21. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
-22. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
-23. **Chart Data Fixes**: Corrected pie chart percentages and data validation
-24. **Mobile Optimization**: Enhanced responsive design across all components
-25. **Testing Framework**: Added comprehensive structure validation tests
-26. **Shared Calculation Page**: Added requirements for shared calculation display
-27. **Marketing Content**: Added ability for premium users to customize shared calculation pages
+1. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
+2. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
+3. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
+4. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
+5. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
+6. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+7. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
+8. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
+9. **Dashboard Enhancements**: Added indicators showing which calculations have notes/comments
+10. **Component Integration**: Notes and comments integrated into all result tab components
+11. **Premium Gating**: Proper upgrade prompts and feature gating for non-premium users
+12. **Visual Design**: Amber gradient for notes, blue gradient for comments, Crown icons for premium features
+13. **User Tier System**: Updated tier definitions to use 'free', 'basic', and 'premium'
+14. **Save Limit Implementation**: Both client-side and server-side validation for free users
+15. **Error Handling**: Clear error messages and upgrade prompts for users hitting limits
+16. **Database Triggers**: Server-side enforcement of save limits based on user tier
+17. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
+18. **Database Naming Convention**: Added requirement for singular table names across all database operations
+19. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
+20. **Modular Design**: Established clear file structure and component organization principles
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -559,3 +617,5 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Enhanced shared calculation functionality
 - Added premium notes and comments without breaking existing functionality
 - Maintained navigation consistency while improving user experience
+- Enforced readonly behavior on shared pages
+- Removed "Create Your Own" elements from shared pages without affecting main application

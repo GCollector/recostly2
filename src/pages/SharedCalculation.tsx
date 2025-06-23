@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Calculator, Home, MapPin, Percent, Calendar, MessageCircle, User, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Calculator, Home, MapPin, Percent, Calendar, MessageCircle, User, AlertTriangle } from 'lucide-react';
 import { useCalculations } from '../contexts/CalculationContext';
 import { supabase } from '../lib/supabase';
 import { calculateMonthlyPayment, calculateClosingCosts, generateAmortizationSchedule } from '../utils/mortgageCalculations';
 import type { Database } from '../lib/supabase';
+import NotesSection from '../components/shared/NotesSection';
+import CommentsSection from '../components/shared/CommentsSection';
 
 type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
 type Profile = Database['public']['Tables']['profile']['Row'];
@@ -114,13 +116,6 @@ const SharedCalculation: React.FC = () => {
           <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold font-heading text-slate-900 mb-4">Calculation Not Found</h1>
           <p className="text-slate-600 font-sans mb-6">{error}</p>
-          <Link
-            to="/calculator"
-            className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium font-sans transition-colors"
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            <span>Create New Calculation</span>
-          </Link>
         </div>
       </div>
     );
@@ -135,13 +130,6 @@ const SharedCalculation: React.FC = () => {
           <p className="text-slate-600 font-sans mb-6">
             The calculation you're looking for doesn't exist or may have been deleted.
           </p>
-          <Link
-            to="/calculator"
-            className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium font-sans transition-colors"
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            <span>Create New Calculation</span>
-          </Link>
         </div>
       </div>
     );
@@ -173,17 +161,6 @@ const SharedCalculation: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header with Back Link */}
-      <div className="flex items-center space-x-4 mb-6">
-        <Link
-          to="/calculator"
-          className="inline-flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="font-sans">Create Your Own</span>
-        </Link>
-      </div>
-
       {/* Main Header */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold font-heading text-slate-900">
@@ -359,6 +336,17 @@ const SharedCalculation: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* Readonly Notes Section for Mortgage Summary */}
+            {calculation.notes && calculation.notes.mortgage && (
+              <NotesSection
+                calculationId={calculation.id}
+                section="mortgage"
+                sectionTitle="Mortgage Summary"
+                currentNotes={calculation.notes.mortgage}
+                readonly={true}
+              />
+            )}
           </div>
         )}
 
@@ -386,6 +374,17 @@ const SharedCalculation: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Readonly Notes Section for Closing Costs */}
+            {calculation.notes && calculation.notes.closing && (
+              <NotesSection
+                calculationId={calculation.id}
+                section="closing"
+                sectionTitle="Closing Costs"
+                currentNotes={calculation.notes.closing}
+                readonly={true}
+              />
+            )}
 
             {/* Closing Cost Breakdown */}
             <div className="bg-white p-6 rounded-xl border border-slate-200">
@@ -489,6 +488,17 @@ const SharedCalculation: React.FC = () => {
               </div>
             </div>
 
+            {/* Readonly Notes Section for Amortization */}
+            {calculation.notes && calculation.notes.amortization && (
+              <NotesSection
+                calculationId={calculation.id}
+                section="amortization"
+                sectionTitle="Amortization"
+                currentNotes={calculation.notes.amortization}
+                readonly={true}
+              />
+            )}
+
             {/* Amortization Table */}
             <div className="bg-white p-6 rounded-xl border border-slate-200">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Amortization Schedule</h3>
@@ -519,17 +529,13 @@ const SharedCalculation: React.FC = () => {
         )}
       </div>
 
-      {/* Comments Section */}
+      {/* Readonly Comments Section - Only show if comments exist */}
       {calculation.comments && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold font-heading text-slate-900 mb-4 flex items-center">
-            <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
-            Comments
-          </h3>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="font-sans text-blue-800 whitespace-pre-wrap">{calculation.comments}</p>
-          </div>
-        </div>
+        <CommentsSection
+          calculationId={calculation.id}
+          currentComments={calculation.comments}
+          readonly={true}
+        />
       )}
 
       {/* Marketing Content (Premium Feature) */}
@@ -605,21 +611,6 @@ const SharedCalculation: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Call to Action */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-center text-white">
-        <h2 className="text-2xl font-bold font-heading mb-4">Create Your Own Calculation</h2>
-        <p className="font-sans text-blue-100 mb-6 max-w-2xl mx-auto">
-          Use our professional mortgage calculator to explore different scenarios and find the perfect financing solution for your needs.
-        </p>
-        <Link
-          to="/calculator"
-          className="inline-flex items-center space-x-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium font-sans transition-colors shadow-lg"
-        >
-          <Calculator className="h-4 w-4 mr-2" />
-          <span>Start New Calculation</span>
-        </Link>
-      </div>
     </div>
   );
 };
