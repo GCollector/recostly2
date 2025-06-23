@@ -16,7 +16,7 @@ The Calculator page MUST follow this exact two-step process:
 
 ### Step 2: Results Display
 - Completely separate view (MortgageResults component)
-- **Back** button to return to Step 1
+- **Edit** button to return to Step 1 (NOT "Back to Input" or "Back")
 - Tab-based results with responsive design:
   - **Mortgage Summary** - Featured monthly payment + supporting cards + charts
   - **Closing Costs** - Detailed provincial/municipal tax breakdown
@@ -67,6 +67,11 @@ The Calculator page MUST follow this exact two-step process:
 - **Conditional Fields**: Show/hide based on toggle state
 
 ### Results Page Design
+
+#### Navigation Elements
+- **Edit Button**: Simple "Edit" text with ArrowLeft icon (NOT "Back to Input" or "Back")
+- **Button Styling**: `text-slate-600 hover:text-slate-900 transition-colors`
+- **Position**: Left side of header, aligned with Results title
 
 #### Tab Navigation
 - **Container**: `bg-white rounded-xl shadow-sm border border-slate-200 p-4`
@@ -158,6 +163,7 @@ The Calculator page MUST follow this exact two-step process:
 - Investment toggle gradient background
 - Step indicator active/inactive states
 - Singular table naming convention
+- Edit button text (must be "Edit", not "Back" or "Back to Input")
 
 ## Required File Structure
 
@@ -252,6 +258,7 @@ The design MUST match these specifications:
 5. **Featured Payment**: Prominent blue gradient card
 6. **Supporting Cards**: Consistent slate-900 text for all amounts
 7. **Charts**: Proper color scheme and responsive containers
+8. **Edit Button**: Simple "Edit" text with ArrowLeft icon
 
 ## Code Structure Requirements
 
@@ -289,7 +296,7 @@ Any changes MUST pass these tests:
 - ✅ Featured payment card displays prominently
 - ✅ Supporting cards use consistent font colors
 - ✅ Charts render without errors
-- ✅ Back button returns to input form
+- ✅ Edit button returns to input form and shows "Edit" text only
 - ✅ Investment analysis tab appears when enabled
 - ✅ Mobile responsive design works correctly
 - ✅ All components are under 300 lines
@@ -327,6 +334,7 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 7. Confirm font color consistency is maintained
 8. Ensure components remain modular and under size limits
 9. Verify database operations use singular table names
+10. Confirm Edit button shows "Edit" text only
 
 ## NEW: Database Integration Requirements
 
@@ -343,24 +351,25 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Calculation results stored with proper structure
 - Database queries MUST target singular table names
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, and singular database table naming are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, and "Edit" button text are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Database Naming Convention**: Added requirement for singular table names across all database operations
-2. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
-3. **Modular Design**: Established clear file structure and component organization principles
-4. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
-5. **Testing Isolation**: Added requirements for component-level testing
-6. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
-7. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
-8. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
-9. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
-10. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
-11. **Chart Data Fixes**: Corrected pie chart percentages and data validation
-12. **Mobile Optimization**: Enhanced responsive design across all components
-13. **Testing Framework**: Added comprehensive structure validation tests
+1. **Edit Button Text**: Changed from "Back to Input" to simply "Edit" for cleaner UX
+2. **Database Naming Convention**: Added requirement for singular table names across all database operations
+3. **Component Architecture**: Added comprehensive requirements for breaking down large components into smaller, manageable pieces
+4. **Modular Design**: Established clear file structure and component organization principles
+5. **Component Size Limits**: Set maximum file size limits to prevent monolithic components
+6. **Testing Isolation**: Added requirements for component-level testing
+7. **Visual Design Overhaul**: Added comprehensive styling requirements for step indicator, input form, and results page
+8. **Responsive Tab Design**: Full names on desktop, short names on mobile, descriptions on large screens
+9. **Featured Payment Card**: Prominent blue gradient card with supporting information grid
+10. **Font Color Consistency**: All supporting amounts use slate-900 for visual consistency
+11. **Investment Analysis Enhancement**: Improved toggle design and conditional field display
+12. **Chart Data Fixes**: Corrected pie chart percentages and data validation
+13. **Mobile Optimization**: Enhanced responsive design across all components
+14. **Testing Framework**: Added comprehensive structure validation tests
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -370,3 +379,4 @@ Before making ANY changes to Calculator.tsx or MortgageResults.tsx:
 - Preserved database integration features
 - Enforced component modularity
 - Established singular table naming convention
+- Standardized Edit button text to "Edit" only

@@ -177,7 +177,7 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
           className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Input</span>
+          <span>Edit</span>
         </button>
         <h2 className="text-2xl font-bold text-slate-900">Results</h2>
         <div className="w-24"></div> {/* Spacer for centering */}
