@@ -9,7 +9,7 @@ A professional, full-featured mortgage calculator designed specifically for the 
 ## ✨ Features
 
 ### Core Calculators
-- **Mortgage Calculator**: Calculate monthly payments, total interest, and amortization schedules
+- **Two-Step Mortgage Calculator**: Professional input form with comprehensive results analysis
 - **Closing Costs Calculator**: Province-specific calculations for Ontario and BC
 - **Amortization Schedule**: Detailed year-by-year payment breakdown with interactive charts
 - **Investment Property Calculator**: Cap rate, cash flow, ROI, and break-even analysis
@@ -32,6 +32,7 @@ A professional, full-featured mortgage calculator designed specifically for the 
 - **Data Persistence**: Save calculations to your account
 - **Shareable Links**: Generate public links to share calculations
 - **Canadian-specific**: Tailored for Toronto and Vancouver markets
+- **Modular Architecture**: Clean, maintainable component structure
 
 ## 🛠️ Tech Stack
 
@@ -47,34 +48,51 @@ A professional, full-featured mortgage calculator designed specifically for the 
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── MortgageCalculator.tsx
-│   ├── ClosingCosts.tsx
-│   ├── AmortizationSchedule.tsx
-│   ├── InvestmentCalculator.tsx
+├── components/
+│   ├── mortgage/            # Input form components
+│   │   ├── MortgageInputForm.tsx
+│   │   ├── PropertyFinancingSection.tsx
+│   │   ├── InvestmentAnalysisSection.tsx
+│   │   ├── InvestmentToggle.tsx
+│   │   └── InvestmentFields.tsx
+│   ├── results/             # Results display components
+│   │   ├── MortgageSummaryTab.tsx
+│   │   ├── ClosingCostsTab.tsx
+│   │   ├── AmortizationTab.tsx
+│   │   ├── InvestmentAnalysisTab.tsx
+│   │   ├── ResultsTabNavigation.tsx
+│   │   └── ResultsActionButtons.tsx
+│   ├── shared/              # Reusable components
+│   │   └── ShareModal.tsx
+│   ├── MortgageResults.tsx  # Main results container
 │   ├── PricingSection.tsx
-│   └── SubscriptionManager.tsx
-├── contexts/           # React Context providers
+│   ├── SubscriptionManager.tsx
+│   └── Layout.tsx
+├── contexts/               # React Context providers
 │   ├── AuthContext.tsx
 │   └── CalculationContext.tsx
-├── pages/              # Page components
+├── pages/                  # Page components
 │   ├── Home.tsx
-│   ├── Calculator.tsx
+│   ├── Calculator.tsx      # Two-step calculator process
 │   ├── Dashboard.tsx
 │   ├── Settings.tsx
+│   ├── Pricing.tsx
+│   ├── Login.tsx
+│   ├── Signup.tsx
 │   └── SharedCalculation.tsx
-├── lib/                # Utilities and configurations
-│   ├── supabase.ts
-│   └── stripe.ts
-└── App.tsx             # Main application component
+├── utils/                  # Utility functions
+│   └── mortgageCalculations.ts
+└── lib/                    # Configurations
+    ├── supabase.ts
+    └── stripe.ts
 
 supabase/
-├── functions/          # Edge Functions
+├── functions/              # Edge Functions
 │   ├── create-checkout-session/
 │   ├── create-portal-session/
 │   ├── create-stripe-customer/
 │   └── stripe-webhook/
-└── migrations/         # Database schema
+└── migrations/             # Database schema
 ```
 
 ## 🚀 Getting Started
@@ -115,7 +133,7 @@ supabase/
 4. **Set up Supabase**
    
    - Create a new Supabase project
-   - Run the migration file in `supabase/migrations/` to set up the database schema
+   - Run the migration files in `supabase/migrations/` to set up the database schema
    - Deploy the edge functions in `supabase/functions/`
 
 5. **Configure Stripe**
@@ -131,11 +149,10 @@ supabase/
 
 ## 📊 Database Schema
 
-The application uses three main tables:
+The application uses a singular table naming convention with two main tables:
 
-- **profiles**: User account information and subscription status
-- **mortgage_calculations**: Saved mortgage calculations
-- **investment_calculations**: Saved investment property analyses
+- **profile**: User account information and subscription status
+- **mortgage_calculation**: Saved mortgage calculations with investment analysis
 
 All tables include Row Level Security (RLS) policies for data protection.
 
@@ -178,6 +195,40 @@ Deploy the included edge functions for Stripe integration:
 - `create-stripe-customer`: Creates Stripe customers
 - `stripe-webhook`: Handles Stripe webhook events
 
+## 🏛️ Application Structure
+
+### Two-Step Calculator Process
+
+The calculator follows a carefully designed two-step process:
+
+1. **Step 1: Input Form**
+   - Comprehensive mortgage details input
+   - Property and financing information
+   - Optional investment analysis with toggle
+   - Professional form validation
+
+2. **Step 2: Results Analysis**
+   - Tabbed results interface with responsive design
+   - Featured monthly payment display
+   - Detailed breakdowns and interactive charts
+   - Save and share functionality
+
+### Component Architecture
+
+The application follows a modular component architecture:
+
+- **Maximum 200-300 lines per component** for maintainability
+- **Single Responsibility Principle** for each component
+- **Reusable components** in the shared directory
+- **Clear separation** between input, results, and utility components
+
+### Database Design
+
+- **Singular table naming** convention throughout
+- **Row Level Security** for all user data
+- **Optimized indexes** for performance
+- **Automatic profile creation** on user signup
+
 ## 🚀 Deployment
 
 The application is configured for easy deployment on Netlify:
@@ -189,6 +240,31 @@ The application is configured for easy deployment on Netlify:
 Build command: `npm run build`
 Publish directory: `dist`
 
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
+
+# Watch mode for development
+npm run test:watch
+```
+
+The application includes comprehensive tests for:
+- Component functionality and integration
+- Calculator structure and workflow
+- Chart rendering and data validation
+- Responsive design requirements
+- Database operations
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -196,6 +272,14 @@ Publish directory: `dist`
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow the two-step calculator structure
+- Maintain component size limits (200-300 lines)
+- Use singular table naming convention
+- Include tests for new features
+- Follow the established design system
 
 ## 📝 License
 
@@ -206,10 +290,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built for the Canadian real estate market
 - Designed with real estate professionals in mind
 - Optimized for Toronto and Vancouver markets
+- Follows modern React and TypeScript best practices
 
 ## 📞 Support
 
 For support, email support@mortgagecalc.ca or create an issue in this repository.
+
+## 🔄 Recent Updates
+
+### Version 2.0 - Major Architecture Overhaul
+- **Two-Step Calculator Process**: Redesigned from tabbed interface to professional two-step workflow
+- **Modular Component Architecture**: Broke down large components into maintainable, focused modules
+- **Enhanced User Experience**: Improved navigation with "Edit" button and step indicators
+- **Database Optimization**: Migrated to singular table naming convention for better performance
+- **Background Authentication**: Removed loading screens for better UX
+- **Responsive Design**: Enhanced mobile and desktop experiences
+- **Chart Improvements**: Fixed rendering issues and improved data visualization
+- **Dashboard Navigation**: Direct links to calculation results from saved calculations
+
+### Technical Improvements
+- **Component Size Limits**: All components under 300 lines for better maintainability
+- **Testing Coverage**: Comprehensive test suite including regression tests
+- **Performance Optimization**: Background profile loading and optimized database queries
+- **Error Handling**: Improved error boundaries and graceful failure handling
+- **Accessibility**: Enhanced ARIA labels and keyboard navigation
 
 ---
 
