@@ -2,10 +2,12 @@ import React from 'react';
 import { TrendingUp, Home, Settings, Calculator } from 'lucide-react';
 import { MortgageData } from '../../pages/Calculator';
 import { useAuth } from '../../contexts/AuthContext';
+import { AffordabilityResults } from '../../types/premium';
 import PropertyFinancingSection from './PropertyFinancingSection';
 import InvestmentAnalysisSection from './InvestmentAnalysisSection';
 import ClosingCostsSection from './ClosingCostsSection';
 import MarketingControlSection from './MarketingControlSection';
+import AffordabilitySection from '../premium/AffordabilitySection';
 
 interface MortgageInputFormProps {
   data: MortgageData;
@@ -17,6 +19,7 @@ interface MortgageInputFormProps {
     cmhcPremium: number;
     totalLoanAmount: number;
   };
+  onAffordabilityCalculated?: (results: AffordabilityResults) => void;
 }
 
 const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
@@ -24,13 +27,14 @@ const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
   onInputChange,
   onExpenseChange,
   onClosingCostChange,
-  loanCalculation
+  loanCalculation,
+  onAffordabilityCalculated
 }) => {
   const { user } = useAuth();
 
   return (
     <div className="space-y-12">
-      {/* Mortgage Details Section */}
+      {/* Mortgage Details Section - Always first */}
       <div>
         <h2 className="text-2xl font-semibold font-heading text-slate-900 mb-4">Mortgage Details</h2>
         <p className="text-slate-600 font-sans mb-8">Enter your property and financing information</p>
@@ -43,6 +47,17 @@ const MortgageInputForm: React.FC<MortgageInputFormProps> = ({
           />
         </div>
       </div>
+
+      {/* Premium Affordability Estimator - Now positioned AFTER mortgage details */}
+      {user?.tier === 'premium' && data.enableAffordabilityEstimator && onAffordabilityCalculated && (
+        <div className="border-t border-slate-200 pt-12">
+          <AffordabilitySection
+            data={data}
+            onInputChange={onInputChange}
+            onAffordabilityCalculated={onAffordabilityCalculated}
+          />
+        </div>
+      )}
 
       {/* Premium Features Toggle Section */}
       {user?.tier === 'premium' && (

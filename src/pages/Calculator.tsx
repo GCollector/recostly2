@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
-import AffordabilitySection from '../components/premium/AffordabilitySection';
 import { calculateClosingCosts, calculateTotalLoanAmount } from '../utils/mortgageCalculations';
 import { AffordabilityResults } from '../types/premium';
 
@@ -20,8 +19,8 @@ export interface MortgageData {
   enableInvestmentAnalysis: boolean;
   enableClosingCosts: boolean;
   showMarketingOnShare: boolean;
-  enableAffordabilityEstimator: boolean; // New field
-  enableRentVsBuy: boolean; // New field
+  enableAffordabilityEstimator: boolean;
+  enableRentVsBuy: boolean;
   monthlyRent?: number;
   monthlyExpenses?: {
     taxes: number;
@@ -66,8 +65,8 @@ const Calculator: React.FC = () => {
     enableInvestmentAnalysis: false,
     enableClosingCosts: true,
     showMarketingOnShare: true,
-    enableAffordabilityEstimator: false, // New field
-    enableRentVsBuy: false, // New field
+    enableAffordabilityEstimator: false,
+    enableRentVsBuy: false,
     monthlyRent: 2500,
     monthlyExpenses: {
       taxes: 400,
@@ -269,24 +268,14 @@ const Calculator: React.FC = () => {
       {/* Form Content */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
         <div className="p-8 space-y-8">
-          {/* Premium Affordability Estimator - Positioned BEFORE the main form */}
-          {user?.tier === 'premium' && mortgageData.enableAffordabilityEstimator && (
-            <div className="mb-8">
-              <AffordabilitySection
-                data={mortgageData}
-                onInputChange={handleInputChange}
-                onAffordabilityCalculated={handleAffordabilityCalculated}
-              />
-            </div>
-          )}
-
-          {/* Main Mortgage Input Form - Always positioned consistently */}
+          {/* Main Mortgage Input Form - Affordability estimator now inside this component */}
           <MortgageInputForm
             data={mortgageData}
             onInputChange={handleInputChange}
             onExpenseChange={handleExpenseChange}
             onClosingCostChange={handleClosingCostChange}
             loanCalculation={loanCalculation}
+            onAffordabilityCalculated={handleAffordabilityCalculated}
           />
 
           {/* Calculate Button */}
