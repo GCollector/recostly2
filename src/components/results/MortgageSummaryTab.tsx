@@ -13,6 +13,7 @@ interface MortgageSummaryTabProps {
   downPaymentPercent: number;
   calculationId?: string;
   currentNotes?: Record<string, string>;
+  readonly?: boolean; // New prop for shared pages
 }
 
 const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
@@ -23,7 +24,8 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
   totalCost,
   downPaymentPercent,
   calculationId,
-  currentNotes = {}
+  currentNotes = {},
+  readonly = false
 }) => {
   // Chart data
   const pieChartData = [
@@ -152,12 +154,25 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
       </div>
 
       {/* Premium Notes Section - Always visible for logged in users */}
-      <NotesSection
-        calculationId={calculationId || 'temp'}
-        section="mortgage"
-        sectionTitle="Mortgage Summary"
-        currentNotes={currentNotes.mortgage}
-      />
+      {!readonly && (
+        <NotesSection
+          calculationId={calculationId || 'temp'}
+          section="mortgage"
+          sectionTitle="Mortgage Summary"
+          currentNotes={currentNotes.mortgage}
+        />
+      )}
+
+      {/* Readonly Notes Section for shared pages */}
+      {readonly && currentNotes.mortgage && (
+        <NotesSection
+          calculationId={calculationId || ''}
+          section="mortgage"
+          sectionTitle="Mortgage Summary"
+          currentNotes={currentNotes.mortgage}
+          readonly={true}
+        />
+      )}
 
       {/* Property Summary */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

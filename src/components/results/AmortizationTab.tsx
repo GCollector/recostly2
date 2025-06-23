@@ -15,6 +15,7 @@ interface AmortizationTabProps {
   }>;
   calculationId?: string;
   currentNotes?: Record<string, string>;
+  readonly?: boolean; // New prop for shared pages
 }
 
 const AmortizationTab: React.FC<AmortizationTabProps> = ({
@@ -23,7 +24,8 @@ const AmortizationTab: React.FC<AmortizationTabProps> = ({
   amortizationYears,
   amortizationSchedule,
   calculationId,
-  currentNotes = {}
+  currentNotes = {},
+  readonly = false
 }) => {
   const amortizationChartData = amortizationSchedule.map(year => ({
     year: `Year ${year.year}`,
@@ -63,12 +65,25 @@ const AmortizationTab: React.FC<AmortizationTabProps> = ({
       </div>
 
       {/* Premium Notes Section - Always visible for logged in users */}
-      <NotesSection
-        calculationId={calculationId || 'temp'}
-        section="amortization"
-        sectionTitle="Amortization"
-        currentNotes={currentNotes.amortization}
-      />
+      {!readonly && (
+        <NotesSection
+          calculationId={calculationId || 'temp'}
+          section="amortization"
+          sectionTitle="Amortization"
+          currentNotes={currentNotes.amortization}
+        />
+      )}
+
+      {/* Readonly Notes Section for shared pages */}
+      {readonly && currentNotes.amortization && (
+        <NotesSection
+          calculationId={calculationId || ''}
+          section="amortization"
+          sectionTitle="Amortization"
+          currentNotes={currentNotes.amortization}
+          readonly={true}
+        />
+      )}
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-8">

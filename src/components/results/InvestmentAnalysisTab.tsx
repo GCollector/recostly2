@@ -14,13 +14,15 @@ interface InvestmentAnalysisTabProps {
   } | null;
   calculationId?: string;
   currentNotes?: Record<string, string>;
+  readonly?: boolean; // New prop for shared pages
 }
 
 const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({ 
   data, 
   investmentMetrics, 
   calculationId, 
-  currentNotes = {} 
+  currentNotes = {},
+  readonly = false
 }) => {
   if (!investmentMetrics) return null;
 
@@ -64,12 +66,25 @@ const InvestmentAnalysisTab: React.FC<InvestmentAnalysisTabProps> = ({
       </div>
 
       {/* Premium Notes Section - Always visible for logged in users */}
-      <NotesSection
-        calculationId={calculationId || 'temp'}
-        section="investment"
-        sectionTitle="Investment Analysis"
-        currentNotes={currentNotes.investment}
-      />
+      {!readonly && (
+        <NotesSection
+          calculationId={calculationId || 'temp'}
+          section="investment"
+          sectionTitle="Investment Analysis"
+          currentNotes={currentNotes.investment}
+        />
+      )}
+
+      {/* Readonly Notes Section for shared pages */}
+      {readonly && currentNotes.investment && (
+        <NotesSection
+          calculationId={calculationId || ''}
+          section="investment"
+          sectionTitle="Investment Analysis"
+          currentNotes={currentNotes.investment}
+          readonly={true}
+        />
+      )}
 
       {/* Investment Analysis */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">

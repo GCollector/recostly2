@@ -17,13 +17,15 @@ interface ClosingCostsTabProps {
   };
   calculationId?: string;
   currentNotes?: Record<string, string>;
+  readonly?: boolean; // New prop for shared pages
 }
 
 const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({ 
   data, 
   closingCosts, 
   calculationId, 
-  currentNotes = {} 
+  currentNotes = {},
+  readonly = false
 }) => {
   return (
     <div className="space-y-8">
@@ -51,12 +53,25 @@ const ClosingCostsTab: React.FC<ClosingCostsTabProps> = ({
       </div>
 
       {/* Premium Notes Section - Always visible for logged in users */}
-      <NotesSection
-        calculationId={calculationId || 'temp'}
-        section="closing"
-        sectionTitle="Closing Costs"
-        currentNotes={currentNotes.closing}
-      />
+      {!readonly && (
+        <NotesSection
+          calculationId={calculationId || 'temp'}
+          section="closing"
+          sectionTitle="Closing Costs"
+          currentNotes={currentNotes.closing}
+        />
+      )}
+
+      {/* Readonly Notes Section for shared pages */}
+      {readonly && currentNotes.closing && (
+        <NotesSection
+          calculationId={calculationId || ''}
+          section="closing"
+          sectionTitle="Closing Costs"
+          currentNotes={currentNotes.closing}
+          readonly={true}
+        />
+      )}
 
       {/* Closing Cost Breakdown */}
       <div className="bg-white p-6 rounded-xl border border-slate-200">
