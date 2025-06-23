@@ -269,9 +269,9 @@ const Calculator: React.FC = () => {
       {/* Form Content */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
         <div className="p-8 space-y-8">
-          {/* Premium Affordability Estimator */}
+          {/* Premium Affordability Estimator - Positioned BEFORE the main form */}
           {user?.tier === 'premium' && mortgageData.enableAffordabilityEstimator && (
-            <div className="border-t border-slate-200 pt-12">
+            <div className="mb-8">
               <AffordabilitySection
                 data={mortgageData}
                 onInputChange={handleInputChange}
@@ -280,6 +280,7 @@ const Calculator: React.FC = () => {
             </div>
           )}
 
+          {/* Main Mortgage Input Form - Always positioned consistently */}
           <MortgageInputForm
             data={mortgageData}
             onInputChange={handleInputChange}
