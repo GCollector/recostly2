@@ -3,12 +3,21 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Check if we have real Supabase credentials
+const hasValidCredentials = () => {
+  return supabaseUrl && 
+         supabaseAnonKey && 
+         supabaseUrl.includes('supabase.co') && 
+         supabaseAnonKey.length > 50 && // Real Supabase keys are much longer
+         !supabaseUrl.includes('placeholder')
+}
+
 // Provide fallback values for development/demo purposes
 const defaultUrl = 'https://placeholder.supabase.co'
 const defaultKey = 'placeholder-key'
 
-if (!supabaseUrl && !supabaseAnonKey) {
-  console.warn('Supabase environment variables not found. Using demo mode.')
+if (!hasValidCredentials()) {
+  console.warn('Supabase environment variables not properly configured. Some features may be limited.')
 }
 
 // Create Supabase client with optimized configuration for better reliability and network handling
@@ -38,6 +47,9 @@ export const supabase = createClient(
     }
   }
 )
+
+// Export the configuration check
+export const isSupabaseConfigured = hasValidCredentials
 
 export type Database = {
   public: {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import type { Database } from '../lib/supabase';
 
@@ -30,13 +30,6 @@ export const useCalculations = () => {
 };
 
 const LOCAL_STORAGE_KEY = 'mortgage_calculation';
-
-// Check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key';
-};
 
 export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -89,8 +82,8 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     if (!isSupabaseConfigured()) {
-      const error = new Error('Database is not available in demo mode.');
-      (error as any).type = 'DEMO_MODE';
+      const error = new Error('Database is not available. Please check your configuration.');
+      (error as any).type = 'CONFIG_ERROR';
       throw error;
     }
 
@@ -137,7 +130,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const deleteCalculation = async (id: string) => {
     if (!user) throw new Error('Must be logged in to delete calculations');
-    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available');
 
     try {
       const { error } = await supabase
@@ -197,7 +190,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationNotes = async (id: string, section: string, notes: string) => {
     if (!user) throw new Error('Must be logged in to update notes');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for notes');
-    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available');
 
     try {
       const currentCalc = calculations.find(calc => calc.id === id);
@@ -235,7 +228,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationComments = async (id: string, comments: string) => {
     if (!user) throw new Error('Must be logged in to update comments');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for comments');
-    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available');
 
     try {
       const { data, error } = await supabase

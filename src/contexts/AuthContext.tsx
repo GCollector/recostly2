@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import type { Database } from '../lib/supabase';
 
@@ -32,13 +32,6 @@ export const useAuth = () => {
 // Debug logging helper
 const debugLog = (message: string, data?: any) => {
   console.log(`🔍 [AUTH DEBUG] ${message}`, data || '');
-};
-
-// Check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key';
 };
 
 // Optimized timeout constants for better network handling
@@ -395,7 +388,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string): Promise<void> => {
     if (!isSupabaseConfigured()) {
-      throw new Error('Authentication is not available in demo mode');
+      throw new Error('Authentication requires proper Supabase configuration. Please check your environment variables.');
     }
 
     try {
@@ -440,7 +433,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
     if (!isSupabaseConfigured()) {
-      throw new Error('Authentication is not available in demo mode');
+      throw new Error('Authentication requires proper Supabase configuration. Please check your environment variables.');
     }
 
     try {
@@ -539,7 +532,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (!isSupabaseConfigured()) {
-      throw new Error('Profile updates are not available in demo mode');
+      throw new Error('Profile updates require proper Supabase configuration.');
     }
 
     try {
