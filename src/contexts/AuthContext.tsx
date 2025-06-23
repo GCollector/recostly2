@@ -29,95 +29,120 @@ export const useAuth = () => {
   return context;
 };
 
-// Timeout constants - reduced for better UX
-const SIGN_IN_TIMEOUT = 8000; // 8 seconds
-const PROFILE_LOAD_TIMEOUT = 6000; // 6 seconds
-const SESSION_INIT_TIMEOUT = 8000; // 8 seconds
+// More generous timeout constants for better UX
+const SIGN_IN_TIMEOUT = 15000; // 15 seconds
+const PROFILE_LOAD_TIMEOUT = 10000; // 10 seconds
+const SESSION_INIT_TIMEOUT = 12000; // 12 seconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to create a timeout promise
+  // Helper function to create a timeout promise with better error handling
   function createTimeoutPromise(ms: number, operation: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`${operation} timeout after ${ms}ms`));
+        reject(new Error(`${operation} timeout after ${ms}ms - this may be due to network conditions`));
       }, ms);
     });
   }
 
-  // Improved profile loading with better error handling
-  const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+  // Improved profile loading with retry logic and better error handling
+  const loadUserProfile = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
+    const maxRetries = 2;
+    
     try {
-      console.log('📝 Loading profile for user:', supabaseUser.email);
+      console.log(`📝 Loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1})`);
 
-      // First, try to get existing profile
+      // Use a more generous timeout and simpler query
       const profilePromise = supabase
         .from('profile')
         .select('*')
         .eq('id', supabaseUser.id)
-        .maybeSingle(); // Use maybeSingle to handle no rows gracefully
+        .maybeSingle();
 
       const timeoutPromise = createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile loading');
 
-      const { data: profile, error } = await Promise.race([
+      const result = await Promise.race([
         profilePromise,
         timeoutPromise
-      ]) as any;
+      ]);
+
+      const { data: profile, error } = result as any;
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
-        // Don't throw on profile errors - just log and continue
-        console.warn('Profile fetch failed, user will remain signed in but without profile data');
-        return null;
-      }
-
-      // If no profile exists, try to create one
-      if (!profile) {
-        console.log('🆕 Creating new profile for user:', supabaseUser.email);
         
-        const newProfile = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.name || 
-                supabaseUser.user_metadata?.full_name || 
-                supabaseUser.email?.split('@')[0] || 
-                'User',
-          tier: 'basic' as const
-        };
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116' || error.message?.includes('No rows found')) {
+          console.log('🆕 Creating new profile for user:', supabaseUser.email);
+          
+          const newProfile = {
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name: supabaseUser.user_metadata?.name || 
+                  supabaseUser.user_metadata?.full_name || 
+                  supabaseUser.email?.split('@')[0] || 
+                  'User',
+            tier: 'basic' as const
+          };
 
-        try {
-          const createPromise = supabase
-            .from('profile')
-            .insert(newProfile)
-            .select()
-            .single();
+          try {
+            const createResult = await Promise.race([
+              supabase
+                .from('profile')
+                .insert(newProfile)
+                .select()
+                .single(),
+              createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile creation')
+            ]);
 
-          const createTimeoutPromise = createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile creation');
+            const { data: createdProfile, error: createError } = createResult as any;
 
-          const { data: createdProfile, error: createError } = await Promise.race([
-            createPromise,
-            createTimeoutPromise
-          ]) as any;
+            if (createError) {
+              console.error('❌ Error creating profile:', createError);
+              
+              // If creation fails, try to fetch again (maybe it was created by trigger)
+              if (retryCount < maxRetries) {
+                console.log('🔄 Retrying profile fetch after creation failure...');
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                return loadUserProfile(supabaseUser, retryCount + 1);
+              }
+              
+              console.warn('Profile creation failed, user will continue without profile data');
+              return null;
+            }
 
-          if (createError) {
-            console.error('❌ Error creating profile:', createError);
-            console.warn('Profile creation failed, user will remain signed in but without profile data');
+            if (createdProfile) {
+              console.log('✅ Profile created successfully');
+              return { ...createdProfile, supabaseUser };
+            }
+          } catch (createError) {
+            console.error('💥 Error creating profile:', createError);
+            
+            // Retry logic for creation failures
+            if (retryCount < maxRetries) {
+              console.log('🔄 Retrying profile creation...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return loadUserProfile(supabaseUser, retryCount + 1);
+            }
+            
+            console.warn('Profile creation failed after retries, user will continue without profile data');
             return null;
           }
-
-          if (createdProfile) {
-            console.log('✅ Profile created successfully');
-            return { ...createdProfile, supabaseUser };
+        } else {
+          // For other errors, try retry if we haven't exceeded max retries
+          if (retryCount < maxRetries && !error.message?.includes('timeout')) {
+            console.log('🔄 Retrying profile fetch due to error...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return loadUserProfile(supabaseUser, retryCount + 1);
           }
-        } catch (createError) {
-          console.error('💥 Error creating profile:', createError);
-          console.warn('Profile creation failed due to error, user will remain signed in but without profile data');
+          
+          console.warn('Profile fetch failed, user will continue without profile data');
           return null;
         }
-      } else {
+      } else if (profile) {
         console.log('✅ Profile loaded successfully');
         return { ...profile, supabaseUser };
       }
@@ -125,28 +150,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      console.warn('Profile loading failed, user will remain signed in but without profile data');
+      
+      // Retry logic for network/timeout errors
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying profile load due to error (attempt ${retryCount + 2}/${maxRetries + 1})...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return loadUserProfile(supabaseUser, retryCount + 1);
+      }
+      
+      console.warn('Profile loading failed after all retries, user will continue without profile data');
       return null;
     }
   };
 
-  // Initialize authentication with improved error handling
+  // Initialize authentication with improved error handling and no forced sign-outs
   useEffect(() => {
     let mounted = true;
+    let initTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing authentication...');
         
+        // Set a fallback timeout to ensure loading doesn't hang indefinitely
+        initTimeout = setTimeout(() => {
+          if (mounted) {
+            console.warn('⏰ Auth initialization taking longer than expected, continuing...');
+            setLoading(false);
+          }
+        }, SESSION_INIT_TIMEOUT);
+        
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = createTimeoutPromise(SESSION_INIT_TIMEOUT, 'Session initialization');
         
-        const { data: { session: currentSession }, error } = await Promise.race([
+        const result = await Promise.race([
           sessionPromise,
           timeoutPromise
-        ]) as any;
+        ]);
+        
+        const { data: { session: currentSession }, error } = result as any;
         
         if (!mounted) return;
+        
+        // Clear the fallback timeout since we got a response
+        clearTimeout(initTimeout);
         
         if (error) {
           console.error('❌ Error getting session:', error);
@@ -181,6 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
         if (mounted) {
+          clearTimeout(initTimeout);
           setLoading(false);
           setUser(null);
           setSession(null);
@@ -192,6 +240,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
     };
   }, []);
 
@@ -246,10 +297,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const timeoutPromise = createTimeoutPromise(SIGN_IN_TIMEOUT, 'Sign in');
 
-      const { data, error } = await Promise.race([
+      const result = await Promise.race([
         signInPromise,
         timeoutPromise
-      ]) as any;
+      ]);
+
+      const { data, error } = result as any;
 
       if (error) {
         console.error('❌ Sign in error:', error);
@@ -281,10 +334,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const timeoutPromise = createTimeoutPromise(SIGN_IN_TIMEOUT, 'Sign up');
 
-      const { data, error } = await Promise.race([
+      const result = await Promise.race([
         signUpPromise,
         timeoutPromise
-      ]) as any;
+      ]);
+
+      const { data, error } = result as any;
 
       if (error) {
         console.error('❌ Sign up error:', error);
@@ -308,10 +363,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const timeoutPromise = createTimeoutPromise(5000, 'Sign out');
 
       try {
-        const { error } = await Promise.race([
+        const result = await Promise.race([
           signOutPromise,
           timeoutPromise
-        ]) as any;
+        ]);
+
+        const { error } = result as any;
 
         if (error && !error.message?.includes('timeout')) {
           console.error('❌ Sign out error:', error);
@@ -349,12 +406,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select()
         .single();
 
-      const timeoutPromise = createTimeoutPromise(8000, 'Profile update');
+      const timeoutPromise = createTimeoutPromise(10000, 'Profile update');
 
-      const { data, error } = await Promise.race([
+      const result = await Promise.race([
         updatePromise,
         timeoutPromise
-      ]) as any;
+      ]);
+
+      const { data, error } = result as any;
 
       if (error) {
         if (error.message?.includes('timeout')) {
