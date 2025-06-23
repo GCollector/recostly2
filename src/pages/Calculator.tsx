@@ -39,6 +39,11 @@ export interface MortgageData {
     surveyFee: number;
     firstTimeBuyerRebate: number;
   };
+  rentVsBuyData?: {
+    monthlyRent: number;
+    annualRentIncrease: number;
+    comparisonYears: number;
+  };
 }
 
 const Calculator: React.FC = () => {
@@ -84,6 +89,11 @@ const Calculator: React.FC = () => {
       appraisal: defaultClosingCosts.appraisal,
       surveyFee: defaultClosingCosts.surveyFee,
       firstTimeBuyerRebate: defaultClosingCosts.firstTimeBuyerRebate
+    },
+    rentVsBuyData: {
+      monthlyRent: 2500,
+      annualRentIncrease: 3,
+      comparisonYears: 10
     }
   });
 
@@ -268,7 +278,7 @@ const Calculator: React.FC = () => {
       {/* Form Content */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[600px]" data-testid="calculator-content">
         <div className="p-8 space-y-8">
-          {/* Main Mortgage Input Form - Affordability estimator now inside this component */}
+          {/* Main Mortgage Input Form with Save Button */}
           <MortgageInputForm
             data={mortgageData}
             onInputChange={handleInputChange}
@@ -276,6 +286,9 @@ const Calculator: React.FC = () => {
             onClosingCostChange={handleClosingCostChange}
             loanCalculation={loanCalculation}
             onAffordabilityCalculated={handleAffordabilityCalculated}
+            calculationId={savedCalculationId}
+            currentNotes={currentNotes}
+            currentComments={currentComments}
           />
 
           {/* Calculate Button */}

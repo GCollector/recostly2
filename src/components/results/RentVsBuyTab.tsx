@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { Home, TrendingUp, User, Mail, Phone } from 'lucide-react';
+import { Building, TrendingUp, User, Mail, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { RentVsBuyData, RentVsBuyResults } from '../../types/premium';
 import { calculateRentVsBuy } from '../../utils/rentVsBuyCalculations';
@@ -66,11 +66,11 @@ const RentVsBuyTab: React.FC<RentVsBuyTabProps> = ({
     <div className="space-y-8">
       {/* Input Section */}
       {!readonly && (
-        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">Rent vs Buy Comparison Settings</h3>
+        <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+          <h3 className="text-lg font-semibold text-purple-900 mb-4">Rent vs Buy Comparison Settings</h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-blue-700 mb-2">
+              <label className="block text-sm font-medium text-purple-700 mb-2">
                 Monthly Rent
               </label>
               <CurrencyInput
@@ -82,7 +82,7 @@ const RentVsBuyTab: React.FC<RentVsBuyTabProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-blue-700 mb-2">
+              <label className="block text-sm font-medium text-purple-700 mb-2">
                 Annual Rent Increase
               </label>
               <div className="relative">
@@ -91,15 +91,15 @@ const RentVsBuyTab: React.FC<RentVsBuyTabProps> = ({
                   step="0.1"
                   value={rentData.annualRentIncrease}
                   onChange={(e) => handleRentDataChange('annualRentIncrease', Number(e.target.value))}
-                  className="w-full pr-8 pl-3 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                  className="w-full pr-8 pl-3 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-sans"
                   placeholder="3"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500">%</span>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-500">%</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-blue-700 mb-2">
+              <label className="block text-sm font-medium text-purple-700 mb-2">
                 Comparison Period
               </label>
               <div className="relative">
@@ -107,12 +107,12 @@ const RentVsBuyTab: React.FC<RentVsBuyTabProps> = ({
                   type="number"
                   value={rentData.comparisonYears}
                   onChange={(e) => handleRentDataChange('comparisonYears', Number(e.target.value))}
-                  className="w-full pr-16 pl-3 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans"
+                  className="w-full pr-16 pl-3 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-sans"
                   placeholder="10"
                   min="1"
                   max="30"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500">years</span>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-500">years</span>
               </div>
             </div>
           </div>

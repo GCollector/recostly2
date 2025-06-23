@@ -7,12 +7,14 @@ The Calculator page MUST follow this exact two-step process:
 ### Step 1: Input Form
 - Single page with all input fields
 - Step indicator showing "1 Input Details" (active) and "2 View Results" (inactive)
+- **Save Button**: Always visible for logged-in users at the top of the form
 - Sections:
   - **Mortgage Details** header with subtitle
   - **Property & Financing** section with responsive grid layout (md:grid-cols-2)
-  - **Premium Affordability Estimator** section with toggle switch and purple gradient background (PREMIUM ONLY)
+  - **Affordability Estimator** section with toggle switch and purple gradient background (PREMIUM ONLY)
   - **Closing Costs Analysis** section with toggle switch and blue gradient background (OPTIONAL)
   - **Investment Property Analysis** section with toggle switch and emerald gradient background (OPTIONAL)
+  - **Rent vs Buy Analysis** section with toggle switch and purple/pink gradient background (OPTIONAL)
   - **Marketing Control** section for premium users with amber gradient background
 - **Calculate Results** button at bottom with icon and hover effects
 - NO tabs, NO separate calculator components
@@ -21,84 +23,66 @@ The Calculator page MUST follow this exact two-step process:
 - Completely separate view (MortgageResults component)
 - **Edit** button to return to Step 1 (NOT "Back to Input" or "Back")
 - Tab-based results with responsive design:
-  - **Mortgage Summary** - Featured monthly payment + supporting cards + charts + affordability results banner
+  - **Mortgage Summary** - Featured monthly payment + supporting cards + charts
   - **Closing Costs** - Detailed provincial/municipal tax breakdown (only shown if enabled in Step 1)
   - **Amortization** - Payment schedule with interactive charts
   - **Investment Analysis** - ROI, cash flow, cap rate (only shown if enabled in Step 1)
-  - **Rent vs Buy** - Long-term cost comparison analysis (PREMIUM ONLY, only shown if enabled)
+  - **Rent vs Buy** - Long-term cost comparison (only shown if enabled in Step 1)
 
-## NEW: Closing Cost Presets System (Premium Feature)
+## NEW: Save Functionality Requirements
 
-### Comprehensive Preset Coverage
-- **All Regions**: Presets must include all possible closing cost fees for all supported regions (Ontario/Toronto, BC/Vancouver)
-- **Complete Fee Structure**: Each preset includes all fee types:
-  - Land Transfer Tax (provincial)
-  - Additional Tax (municipal - Toronto only)
-  - Legal Fees
-  - Title Insurance
-  - Home Inspection
-  - Property Appraisal
-  - Survey Fee
-  - First-Time Buyer Rebate
-- **Regional Variations**: Presets can be created for different property types and regions
-- **Professional Use**: Designed for real estate professionals to quickly apply standard fee structures
+### Input Page Save Button
+- **Always Visible**: Save button appears at the top of the input form for logged-in users
+- **Update vs Create**: 
+  - If `calculationId` exists and is not 'temp', ALWAYS update the existing calculation
+  - If no `calculationId` or `calculationId` is 'temp', create new calculation
+- **Save All State**: When saving, ALL input values and section states must be preserved:
+  - All mortgage details (price, down payment, rate, etc.)
+  - All section enable/disable states (closing costs, investment, rent vs buy, affordability, marketing)
+  - All optional section data (investment expenses, closing cost overrides, rent vs buy parameters)
+  - All notes and comments
+- **Real-time Feedback**: Show success/error messages after save attempts
+- **Loading States**: Show "Saving..." text and disable button during save operations
 
-### Preset Application
-- **Dropdown Selector**: Premium users see preset dropdown in Closing Costs section
-- **Complete Override**: Selecting a preset updates ALL closing cost fields
-- **Maintains Calculations**: Auto-calculated fields (land transfer tax, municipal tax, rebates) are overridden but can be manually adjusted
-- **Visual Feedback**: Clear indication when preset is applied
+### Section State Persistence
+- **Enable/Disable States**: All section toggle states must be saved in the notes object:
+  - `enableClosingCosts` (boolean)
+  - `enableInvestmentAnalysis` (boolean) 
+  - `enableRentVsBuy` (boolean)
+  - `enableAffordabilityEstimator` (boolean, premium only)
+  - `showMarketingOnShare` (boolean, premium only)
+- **Section Data**: All section-specific data must be preserved:
+  - Investment analysis: monthly rent and expenses
+  - Rent vs buy: monthly rent, annual increase, comparison years
+  - Closing costs: any manual overrides to calculated values
+  - Affordability: input parameters and results
 
-### Preset Management (Settings Page)
-- **Premium Only**: Preset management only available to premium users
-- **CRUD Operations**: Create, read, update, delete presets
-- **Categorization**: Optional tags for organizing presets (e.g., "Condo", "Freehold", "Commercial")
-- **Validation**: Ensure all required fields are present
-- **Export/Import**: Future consideration for sharing presets between team members
+### Clone Functionality
+- **Stay on Dashboard**: Clone operation must remain on dashboard (no navigation)
+- **Immediate Feedback**: Show success message when clone completes
+- **Tier Limits**: Respect save limits for free users (1 calculation max)
+- **Complete Copy**: Clone must copy ALL data including section states and optional data
 
-## NEW: Calculation Update System
+## NEW: Rent vs Buy Analysis Section
 
-### Update vs Create Logic
-- **Existing Calculations**: When editing a saved calculation, updates should modify the existing record
-- **New Calculations**: Only create new records when explicitly saving a new calculation
-- **State Management**: Track whether calculation is new or existing based on presence of calculationId
-- **User Intent**: Clear distinction between "Save" (update existing) and "Save As New" (create copy)
+### Section Design
+- **Consistent Styling**: Follows same pattern as other optional sections
+- **Toggle Control**: Enable/disable toggle in section header
+- **Purple/Pink Gradient**: `bg-gradient-to-r from-purple-50 to-pink-50` with purple border
+- **Building Icon**: Uses Building icon from lucide-react
+- **Visual Separation**: `border-t border-slate-200 pt-12` from other sections
 
-### Update Workflow
-1. **Edit Existing**: When user clicks "View" from dashboard, loads calculation in edit mode
-2. **Modify Values**: User can change any input values
-3. **Save Changes**: "Save" button updates the existing calculation record
-4. **Preserve History**: Maintain created_at timestamp, update updated_at timestamp
-5. **Notes Preservation**: Existing notes and comments are preserved unless explicitly changed
+### Input Fields
+- **Monthly Rent**: Currency input with $ prefix
+- **Annual Rent Increase**: Percentage input (default 3%)
+- **Comparison Period**: Years input (default 10 years, max 30)
+- **Real-time Preview**: Shows analysis summary as user types
 
-### Database Operations
-- **UPDATE queries**: Use UPDATE instead of INSERT when calculationId exists
-- **Optimistic Updates**: Update UI immediately, handle conflicts gracefully
-- **Validation**: Ensure user owns the calculation before allowing updates
-- **Audit Trail**: Track when calculations are modified
-
-## NEW: Clone Functionality
-
-### Clone Feature Requirements
-- **Tier-Based Access**: Clone functionality respects user tier limits
-- **Free Users**: Cannot clone (would exceed 1 calculation limit)
-- **Basic Users**: Can clone unlimited calculations
-- **Premium Users**: Can clone unlimited calculations
-- **Visual Indication**: Clone button only shown when user can clone
-
-### Clone Workflow
-1. **Clone Button**: Available in dashboard for each saved calculation
-2. **Tier Check**: Verify user can save additional calculations
-3. **Data Duplication**: Copy all calculation data except ID and timestamps
-4. **Name Modification**: Append "Copy" or timestamp to distinguish from original
-5. **Immediate Edit**: Redirect to calculator with cloned data for editing
-6. **Save Prompt**: User must explicitly save the cloned calculation
-
-### Clone Restrictions
-- **Save Limits**: Cloning respects tier-based save limits
-- **Free User Message**: Clear explanation why free users cannot clone
-- **Upgrade Prompt**: Encourage free users to upgrade for clone functionality
-- **Error Handling**: Graceful handling when clone would exceed limits
+### Results Integration
+- **Results Tab**: Only appears when rent vs buy is enabled
+- **Tab Icon**: Building icon for consistency
+- **Interactive Charts**: Bar charts comparing cumulative costs over time
+- **Analysis Summary**: Clear explanation of findings and recommendations
 
 ## NEW: Currency Formatting Requirements
 
@@ -158,7 +142,6 @@ The Calculator page MUST follow this exact two-step process:
 - **Readonly fields**: Tax fields that are automatically calculated should be readonly
 - **Visual distinction**: Readonly fields should have a different background color
 - **Explanatory text**: Small helper text should explain automatic calculations
-- **Preset Override**: Presets can override automatic calculations
 
 ### Closing Costs Dependencies
 - **Property price changes** must trigger recalculation of land transfer tax
@@ -166,64 +149,36 @@ The Calculator page MUST follow this exact two-step process:
 - **First-time buyer status** must trigger recalculation of rebates
 - **Automatic updates**: Changes to dependent fields must happen in real-time
 - **Manual overrides**: Non-dependent fields remain editable
-- **Preset Application**: Presets override all fields including auto-calculated ones
 
 ### Closing Costs UI Requirements
 - **Readonly styling**: Gray background for auto-calculated fields
 - **Helper text**: Explain which fields are automatically calculated
 - **Total calculation**: Show running total of all closing costs
 - **Visual feedback**: Clearly indicate which fields are dependent on mortgage details
-- **Preset Selector**: Dropdown for premium users to apply presets
 
-## NEW: Premium Affordability Estimator
+## NEW: Premium Closing Cost Presets
 
-### Affordability Analysis (Premium Only)
-- **Income-Based Calculation**: Calculate maximum affordable home price based on annual income
-- **Debt Service Ratios**: Apply Canadian lending guidelines (GDS ≤32%, TDS ≤40%)
-- **Real-Time Updates**: Instant calculation as user inputs data
-- **Apply to Calculator**: Button to apply affordability results to main mortgage inputs
-- **Visual Feedback**: Clear indication of budget compliance
+### Preset Management (Premium Only)
+- **Settings Tab**: New "Closing Cost Presets" tab in settings for premium users
+- **CRUD Operations**: Create, read, update, delete presets
+- **Preset Fields**: All closing cost fields available in presets
+- **Regional Flexibility**: Presets can include costs for any region
+- **Tagging System**: Optional tags for organizing presets (e.g., "Condo", "Freehold")
 
-### Affordability Inputs
-- **Annual Income**: Gross annual household income
-- **Monthly Debts**: Existing monthly debt obligations
-- **Down Payment**: Available down payment amount
-- **Interest Rate**: Mortgage interest rate for calculations
-
-### Affordability Results
-- **Maximum Affordable Price**: Highest home price within budget guidelines
-- **Maximum Monthly Payment**: Highest sustainable mortgage payment
-- **GDS Ratio**: Gross Debt Service ratio with visual indicators
-- **TDS Ratio**: Total Debt Service ratio with visual indicators
-- **Budget Compliance**: Clear pass/fail indication with explanations
-
-## NEW: Rent vs Buy Analysis (Premium Only)
-
-### Long-Term Comparison
-- **Time Horizon**: Configurable comparison period (1-30 years)
-- **Rent Escalation**: Annual rent increase assumptions
-- **Total Cost Analysis**: Cumulative costs over time for both scenarios
-- **Break-Even Analysis**: Point where buying becomes more cost-effective
-- **Interactive Charts**: Visual representation of cost comparison over time
-
-### Rent vs Buy Inputs
-- **Monthly Rent**: Current market rent for comparable property
-- **Annual Rent Increase**: Expected yearly rent escalation percentage
-- **Comparison Period**: Number of years for analysis
-
-### Rent vs Buy Results
-- **Total Rent Paid**: Cumulative rent over comparison period
-- **Total Ownership Cost**: Down payment plus mortgage payments
-- **Net Benefit**: Financial advantage of buying vs renting
-- **Year-by-Year Breakdown**: Annual comparison with charts
+### Preset Application
+- **Dropdown Selector**: Appears in closing costs section for premium users
+- **One-Click Apply**: Selecting preset updates all closing cost fields
+- **Override Capability**: Users can modify preset values after applying
+- **Smart Defaults**: Presets provide reasonable starting points for different property types
 
 ## NEW: Optional Sections System
 
-### Four Optional Sections
-1. **Affordability Estimator** (premium only, disabled by default)
-2. **Closing Costs Analysis** (enabled by default with reasonable values)
-3. **Investment Property Analysis** (disabled by default)
-4. **Rent vs Buy Analysis** (premium only, disabled by default)
+### Five Optional Sections
+1. **Affordability Estimator** (premium only, purple gradient)
+2. **Closing Costs Analysis** (enabled by default with reasonable values, blue gradient)
+3. **Investment Property Analysis** (disabled by default, emerald gradient)
+4. **Rent vs Buy Analysis** (disabled by default, purple/pink gradient)
+5. **Marketing Control** (premium only, amber gradient)
 
 ### Visual Separation
 - Each optional section separated by `border-t border-slate-200 pt-12`
@@ -234,10 +189,10 @@ The Calculator page MUST follow this exact two-step process:
 - **Responsive layout** for section headers (stacks on mobile)
 
 ### Default Values
-- **Affordability**: Standard income and debt assumptions
 - **Closing Costs**: Reasonable defaults based on location and property price
 - **Investment Analysis**: Standard rental market values for the selected city
-- **Rent vs Buy**: Market rent assumptions for the area
+- **Rent vs Buy**: Typical rental costs and market assumptions
+- **Affordability**: Based on current mortgage details
 - **Marketing Control**: Show marketing content by default for premium users
 
 ### Section State Persistence
@@ -245,6 +200,7 @@ The Calculator page MUST follow this exact two-step process:
 - **Only show tabs** for enabled sections in results
 - **Show message** when trying to access disabled section tab
 - **Preserve section state** when navigating back to input form
+- **Save all states** when saving calculations
 
 ## NEW: Premium Marketing Control
 
@@ -268,7 +224,7 @@ The Calculator page MUST follow this exact two-step process:
 - **Public (unregistered users)**: Cannot save calculations, must create an account
 - **Free registered user**: Can save maximum of 1 calculation. They should be informed of this wherever necessary. Encouraged to buy basic membership or delete existing calculation to save a new one.
 - **Basic tier** ($9/month): Can save unlimited calculations
-- **Premium tier** ($29/month): Can save unlimited calculations plus access to notes, comments, marketing control, affordability estimator, rent vs buy analysis, and closing cost presets
+- **Premium tier** ($29/month): Can save unlimited calculations plus access to notes, comments, marketing control, affordability estimator, and closing cost presets
 
 ### Save Limit Implementation
 - Server-side validation in database trigger function
@@ -276,7 +232,6 @@ The Calculator page MUST follow this exact two-step process:
 - Clear error messages for users hitting limits
 - Upgrade prompts for free users
 - Delete existing calculation option for free users
-- Clone restrictions based on tier limits
 
 ### Database Trigger Requirements
 ```sql
@@ -291,7 +246,6 @@ END IF;
 - Provide upgrade options
 - Allow deletion of existing calculations for free users
 - Inform users about tier limitations upfront
-- Prevent clone operations that would exceed limits
 
 ## NEW: Premium Notes and Comments System
 
@@ -324,7 +278,6 @@ END IF;
 - **Save Integration**: Notes and comments saved with calculation data
 - **Dashboard Indicators**: Show badges when calculations have notes/comments
 - **Temporary Storage**: Notes and comments can be added before saving calculation
-- **Update Preservation**: Notes and comments preserved when updating existing calculations
 
 ## NEW: Shared Calculation Page Requirements
 
@@ -444,9 +397,10 @@ const loggedInNavigation = [
 - **Colors**: Slate color palette throughout
 
 ### Optional Sections Design
-- **Affordability Estimator Section**: `bg-gradient-to-r from-purple-50 to-blue-50` with purple border
+- **Affordability Section**: `bg-gradient-to-r from-purple-50 to-blue-50` with purple border (premium only)
 - **Closing Costs Section**: `bg-gradient-to-r from-blue-50 to-indigo-50` with blue border
 - **Investment Analysis Section**: `bg-gradient-to-r from-emerald-50 to-blue-50` with emerald border
+- **Rent vs Buy Section**: `bg-gradient-to-r from-purple-50 to-pink-50` with purple border
 - **Marketing Control Section**: `bg-gradient-to-r from-amber-50 to-orange-50` with amber border
 - **Visual Separation**: `border-t border-slate-200 pt-12` between sections
 - **Toggle Switches**: Custom styled with section-appropriate colors when active
@@ -465,13 +419,12 @@ const loggedInNavigation = [
 - **Container**: `bg-white rounded-xl shadow-sm border border-slate-200 p-4`
 - **Grid Layout**: 
   - Dynamic columns based on enabled sections
-  - Responsive grid that adapts to number of tabs (2-5 tabs)
+  - Responsive grid that adapts to number of tabs (2-5 tabs possible)
 - **Active Tab**: `bg-blue-100 text-blue-700`
 - **Tab Content**: Icons, full names (hidden on mobile), short names (mobile only), descriptions (desktop only)
 - **Only show tabs** for sections that were enabled in Step 1
 
 #### Mortgage Summary Layout
-- **Affordability Banner**: Show affordability results at top if available
 - **Featured Payment Card**: 
   - `bg-gradient-to-br from-blue-50 to-blue-100`
   - `border-2 border-blue-200 shadow-lg`
@@ -489,7 +442,7 @@ const loggedInNavigation = [
 - **Pie Chart**: Total cost breakdown with custom labels showing percentages
 - **Bar Chart**: Interest vs Principal comparison (no percentage text)
 - **Line Chart**: Remaining balance over time (amortization)
-- **Rent vs Buy Chart**: Cumulative cost comparison over time
+- **Rent vs Buy Charts**: Cumulative cost comparison over time
 - **Responsive**: All charts in ResponsiveContainer
 - **Colors**: Consistent color scheme (emerald, blue, red, purple)
 - **CRITICAL**: All charts MUST be interactive on shared pages
@@ -530,7 +483,7 @@ const loggedInNavigation = [
 ### Required Component Breakdown
 
 #### Input Form Components (`src/components/mortgage/`)
-- `MortgageInputForm.tsx` - Main container for all input sections
+- `MortgageInputForm.tsx` - Main container for all input sections with save button
 - `PropertyFinancingSection.tsx` - Basic mortgage inputs
 - `ClosingCostsSection.tsx` - Closing costs analysis container with preset selector
 - `ClosingCostsToggle.tsx` - Reusable toggle switch for closing costs
@@ -538,20 +491,21 @@ const loggedInNavigation = [
 - `InvestmentAnalysisSection.tsx` - Investment analysis container
 - `InvestmentToggle.tsx` - Reusable toggle switch for investment
 - `InvestmentFields.tsx` - Investment-specific fields
+- `RentVsBuySection.tsx` - Rent vs buy analysis container
 - `MarketingControlSection.tsx` - Premium marketing control (premium only)
 
 #### Premium Components (`src/components/premium/`)
 - `AffordabilitySection.tsx` - Affordability estimator (premium only)
-- `ClosingCostPresets.tsx` - Preset management and selection (premium only)
+- `ClosingCostPresets.tsx` - Preset management and selector (premium only)
 
 #### Results Components (`src/components/results/`)
-- `MortgageSummaryTab.tsx` - Featured payment + charts + summary + notes + affordability banner
+- `MortgageSummaryTab.tsx` - Featured payment + charts + summary + notes
 - `ClosingCostsTab.tsx` - Closing costs breakdown + notes (supports custom values)
 - `AmortizationTab.tsx` - Amortization schedule with charts + notes
 - `InvestmentAnalysisTab.tsx` - Investment metrics + notes
-- `RentVsBuyTab.tsx` - Rent vs buy analysis + notes (premium only)
+- `RentVsBuyTab.tsx` - Rent vs buy comparison + notes
 - `ResultsTabNavigation.tsx` - Tab navigation component (supports 2-5 tabs)
-- `ResultsActionButtons.tsx` - Save, update, clone, and share buttons
+- `ResultsActionButtons.tsx` - Save and share buttons
 
 #### Shared Components (`src/components/shared/`)
 - `CurrencyInput.tsx` - Reusable currency input with formatting
@@ -562,8 +516,8 @@ const loggedInNavigation = [
 
 #### Utilities (`src/utils/`)
 - `mortgageCalculations.ts` - Pure calculation functions
-- `affordabilityCalculations.ts` - Affordability calculation functions
 - `rentVsBuyCalculations.ts` - Rent vs buy calculation functions
+- `affordabilityCalculations.ts` - Affordability calculation functions
 - Other utility functions as needed
 
 ### Component Design Principles
@@ -574,7 +528,6 @@ const loggedInNavigation = [
 - **Testing**: Each component should be testable in isolation
 - **Readonly Support**: Notes and Comments components must support readonly mode for shared pages
 - **Chart Integration**: All result components must include interactive charts
-- **Tier Awareness**: Components must respect user tier limitations
 
 ## FORBIDDEN CHANGES
 
@@ -597,7 +550,7 @@ const loggedInNavigation = [
 - Step indicator with proper styling
 - Two-step workflow
 - MortgageResults component
-- Optional sections (affordability, closing costs, investment analysis, rent vs buy)
+- Optional sections (closing costs, investment analysis, rent vs buy, affordability estimator)
 - Featured monthly payment card layout
 - Responsive tab design
 - Component modularity
@@ -608,14 +561,13 @@ const loggedInNavigation = [
 - Interactive charts on shared pages
 - Professional services marketing section
 - Premium marketing control functionality
-- Closing cost presets system
-- Update vs create logic
-- Clone functionality with tier restrictions
+- Save button on input page
+- Section state persistence
 
 ❌ **NEVER** change:
 - Font colors for consistency (all supporting amounts in slate-900)
 - Tab structure with full/short names for responsive design
-- Optional sections gradient backgrounds (purple for affordability, blue for closing costs, emerald for investment)
+- Optional sections gradient backgrounds (purple for affordability, blue for closing costs, emerald for investment, purple/pink for rent vs buy)
 - Step indicator active/inactive states
 - Singular table naming convention
 - Edit button text (must be "Edit", not "Back" or "Back to Input")
@@ -626,49 +578,48 @@ const loggedInNavigation = [
 - Chart interactivity and responsiveness
 - Marketing content positioning above tabs
 - Neutral slate styling for notes sections
-- Update logic for existing calculations
-- Clone restrictions based on tier
+- Save functionality to always update existing calculations when calculationId is provided
 
 ## Required File Structure
 
 ```
 src/
 ├── pages/
-│   ├── Calculator.tsx - Main component with two-step logic and update/create handling
-│   ├── Dashboard.tsx - Includes clone functionality with tier restrictions
+│   ├── Calculator.tsx - Main component with two-step logic and save functionality
 │   └── SharedCalculation.tsx - Shared page with full chart functionality
 ├── components/
 │   ├── mortgage/
-│   │   ├── MortgageInputForm.tsx
+│   │   ├── MortgageInputForm.tsx - Includes save button and all sections
 │   │   ├── PropertyFinancingSection.tsx
-│   │   ├── ClosingCostsSection.tsx (includes preset selector)
+│   │   ├── ClosingCostsSection.tsx - Includes preset selector
 │   │   ├── ClosingCostsToggle.tsx
 │   │   ├── ClosingCostsFields.tsx
 │   │   ├── InvestmentAnalysisSection.tsx
 │   │   ├── InvestmentToggle.tsx
 │   │   ├── InvestmentFields.tsx
+│   │   ├── RentVsBuySection.tsx - NEW rent vs buy analysis
 │   │   └── MarketingControlSection.tsx
 │   ├── premium/
-│   │   ├── AffordabilitySection.tsx (premium only)
-│   │   └── ClosingCostPresets.tsx (premium only)
+│   │   ├── AffordabilitySection.tsx - Premium affordability estimator
+│   │   └── ClosingCostPresets.tsx - Premium preset management
 │   ├── results/
-│   │   ├── MortgageSummaryTab.tsx (supports readonly mode + affordability banner)
+│   │   ├── MortgageSummaryTab.tsx (supports readonly mode)
 │   │   ├── ClosingCostsTab.tsx (supports readonly mode and custom values)
 │   │   ├── AmortizationTab.tsx (supports readonly mode)
 │   │   ├── InvestmentAnalysisTab.tsx (supports readonly mode)
-│   │   ├── RentVsBuyTab.tsx (supports readonly mode, premium only)
-│   │   ├── ResultsTabNavigation.tsx (supports 2-5 tabs)
-│   │   └── ResultsActionButtons.tsx (includes clone functionality)
+│   │   ├── RentVsBuyTab.tsx (supports readonly mode) - NEW
+│   │   ├── ResultsTabNavigation.tsx - Supports 2-5 tabs dynamically
+│   │   └── ResultsActionButtons.tsx
 │   ├── shared/
 │   │   ├── CurrencyInput.tsx - Reusable currency input with formatting
 │   │   ├── ShareModal.tsx
 │   │   ├── NotesSection.tsx (supports readonly mode, neutral styling)
 │   │   └── CommentsSection.tsx (supports readonly mode)
-│   └── MortgageResults.tsx - Results display with tabs and update logic
+│   └── MortgageResults.tsx - Results display with tabs
 ├── utils/
 │   ├── mortgageCalculations.ts
-│   ├── affordabilityCalculations.ts
-│   └── rentVsBuyCalculations.ts
+│   ├── rentVsBuyCalculations.ts - NEW
+│   └── affordabilityCalculations.ts
 └── test/
     └── calculator-structure.test.tsx - Structure validation tests
 ```
@@ -687,10 +638,10 @@ export interface MortgageData {
   city: 'toronto' | 'vancouver';
   isFirstTimeBuyer: boolean;
   enableInvestmentAnalysis: boolean;
-  enableClosingCosts: boolean;
-  showMarketingOnShare: boolean;
-  enableAffordabilityEstimator: boolean; // Premium only
-  enableRentVsBuy: boolean; // Premium only
+  enableClosingCosts: boolean; // Optional section
+  enableRentVsBuy: boolean; // NEW optional section
+  enableAffordabilityEstimator: boolean; // Premium optional section
+  showMarketingOnShare: boolean; // Premium marketing control
   monthlyRent?: number;
   monthlyExpenses?: {
     taxes: number;
@@ -699,7 +650,7 @@ export interface MortgageData {
     maintenance: number;
     other: number;
   };
-  closingCosts?: {
+  closingCosts?: { // Custom closing costs
     landTransferTax: number;
     additionalTax: number;
     legalFees: number;
@@ -708,6 +659,11 @@ export interface MortgageData {
     appraisal: number;
     surveyFee: number;
     firstTimeBuyerRebate: number;
+  };
+  rentVsBuyData?: { // NEW rent vs buy parameters
+    monthlyRent: number;
+    annualRentIncrease: number;
+    comparisonYears: number;
   };
 }
 ```
@@ -721,14 +677,20 @@ export interface MortgageData {
 - Comments stored as text field
 - Marketing control preference stored in notes as `showMarketingOnShare` boolean
 - Section state (enabled/disabled) stored in notes
-- Closing cost presets stored in `closing_cost_preset` table
-- Update operations preserve created_at, modify updated_at
+- All section data stored appropriately (investment_data, rent vs buy parameters, etc.)
+
+### Save Functionality Requirements
+- **Update vs Create Logic**: If `calculationId` exists and is not 'temp', ALWAYS update
+- **Complete State Preservation**: Save ALL input values and section states
+- **Real-time Feedback**: Show success/error messages immediately
+- **Loading States**: Disable button and show "Saving..." during operations
+- **Error Handling**: Clear error messages for save limits and other issues
 
 ### Optional Sections Requirements
-- **Affordability Estimator**: Purple gradient background, premium only, disabled by default
+- **Affordability Estimator**: Purple gradient background, premium users only, disabled by default
 - **Closing Costs**: Blue gradient background, enabled by default with reasonable values
 - **Investment Analysis**: Emerald gradient background, disabled by default
-- **Rent vs Buy**: Purple gradient background, premium only, disabled by default
+- **Rent vs Buy**: Purple/pink gradient background, disabled by default
 - **Marketing Control**: Amber gradient background, premium users only, enabled by default
 - **Visual Separation**: Clear borders and spacing between sections
 - **Toggle Switches**: Section-appropriate colors when active
@@ -747,7 +709,7 @@ export interface MortgageData {
 - Charts: Responsive containers with proper mobile sizing
 - Optional sections: Stack vertically on mobile with proper spacing
 - Section headers: Stack on mobile, side-by-side on desktop
-- Tab navigation: Adapts to 2-5 tabs with appropriate grid layouts
+- Save button: Full-width on mobile, appropriate width on desktop
 
 ### Desktop Enhancements
 - Tab descriptions visible on large screens
@@ -758,7 +720,6 @@ export interface MortgageData {
 - Marketing content: Enhanced visibility and professional presentation
 - Optional sections: Proper grid layouts with visual hierarchy
 - Section headers: Horizontal layout with proper spacing
-- Clone buttons: Clearly visible with appropriate spacing
 
 ## NEW: Shared Calculation Page Requirements
 
@@ -792,7 +753,7 @@ export interface MortgageData {
 ### Removed Elements on Shared Pages
 - **All "Create Your Own" buttons and links**: Completely removed from header and footer
 - **Edit controls**: No edit buttons or form controls anywhere
-- **Action buttons**: No save, share, edit, or clone buttons
+- **Action buttons**: No save, share, or edit buttons
 - **Navigation elements**: Minimal navigation, focus on content display
 - **Call-to-action sections**: Remove bottom CTA section entirely
 - **Viewer controls**: No hide/show toggle for marketing content
@@ -810,30 +771,29 @@ export interface MortgageData {
 The design MUST match these specifications:
 1. **Step Indicator**: Blue active state, slate inactive state, arrow connector
 2. **Input Form**: Clean white card with proper spacing and typography
-3. **Optional Sections**: Purple gradient for affordability, blue gradient for closing costs, emerald for investment, amber for marketing control
-4. **Results Tabs**: Responsive grid with icons and descriptions (2-5 tabs)
-5. **Featured Payment**: Prominent blue gradient card
-6. **Supporting Cards**: Consistent slate-900 text for all amounts
-7. **Charts**: Proper color scheme and responsive containers with full interactivity
-8. **Edit Button**: Simple "Edit" text with ArrowLeft icon
-9. **Notes Sections**: Neutral slate gradient with Crown icons and premium gating
-10. **Comments Section**: Blue gradient with Crown icons and premium gating
-11. **Navigation**: Home redirects to dashboard for logged-in users
-12. **Shared Page**: Clean, readonly presentation with no "Create Your Own" elements
-13. **Readonly Styling**: Muted backgrounds and eye icons for readonly content
-14. **Interactive Charts**: All charts functional on shared pages with tooltips and legends
-15. **Marketing Above Tabs**: Professional services section positioned prominently above tab navigation
-16. **Visual Separation**: Clear borders and spacing between optional sections
-17. **Section Headers**: Proper spacing between icon, text, and toggle
-18. **CMHC Insurance**: Warning box with details when required
-19. **Loan Amount Display**: Combined card showing total loan amount with CMHC premium included
-20. **Notes/Comments UI**: Compact, concise design with smaller padding and text
-21. **Action Buttons**: Appropriately sized buttons (not too wide)
-22. **Dashboard Indicators**: Only show notes/comments badges when actual content exists
-23. **Affordability Banner**: Clear indication of budget compliance in mortgage summary
-24. **Preset Selector**: Dropdown for premium users in closing costs section
-25. **Clone Buttons**: Visible for eligible users with tier-appropriate restrictions
-26. **Update vs Create**: Clear distinction in UI between updating existing and creating new
+3. **Save Button**: Always visible for logged-in users at top of form
+4. **Optional Sections**: Purple for affordability, blue for closing costs, emerald for investment, purple/pink for rent vs buy, amber for marketing control
+5. **Results Tabs**: Responsive grid with icons and descriptions (2-5 tabs)
+6. **Featured Payment**: Prominent blue gradient card
+7. **Supporting Cards**: Consistent slate-900 text for all amounts
+8. **Charts**: Proper color scheme and responsive containers with full interactivity
+9. **Edit Button**: Simple "Edit" text with ArrowLeft icon
+10. **Notes Sections**: Neutral slate gradient with Crown icons and premium gating
+11. **Comments Section**: Blue gradient with Crown icons and premium gating
+12. **Navigation**: Home redirects to dashboard for logged-in users
+13. **Shared Page**: Clean, readonly presentation with no "Create Your Own" elements
+14. **Readonly Styling**: Muted backgrounds and eye icons for readonly content
+15. **Interactive Charts**: All charts functional on shared pages with tooltips and legends
+16. **Marketing Above Tabs**: Professional services section positioned prominently above tab navigation
+17. **Visual Separation**: Clear borders and spacing between optional sections
+18. **Section Headers**: Proper spacing between icon, text, and toggle
+19. **CMHC Insurance**: Warning box with details when required
+20. **Loan Amount Display**: Combined card showing total loan amount with CMHC premium included
+21. **Notes/Comments UI**: Compact, concise design with smaller padding and text
+22. **Action Buttons**: Appropriately sized buttons (not too wide)
+23. **Dashboard Indicators**: Only show notes/comments badges when actual content exists
+24. **Closing Cost Presets**: Premium feature for saving and applying preset values
+25. **Rent vs Buy Analysis**: Complete section with toggle and results tab
 
 ## Code Structure Requirements
 
@@ -844,37 +804,57 @@ const [mortgageData, setMortgageData] = useState<MortgageData>({...});
 const [savedCalculationId, setSavedCalculationId] = useState<string>('');
 const [currentNotes, setCurrentNotes] = useState<Record<string, string>>({});
 const [currentComments, setCurrentComments] = useState<string>('');
-const [affordabilityResults, setAffordabilityResults] = useState<AffordabilityResults | null>(null);
 
 // MortgageData interface MUST include:
 export interface MortgageData {
   // ... other fields
   enableInvestmentAnalysis: boolean;
   enableClosingCosts: boolean;
-  showMarketingOnShare: boolean;
+  enableRentVsBuy: boolean; // NEW
   enableAffordabilityEstimator: boolean; // Premium only
-  enableRentVsBuy: boolean; // Premium only
+  showMarketingOnShare: boolean; // For premium users
+  rentVsBuyData?: { // NEW
+    monthlyRent: number;
+    annualRentIncrease: number;
+    comparisonYears: number;
+  };
 }
 
-// CalculationContext MUST handle:
-// - Update vs create logic based on calculationId
-// - Clone functionality with tier restrictions
-// - Proper error handling for save limits
+// Step 1: Input form
+if (currentStep === 1) {
+  return (
+    <div className="space-y-8">
+      {/* Header with title and subtitle */}
+      {/* Step indicator */}
+      {/* Form with all sections and save button */}
+      {/* Calculate Results button */}
+    </div>
+  );
+}
 
-// Dashboard MUST include:
-// - Clone buttons with tier-based visibility
-// - Update existing calculation workflow
-// - Clear indicators for calculations with notes/comments
+// Step 2: Results
+if (currentStep === 2) {
+  return <MortgageResults 
+    data={mortgageData} 
+    onBack={handleBackToForm}
+    calculationId={savedCalculationId}
+    currentNotes={currentNotes}
+    currentComments={currentComments}
+    onCalculationSaved={handleCalculationSaved}
+    loanCalculation={loanCalculation}
+    affordabilityResults={affordabilityResults}
+  />;
+}
 
-// SharedCalculation.tsx MUST have:
-// 1. Professional services section ABOVE tab navigation
-// 2. Full tab navigation with ResultsTabNavigation component
-// 3. All result tab components with readonly=true prop
-// 4. Interactive charts in all tabs
-// 5. Readonly notes/comments sections
-// 6. NO "Create Your Own" elements anywhere
-// 7. Marketing control respected (only show if premium user enabled it)
-// 8. Only show tabs for sections that were enabled in the original calculation
+// MortgageInputForm.tsx MUST have:
+// Save button at the top for logged-in users
+// All sections with proper toggle functionality
+// Section state persistence in the form data
+
+// CalculationContext.tsx MUST have:
+// Proper update vs create logic based on calculationId
+// Complete state preservation when saving
+// Clone functionality that stays on dashboard
 ```
 
 ## NEW: Testing Requirements
@@ -882,17 +862,18 @@ export interface MortgageData {
 Any changes MUST pass these tests:
 - ✅ Shows step indicator with correct active state styling
 - ✅ Input form has all required sections with proper styling
-- ✅ Affordability estimator toggle shows/hides fields correctly (premium only)
 - ✅ Investment toggle shows/hides fields correctly
 - ✅ Closing costs toggle shows/hides fields correctly
-- ✅ Rent vs buy toggle shows/hides fields correctly (premium only)
+- ✅ Rent vs buy toggle shows/hides fields correctly
 - ✅ Calculate Results button advances to step 2
-- ✅ Results page shows tabbed interface with responsive design (2-5 tabs)
+- ✅ Results page shows tabbed interface with responsive design
 - ✅ Featured payment card displays prominently
 - ✅ Supporting cards use consistent font colors
 - ✅ Charts render without errors
 - ✅ Edit button returns to input form and shows "Edit" text only
-- ✅ All optional tabs appear when enabled
+- ✅ Investment analysis tab appears when enabled
+- ✅ Closing costs tab appears only when enabled
+- ✅ Rent vs buy tab appears only when enabled
 - ✅ Mobile responsive design works correctly
 - ✅ All components are under 300 lines
 - ✅ Components can be tested in isolation
@@ -928,14 +909,10 @@ Any changes MUST pass these tests:
 - ✅ **CRITICAL**: Premium users can add notes/comments without saving calculation first
 - ✅ **CRITICAL**: Notes/comments UI is compact and concise
 - ✅ **CRITICAL**: Save button has appropriate width (not too wide)
-- ✅ **CRITICAL**: Affordability estimator works correctly for premium users
-- ✅ **CRITICAL**: Affordability results appear in mortgage summary
-- ✅ **CRITICAL**: Rent vs buy analysis works correctly for premium users
-- ✅ **CRITICAL**: Closing cost presets apply correctly for premium users
-- ✅ **CRITICAL**: Update existing calculations instead of creating new ones
-- ✅ **CRITICAL**: Clone functionality respects tier limitations
-- ✅ **CRITICAL**: Clone buttons only appear for eligible users
-- ✅ **CRITICAL**: Tab navigation adapts to 2-5 tabs correctly
+- ✅ **CRITICAL**: Save functionality properly updates existing calculations
+- ✅ **CRITICAL**: Clone functionality stays on dashboard
+- ✅ **CRITICAL**: Rent vs buy section appears with proper styling
+- ✅ **CRITICAL**: Closing cost presets work correctly for premium users
 
 ## NEW: Chart Data Requirements
 
@@ -949,14 +926,13 @@ Any changes MUST pass these tests:
 ### Bar Charts
 - Interest vs Principal comparison
 - Amortization schedule with stacked bars
-- Rent vs buy comparison over time
+- Rent vs Buy comparison over time
 - Proper data validation to prevent undefined values
 - Responsive height and formatting
 - **CRITICAL**: Must be interactive on shared pages
 
 ### Line Charts
 - Remaining balance over time
-- Rent vs buy cumulative costs
 - Smooth curves with proper data points
 - Tooltip formatting for currency values
 - **CRITICAL**: Must be interactive on shared pages
@@ -1009,18 +985,15 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 35. **CRITICAL**: Verify premium users can add notes/comments without saving calculation first
 36. **CRITICAL**: Verify notes/comments UI is compact and concise
 37. **CRITICAL**: Verify save button has appropriate width
-38. **CRITICAL**: Test affordability estimator for premium users
-39. **CRITICAL**: Verify affordability results display in mortgage summary
-40. **CRITICAL**: Test rent vs buy analysis for premium users
-41. **CRITICAL**: Verify closing cost presets work correctly
-42. **CRITICAL**: Test update vs create logic for calculations
-43. **CRITICAL**: Verify clone functionality respects tier limits
-44. **CRITICAL**: Test clone button visibility and restrictions
+38. **CRITICAL**: Verify save functionality properly updates existing calculations
+39. **CRITICAL**: Verify clone functionality stays on dashboard
+40. **CRITICAL**: Verify rent vs buy section appears with proper styling
+41. **CRITICAL**: Verify closing cost presets work correctly for premium users
 
 ## NEW: Database Integration Requirements
 
 ### Save Functionality
-- Save button in results page
+- Save button in both input and results pages
 - Integration with CalculationContext
 - Proper error handling and loading states
 - Share modal with copy-to-clipboard functionality
@@ -1029,8 +1002,7 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - Notes and comments saved with calculation data
 - Marketing control preference saved with calculation data
 - Section state (enabled/disabled) saved with calculation data
-- **Update vs Create Logic**: Existing calculations are updated, not duplicated
-- **Clone Functionality**: Creates new calculation with copied data
+- **CRITICAL**: Update existing calculation when calculationId is provided
 
 ### Data Persistence
 - Form data preserved when navigating between steps
@@ -1044,25 +1016,56 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - Chart data properly stored and retrieved for shared pages
 - Marketing control preference respected on shared pages
 - Section state (enabled/disabled) preserved and respected
-- **Closing cost presets** stored and retrieved correctly
-- **Update operations** preserve created_at, modify updated_at
-- **Clone operations** create new records with copied data
 
-**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, navigation behavior, readonly shared page behavior, interactive charts on shared pages, professional services positioning above tabs, neutral notes styling, optional sections with proper visual separation, closing cost presets system, update vs create logic, and clone functionality with tier restrictions are critical requirements that must not be changed.**
+**REMEMBER: The user has specifically requested this two-step process with the exact visual design shown. The featured payment card layout, responsive tabs, consistent styling, modular component architecture, singular database table naming, tier-based save limits, premium notes and comments functionality, navigation behavior, readonly shared page behavior, interactive charts on shared pages, professional services positioning above tabs, neutral notes styling, and optional sections with proper visual separation are critical requirements that must not be changed.**
 
 ## Change Log
 
 ### Recent Updates:
-1. **Closing Cost Presets System**: Added comprehensive preset management for premium users with all possible closing cost fees
-2. **Update vs Create Logic**: Implemented proper update functionality for existing calculations instead of always creating new ones
-3. **Clone Functionality**: Added clone feature with tier-based restrictions and proper save limit enforcement
-4. **Preset Application**: Closing cost presets can override all fields including auto-calculated ones
-5. **Database Column Mapping**: Fixed column name mapping between database (lowercase) and UI (camelCase)
-6. **Comprehensive Fee Coverage**: Presets include all closing cost types for all supported regions
-7. **Settings Integration**: Added preset management tab for premium users
-8. **Tier-Based Clone Restrictions**: Clone buttons only appear for users who can save additional calculations
-9. **Update Preservation**: Notes, comments, and timestamps properly preserved during updates
-10. **Professional Workflow**: Enhanced workflow for real estate professionals with preset and clone capabilities
+1. **Save Button on Input Page**: Added save button to the input form for logged-in users
+2. **Fixed Save Functionality**: Corrected save to properly update existing calculations
+3. **Added Rent vs Buy Section**: New optional section with toggle and fields
+4. **Added Rent vs Buy Tab**: New results tab that only appears when enabled
+5. **Clone Functionality**: Fixed to stay on dashboard with success message
+6. **Section State Persistence**: Ensured all section states are saved properly
+7. **Closing Cost Presets**: Fixed column naming in database and component
+8. **Premium Notes Without Saving**: Modified NotesSection and CommentsSection to allow premium users to add notes/comments without saving calculation first
+9. **Dashboard Notes Indicators**: Fixed dashboard to only show notes/comments badges when actual content exists
+10. **Removed Interest Percentage Text**: Removed "Interest represents X% of your total payments" from interest vs principal chart
+11. **Compact Notes UI**: Made notes and comments sections more concise with smaller padding and text
+12. **Save Button Width**: Fixed save button width to be more appropriate (not too wide)
+13. **CMHC Insurance**: Added CMHC insurance calculation and display when down payment is less than 20%
+14. **Loan Amount Display**: Combined base loan amount and CMHC premium into a single card with clear labeling
+15. **Section State Persistence**: Ensured section state (enabled/disabled) is preserved between steps
+16. **Section Header Spacing**: Improved spacing in optional section headers
+17. **Responsive Section Headers**: Made section headers stack on mobile, side-by-side on desktop
+18. **Conditional Tabs**: Only show tabs for sections that were enabled in Step 1
+19. **Currency Formatting**: Added real-time comma formatting for all money fields
+20. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
+21. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
+22. **CurrencyInput Component**: Created reusable component for all monetary inputs
+23. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
+24. **Helper Text**: Added explanatory text for automatically calculated fields
+25. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
+26. **Visual Separation**: Added clear visual separation between optional sections
+27. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
+28. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
+29. **Notes Styling**: Changed from amber/yellow to neutral slate styling
+30. **Marketing Control Logic**: Viewers can no longer hide marketing content
+31. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
+32. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
+33. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
+34. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
+35. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
+36. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
+37. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
+38. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
+39. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
+40. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
+41. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
+42. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+43. **Premium Notes System**: Added section-specific notes for premium users in all result tabs
+44. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -1075,7 +1078,7 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - Standardized Edit button text to "Edit" only
 - Implemented proper tier-based save limits
 - Enhanced shared calculation functionality
-- Added premium features without breaking existing functionality
+- Added premium notes and comments without breaking existing functionality
 - Maintained navigation consistency while improving user experience
 - Enforced readonly behavior on shared pages
 - Removed "Create Your Own" elements from shared pages without affecting main application
@@ -1092,6 +1095,7 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - **CRITICAL**: Allowed premium users to add notes/comments without saving calculation first
 - **CRITICAL**: Made notes and comments sections more concise
 - **CRITICAL**: Fixed save button width to be more appropriate
-- **CRITICAL**: Added comprehensive closing cost presets system
-- **CRITICAL**: Implemented update vs create logic for calculations
-- **CRITICAL**: Added clone functionality with proper tier restrictions
+- **CRITICAL**: Fixed save functionality to properly update existing calculations
+- **CRITICAL**: Fixed clone functionality to stay on dashboard
+- **CRITICAL**: Added rent vs buy section with proper styling
+- **CRITICAL**: Added closing cost presets for premium users

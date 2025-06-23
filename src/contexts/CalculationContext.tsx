@@ -91,9 +91,9 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     try {
-      // If calculationId is provided, always update the existing calculation
-      if (calculationId && calculationId !== 'temp') {
-        console.log('Updating existing calculation:', calculationId);
+      // CRITICAL FIX: If calculationId is provided and not 'temp', ALWAYS update
+      if (calculationId && calculationId !== 'temp' && calculationId.trim() !== '') {
+        console.log('🔄 UPDATING existing calculation:', calculationId);
         
         const { data, error } = await supabase
           .from('mortgage_calculation')
@@ -118,12 +118,12 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           .single();
 
         if (error) {
-          console.error('Update error:', error);
+          console.error('❌ Update error:', error);
           throw new Error('Failed to update calculation: ' + error.message);
         }
 
         if (data) {
-          console.log('Successfully updated calculation:', data.id);
+          console.log('✅ Successfully UPDATED calculation:', data.id);
           // Update the calculation in our local state
           setCalculations(prev => 
             prev.map(calc => calc.id === calculationId ? data : calc)
@@ -134,7 +134,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw new Error('Failed to update calculation - no data returned');
       } else {
         // Create new calculation - check save limits first
-        console.log('Creating new calculation');
+        console.log('➕ CREATING new calculation');
         
         if (user.tier === 'free' && calculations.length >= 1) {
           const error = new Error('Free users can only save 1 calculation. Upgrade to Basic plan for unlimited calculations, or delete your existing calculation to save a new one.');
@@ -174,7 +174,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
 
         if (data) {
-          console.log('Successfully created calculation:', data.id);
+          console.log('✅ Successfully CREATED calculation:', data.id);
           setCalculations(prev => [data, ...prev]);
           return data.id;
         }
@@ -182,7 +182,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         throw new Error('Failed to save calculation - no data returned');
       }
     } catch (error) {
-      console.error('Save calculation error:', error);
+      console.error('💥 Save calculation error:', error);
       throw error;
     }
   };

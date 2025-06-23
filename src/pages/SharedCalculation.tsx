@@ -12,6 +12,7 @@ import MortgageSummaryTab from '../components/results/MortgageSummaryTab';
 import ClosingCostsTab from '../components/results/ClosingCostsTab';
 import AmortizationTab from '../components/results/AmortizationTab';
 import InvestmentAnalysisTab from '../components/results/InvestmentAnalysisTab';
+import RentVsBuyTab from '../components/results/RentVsBuyTab';
 import { calculateInvestmentMetrics } from '../utils/mortgageCalculations';
 
 type MortgageCalculation = Database['public']['Tables']['mortgage_calculation']['Row'];
@@ -24,7 +25,7 @@ const SharedCalculation: React.FC = () => {
   const [owner, setOwner] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment'>('mortgage');
+  const [activeTab, setActiveTab] = useState<'mortgage' | 'closing' | 'amortization' | 'investment' | 'rentVsBuy'>('mortgage');
 
   useEffect(() => {
     const fetchCalculation = async () => {
@@ -140,9 +141,10 @@ const SharedCalculation: React.FC = () => {
     );
   }
 
-  // Determine if closing costs and investment analysis are enabled
+  // Determine if sections are enabled
   const enableClosingCosts = calculation.notes?.enableClosingCosts !== false; // Default to true if not specified
   const enableInvestmentAnalysis = !!calculation.notes?.enableInvestmentAnalysis || !!calculation.notes?.investment_data;
+  const enableRentVsBuy = !!calculation.notes?.enableRentVsBuy;
 
   // Calculate loan amounts including CMHC insurance
   const loanCalculation = calculateTotalLoanAmount(calculation.home_price, calculation.down_payment);
@@ -203,6 +205,8 @@ const SharedCalculation: React.FC = () => {
         key !== 'enableInvestmentAnalysis' && 
         key !== 'enableClosingCosts' && 
         key !== 'showMarketingOnShare' && 
+        key !== 'enableAffordabilityEstimator' &&
+        key !== 'enableRentVsBuy' &&
         key !== 'investment_data' &&
         typeof value === 'string'
       ) {
@@ -227,6 +231,8 @@ const SharedCalculation: React.FC = () => {
               isFirstTimeBuyer: calculation.is_first_time_buyer,
               enableInvestmentAnalysis: enableInvestmentAnalysis,
               enableClosingCosts: enableClosingCosts,
+              enableRentVsBuy: enableRentVsBuy,
+              enableAffordabilityEstimator: false,
               showMarketingOnShare: true
             }}
             monthlyPayment={monthlyPayment}
@@ -256,6 +262,8 @@ const SharedCalculation: React.FC = () => {
               isFirstTimeBuyer: calculation.is_first_time_buyer,
               enableInvestmentAnalysis: enableInvestmentAnalysis,
               enableClosingCosts: enableClosingCosts,
+              enableRentVsBuy: enableRentVsBuy,
+              enableAffordabilityEstimator: false,
               showMarketingOnShare: true
             }}
             closingCosts={closingCosts}
@@ -292,11 +300,26 @@ const SharedCalculation: React.FC = () => {
               isFirstTimeBuyer: calculation.is_first_time_buyer,
               enableInvestmentAnalysis: true,
               enableClosingCosts: enableClosingCosts,
+              enableRentVsBuy: enableRentVsBuy,
+              enableAffordabilityEstimator: false,
               showMarketingOnShare: true,
               monthlyRent: calculation.notes?.investment_data?.monthlyRent,
               monthlyExpenses: calculation.notes?.investment_data?.monthlyExpenses
             }}
             investmentMetrics={investmentMetrics}
+            calculationId={calculation.id}
+            currentNotes={filteredNotes}
+            readonly={true}
+          />
+        );
+
+      case 'rentVsBuy':
+        return (
+          <RentVsBuyTab
+            homePrice={calculation.home_price}
+            downPayment={calculation.down_payment}
+            monthlyPayment={monthlyPayment}
+            totalInterest={totalInterest}
             calculationId={calculation.id}
             currentNotes={filteredNotes}
             readonly={true}
@@ -391,6 +414,7 @@ const SharedCalculation: React.FC = () => {
         onTabChange={setActiveTab}
         enableInvestmentAnalysis={enableInvestmentAnalysis}
         enableClosingCosts={enableClosingCosts}
+        enableRentVsBuy={enableRentVsBuy}
       />
 
       {/* Tab Content with Interactive Charts */}
