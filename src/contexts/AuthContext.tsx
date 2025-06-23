@@ -183,10 +183,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = createTimeoutPromise(SESSION_INIT_TIMEOUT, 'Session initialization');
         
-        const result = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]);
+        let result;
+        try {
+          result = await Promise.race([
+            sessionPromise,
+            timeoutPromise
+          ]);
+        } catch (raceError: any) {
+          if (!mounted) return;
+          
+          // Clear the fallback timeout since we got a response (even if it's an error)
+          clearTimeout(initTimeout);
+          
+          // Handle timeout specifically as a warning, not an error
+          if (raceError.message?.includes('timeout')) {
+            console.warn('⏰ Session initialization timeout - continuing with no session');
+            setLoading(false);
+            setUser(null);
+            setSession(null);
+            return;
+          }
+          
+          // Re-throw non-timeout errors to be handled by outer catch
+          throw raceError;
+        }
         
         const { data: { session: currentSession }, error } = result as any;
         
