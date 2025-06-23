@@ -27,7 +27,14 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const hasComments = comments.trim().length > 0;
 
   const handleSave = async () => {
-    if (!user || !isPremium || calculationId === 'temp' || readonly) return;
+    if (!user || !isPremium || readonly) return;
+
+    // If we're working with a temporary calculation (not yet saved)
+    // just update the local state and don't try to save to the database
+    if (calculationId === 'temp') {
+      setIsEditing(false);
+      return;
+    }
 
     setIsSaving(true);
     setError('');
@@ -95,7 +102,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           </div>
         </div>
 
-        {!readonly && isPremium && !isEditing && calculationId !== 'temp' && (
+        {!readonly && isPremium && !isEditing && (
           <button
             onClick={() => setIsEditing(true)}
             className="flex items-center space-x-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-200 shadow-sm"
@@ -127,13 +134,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
           >
             Upgrade
           </button>
-        </div>
-      ) : !readonly && calculationId === 'temp' ? (
-        <div className="bg-white/70 backdrop-blur-sm border border-blue-300 rounded-lg p-3 text-center mt-2">
-          <MessageCircle className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-          <p className="text-blue-800 text-sm">
-            Save calculation first to add comments.
-          </p>
         </div>
       ) : !readonly && isEditing ? (
         <div className="space-y-3 mt-2">

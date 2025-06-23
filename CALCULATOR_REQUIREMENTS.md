@@ -170,15 +170,15 @@ END IF;
 ## NEW: Premium Notes and Comments System
 
 ### Notes Feature (Premium Only)
-- **Private Notes**: Available in each results tab (Mortgage Summary, Closing Costs, Amortization, Investment Analysis)
+- **Notes**: Available in each results tab (Mortgage Summary, Closing Costs, Amortization, Investment Analysis)
 - **Section-specific**: Each tab has its own notes section
 - **Premium Gating**: Non-premium users see upgrade prompts
 - **Visual Design**: Neutral slate gradient background (NOT yellow/amber)
 - **Functionality**:
   - Add/Edit/Save notes for each section
-  - Notes are private to the user
-  - Preserved when calculation is saved
+  - Notes are preserved when calculation is saved
   - Rich text editing with proper formatting
+  - **No save requirement**: Premium users can add notes without saving calculation first
 
 ### Comments Feature (Premium Only)
 - **Shareable Comments**: Visible to anyone viewing shared calculation
@@ -190,12 +190,14 @@ END IF;
   - Comments appear on shared calculation pages
   - Perfect for explaining assumptions to clients
   - Professional presentation
+  - **No save requirement**: Premium users can add comments without saving calculation first
 
 ### Notes/Comments Integration
 - **Always Visible**: Notes and comments sections appear for all logged-in users
 - **Contextual Display**: Show appropriate upgrade prompts for non-premium users
 - **Save Integration**: Notes and comments saved with calculation data
 - **Dashboard Indicators**: Show badges when calculations have notes/comments
+- **Temporary Storage**: Notes and comments can be added before saving calculation
 
 ## NEW: Shared Calculation Page Requirements
 
@@ -355,7 +357,7 @@ const loggedInNavigation = [
 
 #### Chart Requirements
 - **Pie Chart**: Total cost breakdown with custom labels showing percentages
-- **Bar Chart**: Interest vs Principal comparison
+- **Bar Chart**: Interest vs Principal comparison (no percentage text)
 - **Line Chart**: Remaining balance over time (amortization)
 - **Responsive**: All charts in ResponsiveContainer
 - **Colors**: Consistent color scheme (emerald, blue, red)
@@ -370,6 +372,8 @@ const loggedInNavigation = [
 - **Upgrade Prompts**: Lock icons with clear upgrade calls-to-action
 - **Edit States**: Proper form controls with save/cancel buttons
 - **Readonly States**: Muted backgrounds with eye/lock icons for shared pages
+- **Compact Design**: Smaller, more concise sections with less padding
+- **Simplified Controls**: Shorter button text ("Add"/"Edit" instead of "Add Notes"/"Edit Notes")
 
 #### Shared Page Readonly Design
 - **Readonly Notes**: Muted slate background (`from-slate-50 to-slate-100`) with eye icon
@@ -561,7 +565,7 @@ export interface MortgageData {
 - Migration files MUST follow singular naming convention
 - Notes stored as JSONB object with section keys
 - Comments stored as text field
-- Marketing control stored in notes as `showMarketingOnShare` boolean
+- Marketing control preference stored in notes as `showMarketingOnShare` boolean
 - Section state (enabled/disabled) stored in notes
 
 ### Optional Sections Requirements
@@ -663,6 +667,9 @@ The design MUST match these specifications:
 17. **Section Headers**: Proper spacing between icon, text, and toggle
 18. **CMHC Insurance**: Warning box with details when required
 19. **Loan Amount Display**: Combined card showing total loan amount with CMHC premium included
+20. **Notes/Comments UI**: Compact, concise design with smaller padding and text
+21. **Action Buttons**: Appropriately sized buttons (not too wide)
+22. **Dashboard Indicators**: Only show notes/comments badges when actual content exists
 
 ## Code Structure Requirements
 
@@ -764,6 +771,10 @@ Any changes MUST pass these tests:
 - ✅ **CRITICAL**: CMHC insurance is calculated and displayed when required
 - ✅ **CRITICAL**: Section state (enabled/disabled) is preserved between steps
 - ✅ **CRITICAL**: Section headers have proper spacing and responsive layout
+- ✅ **CRITICAL**: Dashboard only shows notes/comments badges when actual content exists
+- ✅ **CRITICAL**: Premium users can add notes/comments without saving calculation first
+- ✅ **CRITICAL**: Notes/comments UI is compact and concise
+- ✅ **CRITICAL**: Save button has appropriate width (not too wide)
 
 ## NEW: Chart Data Requirements
 
@@ -831,6 +842,10 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 31. **CRITICAL**: Verify CMHC insurance is calculated correctly
 32. **CRITICAL**: Test section state persistence between steps
 33. **CRITICAL**: Verify section headers have proper spacing
+34. **CRITICAL**: Verify dashboard only shows notes/comments badges when actual content exists
+35. **CRITICAL**: Verify premium users can add notes/comments without saving calculation first
+36. **CRITICAL**: Verify notes/comments UI is compact and concise
+37. **CRITICAL**: Verify save button has appropriate width
 
 ## NEW: Database Integration Requirements
 
@@ -863,38 +878,43 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 ## Change Log
 
 ### Recent Updates:
-1. **CMHC Insurance**: Added CMHC insurance calculation and display when down payment is less than 20%
-2. **Loan Amount Display**: Combined base loan amount and CMHC premium into a single card with clear labeling
-3. **Section State Persistence**: Ensured section state (enabled/disabled) is preserved between steps
-4. **Section Header Spacing**: Improved spacing in optional section headers
-5. **Responsive Section Headers**: Made section headers stack on mobile, side-by-side on desktop
-6. **Conditional Tabs**: Only show tabs for sections that were enabled in Step 1
-7. **Currency Formatting**: Added real-time comma formatting for all money fields
-8. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
-9. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
-10. **CurrencyInput Component**: Created reusable component for all monetary inputs
-11. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
-12. **Helper Text**: Added explanatory text for automatically calculated fields
-13. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
-14. **Visual Separation**: Added clear visual separation between optional sections
-15. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
-16. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
-17. **Notes Styling**: Changed from amber/yellow to neutral slate styling
-18. **Marketing Control Logic**: Viewers can no longer hide marketing content
-19. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
-20. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
-21. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
-22. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
-23. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
-24. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
-25. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
-26. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
-27. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
-28. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
-29. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
-30. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
-31. **Premium Notes System**: Added section-specific private notes for premium users in all result tabs
-32. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
+1. **Premium Notes Without Saving**: Modified NotesSection and CommentsSection to allow premium users to add notes/comments without saving calculation first
+2. **Dashboard Notes Indicators**: Fixed dashboard to only show notes/comments badges when actual content exists
+3. **Removed Interest Percentage Text**: Removed "Interest represents X% of your total payments" from interest vs principal chart
+4. **Compact Notes UI**: Made notes and comments sections more concise with smaller padding and text
+5. **Save Button Width**: Fixed save button width to be more appropriate (not too wide)
+6. **CMHC Insurance**: Added CMHC insurance calculation and display when down payment is less than 20%
+7. **Loan Amount Display**: Combined base loan amount and CMHC premium into a single card with clear labeling
+8. **Section State Persistence**: Ensured section state (enabled/disabled) is preserved between steps
+9. **Section Header Spacing**: Improved spacing in optional section headers
+10. **Responsive Section Headers**: Made section headers stack on mobile, side-by-side on desktop
+11. **Conditional Tabs**: Only show tabs for sections that were enabled in Step 1
+12. **Currency Formatting**: Added real-time comma formatting for all money fields
+13. **Dynamic Closing Costs**: Made closing costs automatically update based on property details
+14. **Readonly Fields**: Added readonly styling for auto-calculated closing cost fields
+15. **CurrencyInput Component**: Created reusable component for all monetary inputs
+16. **Dependent Fields**: Implemented automatic recalculation of dependent closing cost fields
+17. **Helper Text**: Added explanatory text for automatically calculated fields
+18. **Optional Sections System**: Added two optional sections (Closing Costs and Investment Analysis)
+19. **Visual Separation**: Added clear visual separation between optional sections
+20. **Closing Costs Section**: Added as optional section with toggle (enabled by default)
+21. **Premium Marketing Control**: Added ability for premium users to control marketing visibility
+22. **Notes Styling**: Changed from amber/yellow to neutral slate styling
+23. **Marketing Control Logic**: Viewers can no longer hide marketing content
+24. **Shared Page Chart Requirements**: Added mandatory interactive charts on shared calculation pages
+25. **Professional Services Enhancement**: Moved marketing content above tabs for better visibility
+26. **Chart Interactivity**: All charts must be fully functional on shared pages with tooltips and legends
+27. **Component Readonly Support**: Enhanced all result tab components to support readonly mode
+28. **Marketing Positioning**: Professional services section now positioned prominently above tab navigation
+29. **Visual Consistency**: Shared pages must maintain same chart styling and functionality as main calculator
+30. **Shared Page Readonly Requirements**: Added comprehensive requirements for readonly notes/comments on shared pages
+31. **Removed "Create Your Own" Elements**: Specified removal of all "Create Your Own" buttons and CTAs from shared pages
+32. **Readonly Styling Guidelines**: Added specific styling requirements for readonly content display
+33. **Component Readonly Support**: Required NotesSection and CommentsSection to support readonly mode
+34. **Visual Distinction**: Added requirements for clear readonly indicators and muted styling
+35. **Navigation System Overhaul**: Home now redirects to dashboard for logged-in users, removed Dashboard from header
+36. **Premium Notes System**: Added section-specific notes for premium users in all result tabs
+37. **Premium Comments System**: Added shareable comments for premium users visible on shared calculations
 
 ### Breaking Changes Prevented:
 - Maintained two-step process structure
@@ -920,3 +940,7 @@ Before making ANY changes to Calculator.tsx, MortgageResults.tsx, or SharedCalcu
 - **CRITICAL**: Added CMHC insurance calculation and display
 - **CRITICAL**: Ensured section state persistence between steps
 - **CRITICAL**: Improved section header spacing and responsive layout
+- **CRITICAL**: Fixed dashboard to only show notes/comments badges when actual content exists
+- **CRITICAL**: Allowed premium users to add notes/comments without saving calculation first
+- **CRITICAL**: Made notes and comments sections more concise
+- **CRITICAL**: Fixed save button width to be more appropriate
