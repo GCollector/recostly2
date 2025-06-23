@@ -31,6 +31,13 @@ export const useCalculations = () => {
 
 const LOCAL_STORAGE_KEY = 'mortgage_calculation';
 
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key';
+};
+
 export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [calculations, setCalculations] = useState<MortgageCalculation[]>([]);
@@ -43,7 +50,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && isSupabaseConfigured()) {
       fetchCalculations();
     } else {
       setCalculations([]);
@@ -51,7 +58,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [user]);
 
   const fetchCalculations = async () => {
-    if (!user) return;
+    if (!user || !isSupabaseConfigured()) return;
 
     setIsLoading(true);
     try {
@@ -78,6 +85,12 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // Return a specific error type for no user
       const error = new Error('Please create an account to save calculations.');
       (error as any).type = 'AUTH_REQUIRED';
+      throw error;
+    }
+
+    if (!isSupabaseConfigured()) {
+      const error = new Error('Database is not available in demo mode.');
+      (error as any).type = 'DEMO_MODE';
       throw error;
     }
 
@@ -124,6 +137,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const deleteCalculation = async (id: string) => {
     if (!user) throw new Error('Must be logged in to delete calculations');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
 
     try {
       const { error } = await supabase
@@ -154,6 +168,10 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return existingCalc;
     }
 
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+
     // If not found locally, query the database directly
     try {
       console.log('Querying database for calculation:', id);
@@ -179,6 +197,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationNotes = async (id: string, section: string, notes: string) => {
     if (!user) throw new Error('Must be logged in to update notes');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for notes');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
 
     try {
       const currentCalc = calculations.find(calc => calc.id === id);
@@ -216,6 +235,7 @@ export const CalculationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const updateCalculationComments = async (id: string, comments: string) => {
     if (!user) throw new Error('Must be logged in to update comments');
     if (user.tier !== 'premium') throw new Error('Premium subscription required for comments');
+    if (!isSupabaseConfigured()) throw new Error('Database is not available in demo mode');
 
     try {
       const { data, error } = await supabase

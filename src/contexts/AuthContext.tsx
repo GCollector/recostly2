@@ -34,6 +34,13 @@ const debugLog = (message: string, data?: any) => {
   console.log(`🔍 [AUTH DEBUG] ${message}`, data || '');
 };
 
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key';
+};
+
 // Optimized timeout constants for better network handling
 const QUICK_TIMEOUT = 3000; // 3 seconds for quick operations
 const STANDARD_TIMEOUT = 8000; // 8 seconds for standard operations
@@ -57,6 +64,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Background profile loading that doesn't block the UI
   const loadUserProfileInBackground = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
+    if (!isSupabaseConfigured()) {
+      debugLog('Supabase not configured, skipping profile load');
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        name: supabaseUser.user_metadata?.name || 'Demo User',
+        tier: 'free' as const,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        subscription_status: null,
+        marketing_image: null,
+        marketing_copy: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        supabaseUser
+      };
+    }
+
     debugLog(`Background loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
     
     try {
@@ -196,6 +221,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Background authentication initialization - no loading state
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      debugLog('Supabase not configured, skipping auth initialization');
+      return;
+    }
+
     let mounted = true;
 
     const initializeAuthInBackground = async () => {
@@ -298,6 +328,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Optimized auth state listener
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
+
     debugLog('Setting up auth state listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -360,6 +394,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const signIn = async (email: string, password: string): Promise<void> => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Authentication is not available in demo mode');
+    }
+
     try {
       debugLog('Starting sign in process for:', email);
       
@@ -401,6 +439,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Authentication is not available in demo mode');
+    }
+
     try {
       debugLog('Starting sign up process for:', email);
       
@@ -448,6 +490,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async (): Promise<void> => {
+    if (!isSupabaseConfigured()) {
+      // Just clear local state in demo mode
+      setUser(null);
+      setSession(null);
+      return;
+    }
+
     try {
       debugLog('Starting sign out process...');
       
@@ -487,6 +536,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (updates: Partial<Profile>): Promise<void> => {
     if (!user) {
       throw new Error('No user logged in');
+    }
+
+    if (!isSupabaseConfigured()) {
+      throw new Error('Profile updates are not available in demo mode');
     }
 
     try {

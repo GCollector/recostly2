@@ -3,33 +3,41 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+// Provide fallback values for development/demo purposes
+const defaultUrl = 'https://placeholder.supabase.co'
+const defaultKey = 'placeholder-key'
+
+if (!supabaseUrl && !supabaseAnonKey) {
+  console.warn('Supabase environment variables not found. Using demo mode.')
 }
 
 // Create Supabase client with optimized configuration for better reliability and network handling
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'canadian-mortgage-calculator'
-    }
-  },
-  db: {
-    schema: 'public'
-  },
-  // Optimized settings for better network handling
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+export const supabase = createClient(
+  supabaseUrl || defaultUrl, 
+  supabaseAnonKey || defaultKey, 
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'canadian-mortgage-calculator'
+      }
+    },
+    db: {
+      schema: 'public'
+    },
+    // Optimized settings for better network handling
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
   }
-})
+)
 
 export type Database = {
   public: {
