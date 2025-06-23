@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CalculationProvider } from './contexts/CalculationContext';
 import Layout from './components/Layout';
@@ -11,6 +11,17 @@ import Pricing from './pages/Pricing';
 import SharedCalculation from './pages/SharedCalculation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+
+// Scroll to top component
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -61,6 +72,7 @@ function App() {
     <AuthProvider>
       <CalculationProvider>
         <Router>
+          <ScrollToTop />
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />

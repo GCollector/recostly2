@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
@@ -25,6 +25,11 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({ data, onBack }) => {
   const [calculationId, setCalculationId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Calculate mortgage values
   const loanAmount = data.homePrice - data.downPayment;
