@@ -7,7 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Create Supabase client with improved configuration
+// Create Supabase client with optimized configuration for better reliability
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
@@ -22,6 +22,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   db: {
     schema: 'public'
+  },
+  // Add retry configuration for better reliability
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
   }
 })
 

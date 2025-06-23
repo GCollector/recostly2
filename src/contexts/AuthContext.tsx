@@ -29,54 +29,77 @@ export const useAuth = () => {
   return context;
 };
 
-// More generous timeout constants for better UX
-const SIGN_IN_TIMEOUT = 15000; // 15 seconds
-const PROFILE_LOAD_TIMEOUT = 10000; // 10 seconds
-const SESSION_INIT_TIMEOUT = 12000; // 12 seconds
+// Debug logging helper
+const debugLog = (message: string, data?: any) => {
+  console.log(`🔍 [AUTH DEBUG] ${message}`, data || '');
+};
+
+// More generous timeout constants
+const OPERATION_TIMEOUT = 15000; // 15 seconds for all operations
+const PROFILE_RETRY_DELAY = 1000; // 1 second between retries
+const MAX_RETRIES = 3;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to create a timeout promise with better error handling
+  // Create timeout promise with better error context
   function createTimeoutPromise(ms: number, operation: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`${operation} timeout after ${ms}ms - this may be due to network conditions`));
+        reject(new Error(`${operation} timeout after ${ms}ms`));
       }, ms);
     });
   }
 
-  // Improved profile loading with retry logic and better error handling
+  // Enhanced profile loading with comprehensive debugging and retry logic
   const loadUserProfile = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
-    const maxRetries = 2;
+    debugLog(`Loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
     
     try {
-      console.log(`📝 Loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1})`);
+      // Test database connection first
+      debugLog('Testing database connection...');
+      const connectionTest = supabase
+        .from('profile')
+        .select('count')
+        .limit(1);
 
-      // Use a more generous timeout and simpler query
-      const profilePromise = supabase
+      const testResult = await Promise.race([
+        connectionTest,
+        createTimeoutPromise(5000, 'Database connection test')
+      ]);
+
+      debugLog('Database connection test result:', testResult);
+
+      // Now try to fetch the profile
+      debugLog('Fetching user profile...');
+      const profileQuery = supabase
         .from('profile')
         .select('*')
         .eq('id', supabaseUser.id)
         .maybeSingle();
 
-      const timeoutPromise = createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile loading');
-
-      const result = await Promise.race([
-        profilePromise,
-        timeoutPromise
+      const profileResult = await Promise.race([
+        profileQuery,
+        createTimeoutPromise(OPERATION_TIMEOUT, 'Profile fetch')
       ]);
 
-      const { data: profile, error } = result as any;
+      const { data: profile, error } = profileResult as any;
+
+      debugLog('Profile fetch result:', { profile, error });
 
       if (error) {
-        console.error('❌ Profile fetch error:', error);
-        
-        // If profile doesn't exist, try to create it
-        if (error.code === 'PGRST116' || error.message?.includes('No rows found')) {
-          console.log('🆕 Creating new profile for user:', supabaseUser.email);
+        debugLog('Profile fetch error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+
+        // Handle specific error cases
+        if (error.code === 'PGRST116' || error.message?.includes('No rows found') || !profile) {
+          debugLog('Profile not found, attempting to create...');
           
           const newProfile = {
             id: supabaseUser.id,
@@ -88,135 +111,173 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tier: 'basic' as const
           };
 
+          debugLog('Creating new profile with data:', newProfile);
+
           try {
+            const createQuery = supabase
+              .from('profile')
+              .insert(newProfile)
+              .select()
+              .single();
+
             const createResult = await Promise.race([
-              supabase
-                .from('profile')
-                .insert(newProfile)
-                .select()
-                .single(),
-              createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile creation')
+              createQuery,
+              createTimeoutPromise(OPERATION_TIMEOUT, 'Profile creation')
             ]);
 
             const { data: createdProfile, error: createError } = createResult as any;
 
+            debugLog('Profile creation result:', { createdProfile, createError });
+
             if (createError) {
-              console.error('❌ Error creating profile:', createError);
-              
-              // If creation fails, try to fetch again (maybe it was created by trigger)
-              if (retryCount < maxRetries) {
-                console.log('🔄 Retrying profile fetch after creation failure...');
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-                return loadUserProfile(supabaseUser, retryCount + 1);
+              debugLog('Profile creation error details:', {
+                code: createError.code,
+                message: createError.message,
+                details: createError.details
+              });
+
+              // If creation fails due to conflict, try to fetch again
+              if (createError.code === '23505' || createError.message?.includes('duplicate')) {
+                debugLog('Profile already exists, retrying fetch...');
+                if (retryCount < MAX_RETRIES) {
+                  await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
+                  return loadUserProfile(supabaseUser, retryCount + 1);
+                }
               }
-              
-              console.warn('Profile creation failed, user will continue without profile data');
-              return null;
+
+              throw createError;
             }
 
             if (createdProfile) {
-              console.log('✅ Profile created successfully');
+              debugLog('Profile created successfully:', createdProfile);
               return { ...createdProfile, supabaseUser };
             }
-          } catch (createError) {
-            console.error('💥 Error creating profile:', createError);
+          } catch (createError: any) {
+            debugLog('Profile creation failed:', createError);
             
             // Retry logic for creation failures
-            if (retryCount < maxRetries) {
-              console.log('🔄 Retrying profile creation...');
-              await new Promise(resolve => setTimeout(resolve, 1000));
+            if (retryCount < MAX_RETRIES) {
+              debugLog(`Retrying profile creation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+              await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
               return loadUserProfile(supabaseUser, retryCount + 1);
             }
             
-            console.warn('Profile creation failed after retries, user will continue without profile data');
-            return null;
+            throw createError;
           }
         } else {
-          // For other errors, try retry if we haven't exceeded max retries
-          if (retryCount < maxRetries && !error.message?.includes('timeout')) {
-            console.log('🔄 Retrying profile fetch due to error...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // For other errors, implement retry logic
+          if (retryCount < MAX_RETRIES && !error.message?.includes('timeout')) {
+            debugLog(`Retrying profile fetch due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+            await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
             return loadUserProfile(supabaseUser, retryCount + 1);
           }
           
-          console.warn('Profile fetch failed, user will continue without profile data');
-          return null;
+          throw error;
         }
       } else if (profile) {
-        console.log('✅ Profile loaded successfully');
+        debugLog('Profile loaded successfully:', profile);
         return { ...profile, supabaseUser };
       }
       
+      debugLog('No profile data returned');
       return null;
-    } catch (error) {
-      console.error('💥 Error in loadUserProfile:', error);
+    } catch (error: any) {
+      debugLog('Error in loadUserProfile:', {
+        message: error.message,
+        stack: error.stack,
+        retryCount
+      });
       
       // Retry logic for network/timeout errors
-      if (retryCount < maxRetries) {
-        console.log(`🔄 Retrying profile load due to error (attempt ${retryCount + 2}/${maxRetries + 1})...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (retryCount < MAX_RETRIES) {
+        debugLog(`Retrying profile load due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+        await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
         return loadUserProfile(supabaseUser, retryCount + 1);
       }
       
-      console.warn('Profile loading failed after all retries, user will continue without profile data');
+      // After all retries failed, log final error but don't throw
+      debugLog('Profile loading failed after all retries, continuing without profile data');
+      console.warn('Profile loading failed after all retries:', error);
       return null;
     }
   };
 
-  // Initialize authentication with improved error handling and no forced sign-outs
+  // Initialize authentication with comprehensive debugging
   useEffect(() => {
     let mounted = true;
     let initTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
-        console.log('🚀 Initializing authentication...');
+        debugLog('Starting authentication initialization...');
         
-        // Set a fallback timeout to ensure loading doesn't hang indefinitely
+        // Set a fallback timeout
         initTimeout = setTimeout(() => {
           if (mounted) {
-            console.warn('⏰ Auth initialization taking longer than expected, continuing...');
+            debugLog('Auth initialization timeout reached, continuing with no session');
             setLoading(false);
           }
-        }, SESSION_INIT_TIMEOUT);
+        }, OPERATION_TIMEOUT);
         
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = createTimeoutPromise(SESSION_INIT_TIMEOUT, 'Session initialization');
+        // Test Supabase connection first
+        debugLog('Testing Supabase connection...');
+        const healthCheck = supabase.from('profile').select('count').limit(1);
         
-        let result;
         try {
-          result = await Promise.race([
-            sessionPromise,
-            timeoutPromise
+          const healthResult = await Promise.race([
+            healthCheck,
+            createTimeoutPromise(5000, 'Supabase health check')
           ]);
-        } catch (raceError: any) {
-          if (!mounted) return;
+          debugLog('Supabase health check passed:', healthResult);
+        } catch (healthError) {
+          debugLog('Supabase health check failed:', healthError);
+          // Continue anyway, might be a temporary issue
+        }
+
+        // Get current session
+        debugLog('Getting current session...');
+        const sessionQuery = supabase.auth.getSession();
+        
+        let sessionResult;
+        try {
+          sessionResult = await Promise.race([
+            sessionQuery,
+            createTimeoutPromise(OPERATION_TIMEOUT, 'Session fetch')
+          ]);
+        } catch (sessionError: any) {
+          debugLog('Session fetch error:', sessionError);
           
-          // Clear the fallback timeout since we got a response (even if it's an error)
+          if (!mounted) return;
           clearTimeout(initTimeout);
           
-          // Handle timeout specifically as a warning, not an error
-          if (raceError.message?.includes('timeout')) {
-            console.warn('⏰ Session initialization timeout - continuing with no session');
+          if (sessionError.message?.includes('timeout')) {
+            debugLog('Session fetch timeout - continuing with no session');
             setLoading(false);
             setUser(null);
             setSession(null);
             return;
           }
           
-          // Re-throw non-timeout errors to be handled by outer catch
-          throw raceError;
+          throw sessionError;
         }
         
-        const { data: { session: currentSession }, error } = result as any;
+        const { data: { session: currentSession }, error } = sessionResult as any;
         
         if (!mounted) return;
-        
-        // Clear the fallback timeout since we got a response
         clearTimeout(initTimeout);
         
+        debugLog('Session fetch result:', { 
+          hasSession: !!currentSession, 
+          userEmail: currentSession?.user?.email,
+          error 
+        });
+        
         if (error) {
-          console.error('❌ Error getting session:', error);
+          debugLog('Session fetch error details:', {
+            message: error.message,
+            status: error.status,
+            statusText: error.statusText
+          });
           setLoading(false);
           return;
         }
@@ -224,29 +285,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         
         if (currentSession?.user) {
-          console.log('✅ Found existing session for:', currentSession.user.email);
+          debugLog('Found existing session, loading profile...');
           try {
             const userProfile = await loadUserProfile(currentSession.user);
             if (mounted) {
               setUser(userProfile);
+              debugLog('Profile loaded and user set:', !!userProfile);
             }
           } catch (profileError) {
-            console.error('💥 Failed to load profile during initialization:', profileError);
+            debugLog('Failed to load profile during initialization:', profileError);
             if (mounted) {
-              // Don't clear session, just set user to null
               setUser(null);
             }
           }
         } else {
-          console.log('ℹ️ No existing session found');
+          debugLog('No existing session found');
           setUser(null);
         }
         
         if (mounted) {
           setLoading(false);
+          debugLog('Auth initialization completed');
         }
-      } catch (error) {
-        console.error('💥 Error initializing auth:', error);
+      } catch (error: any) {
+        debugLog('Auth initialization error:', {
+          message: error.message,
+          stack: error.stack
+        });
+        
         if (mounted) {
           clearTimeout(initTimeout);
           setLoading(false);
@@ -266,83 +332,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Set up auth state listener with improved error handling
+  // Set up auth state listener with enhanced debugging
   useEffect(() => {
-    console.log('👂 Setting up auth state listener...');
+    debugLog('Setting up auth state listener...');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('🔄 Auth state changed:', event, newSession?.user?.email || 'No user');
+        debugLog('Auth state changed:', { 
+          event, 
+          hasSession: !!newSession,
+          userEmail: newSession?.user?.email 
+        });
         
         setSession(newSession);
 
         if (event === 'SIGNED_IN' && newSession?.user) {
-          console.log('✅ User signed in:', newSession.user.email);
+          debugLog('User signed in, loading profile...');
           setLoading(true);
           
           try {
             const userProfile = await loadUserProfile(newSession.user);
             setUser(userProfile);
+            debugLog('Profile loaded after sign in:', !!userProfile);
           } catch (profileError) {
-            console.error('💥 Failed to load profile after sign in:', profileError);
-            // Don't force sign out - just set user to null and continue
+            debugLog('Failed to load profile after sign in:', profileError);
             setUser(null);
           } finally {
             setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 User signed out');
+          debugLog('User signed out');
           setUser(null);
           setLoading(false);
         } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
-          console.log('🔄 Token refreshed for:', newSession.user.email);
-          // Don't change loading state or reload profile on token refresh
+          debugLog('Token refreshed for user:', newSession.user.email);
+          // Don't reload profile on token refresh unless we don't have one
+          if (!user) {
+            debugLog('No user profile, loading after token refresh...');
+            try {
+              const userProfile = await loadUserProfile(newSession.user);
+              setUser(userProfile);
+            } catch (profileError) {
+              debugLog('Failed to load profile after token refresh:', profileError);
+            }
+          }
         }
       }
     );
 
     return () => {
+      debugLog('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
-  }, []);
+  }, [user]); // Include user in dependencies to handle token refresh properly
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('🔐 Attempting sign in for:', email);
+      debugLog('Starting sign in process for:', email);
       
-      const signInPromise = supabase.auth.signInWithPassword({
+      const signInQuery = supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      const timeoutPromise = createTimeoutPromise(SIGN_IN_TIMEOUT, 'Sign in');
-
       const result = await Promise.race([
-        signInPromise,
-        timeoutPromise
+        signInQuery,
+        createTimeoutPromise(OPERATION_TIMEOUT, 'Sign in')
       ]);
 
       const { data, error } = result as any;
 
+      debugLog('Sign in result:', { 
+        hasUser: !!data?.user, 
+        userEmail: data?.user?.email,
+        error 
+      });
+
       if (error) {
-        console.error('❌ Sign in error:', error);
+        debugLog('Sign in error details:', {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText
+        });
         throw error;
       }
 
-      console.log('✅ Sign in successful for:', data.user?.email);
+      debugLog('Sign in successful');
       // The auth state change listener will handle loading the profile
       
-    } catch (error) {
-      console.error('💥 Sign in failed:', error);
+    } catch (error: any) {
+      debugLog('Sign in failed:', {
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
     try {
-      console.log('📝 Attempting sign up for:', email);
+      debugLog('Starting sign up process for:', email);
       
-      const signUpPromise = supabase.auth.signUp({
+      const signUpQuery = supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -352,60 +443,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
-      const timeoutPromise = createTimeoutPromise(SIGN_IN_TIMEOUT, 'Sign up');
-
       const result = await Promise.race([
-        signUpPromise,
-        timeoutPromise
+        signUpQuery,
+        createTimeoutPromise(OPERATION_TIMEOUT, 'Sign up')
       ]);
 
       const { data, error } = result as any;
 
+      debugLog('Sign up result:', { 
+        hasUser: !!data?.user, 
+        userEmail: data?.user?.email,
+        needsConfirmation: !data?.session,
+        error 
+      });
+
       if (error) {
-        console.error('❌ Sign up error:', error);
+        debugLog('Sign up error details:', {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText
+        });
         throw error;
       }
 
-      console.log('✅ Sign up successful for:', data.user?.email);
+      debugLog('Sign up successful');
       // The auth state change listener will handle loading the profile
       
-    } catch (error) {
-      console.error('💥 Sign up failed:', error);
+    } catch (error: any) {
+      debugLog('Sign up failed:', {
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   };
 
   const signOut = async (): Promise<void> => {
     try {
-      console.log('👋 Signing out...');
+      debugLog('Starting sign out process...');
       
-      const signOutPromise = supabase.auth.signOut();
-      const timeoutPromise = createTimeoutPromise(5000, 'Sign out');
+      const signOutQuery = supabase.auth.signOut();
 
       try {
         const result = await Promise.race([
-          signOutPromise,
-          timeoutPromise
+          signOutQuery,
+          createTimeoutPromise(5000, 'Sign out')
         ]);
 
         const { error } = result as any;
+        debugLog('Sign out result:', { error });
 
         if (error && !error.message?.includes('timeout')) {
-          console.error('❌ Sign out error:', error);
+          debugLog('Sign out error:', error);
         }
       } catch (timeoutError) {
-        console.warn('⏰ Sign out timeout, forcing local cleanup');
+        debugLog('Sign out timeout, forcing local cleanup');
       }
       
-      // Clear state immediately regardless of Supabase response
+      // Clear state immediately
       setUser(null);
       setSession(null);
       setLoading(false);
       
-      console.log('✅ Sign out completed');
+      debugLog('Sign out completed');
       
-    } catch (error) {
-      console.error('💥 Sign out error:', error);
+    } catch (error: any) {
+      debugLog('Sign out error:', {
+        message: error.message,
+        stack: error.stack
+      });
+      
       // Force clear state even on error
       setUser(null);
       setSession(null);
@@ -419,23 +526,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const updatePromise = supabase
+      debugLog('Updating profile for user:', user.email);
+      debugLog('Profile updates:', updates);
+      
+      const updateQuery = supabase
         .from('profile')
         .update(updates)
         .eq('id', user.id)
         .select()
         .single();
 
-      const timeoutPromise = createTimeoutPromise(10000, 'Profile update');
-
       const result = await Promise.race([
-        updatePromise,
-        timeoutPromise
+        updateQuery,
+        createTimeoutPromise(OPERATION_TIMEOUT, 'Profile update')
       ]);
 
       const { data, error } = result as any;
 
+      debugLog('Profile update result:', { data, error });
+
       if (error) {
+        debugLog('Profile update error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
+        
         if (error.message?.includes('timeout')) {
           throw new Error('Profile update timed out. Please try again.');
         }
@@ -444,9 +560,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setUser({ ...data, supabaseUser: user.supabaseUser });
+        debugLog('Profile updated successfully');
       }
-    } catch (error) {
-      console.error('💥 Update profile error:', error);
+    } catch (error: any) {
+      debugLog('Profile update failed:', {
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   };
