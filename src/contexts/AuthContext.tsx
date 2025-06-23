@@ -43,7 +43,8 @@ const MAX_RETRIES = 2; // Reduced retries for faster recovery
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  // CRITICAL CHANGE: Start with loading = false for better UX
+  const [loading, setLoading] = useState(false);
 
   // Create timeout promise with better error context
   function createTimeoutPromise(ms: number, operation: string): Promise<never> {
@@ -54,13 +55,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }
 
-  // Simplified profile loading that skips connection tests and focuses on the actual query
-  const loadUserProfile = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
-    debugLog(`Loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+  // Background profile loading that doesn't block the UI
+  const loadUserProfileInBackground = async (supabaseUser: SupabaseUser, retryCount = 0): Promise<User | null> => {
+    debugLog(`Background loading profile for user: ${supabaseUser.email} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
     
     try {
       // Skip connection test and go directly to profile fetch with shorter timeout
-      debugLog('Fetching user profile directly...');
+      debugLog('Fetching user profile in background...');
       const profileQuery = supabase
         .from('profile')
         .select('*')
@@ -69,17 +70,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const profileResult = await Promise.race([
         profileQuery,
-        createTimeoutPromise(QUICK_TIMEOUT, 'Profile fetch')
+        createTimeoutPromise(QUICK_TIMEOUT, 'Background profile fetch')
       ]);
 
       const { data: profile, error } = profileResult as any;
 
-      debugLog('Profile fetch result:', { hasProfile: !!profile, error: error?.message });
+      debugLog('Background profile fetch result:', { hasProfile: !!profile, error: error?.message });
 
       if (error) {
         // Handle specific error cases
         if (error.code === 'PGRST116' || error.message?.includes('No rows found') || !profile) {
-          debugLog('Profile not found, attempting to create...');
+          debugLog('Profile not found, attempting to create in background...');
           
           const newProfile = {
             id: supabaseUser.id,
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tier: 'basic' as const
           };
 
-          debugLog('Creating new profile with data:', newProfile);
+          debugLog('Creating new profile in background with data:', newProfile);
 
           try {
             const createQuery = supabase
@@ -102,20 +103,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const createResult = await Promise.race([
               createQuery,
-              createTimeoutPromise(STANDARD_TIMEOUT, 'Profile creation')
+              createTimeoutPromise(STANDARD_TIMEOUT, 'Background profile creation')
             ]);
 
             const { data: createdProfile, error: createError } = createResult as any;
 
             if (createError) {
-              debugLog('Profile creation error:', createError.message);
+              debugLog('Background profile creation error:', createError.message);
 
               // If creation fails due to conflict, try to fetch again
               if (createError.code === '23505' || createError.message?.includes('duplicate')) {
-                debugLog('Profile already exists, retrying fetch...');
+                debugLog('Profile already exists, retrying background fetch...');
                 if (retryCount < MAX_RETRIES) {
                   await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
-                  return loadUserProfile(supabaseUser, retryCount + 1);
+                  return loadUserProfileInBackground(supabaseUser, retryCount + 1);
                 }
               }
 
@@ -123,17 +124,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             if (createdProfile) {
-              debugLog('Profile created successfully');
+              debugLog('Profile created successfully in background');
               return { ...createdProfile, supabaseUser };
             }
           } catch (createError: any) {
-            debugLog('Profile creation failed:', createError.message);
+            debugLog('Background profile creation failed:', createError.message);
             
             // Retry logic for creation failures
             if (retryCount < MAX_RETRIES && !createError.message?.includes('timeout')) {
-              debugLog(`Retrying profile creation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+              debugLog(`Retrying background profile creation (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
               await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
-              return loadUserProfile(supabaseUser, retryCount + 1);
+              return loadUserProfileInBackground(supabaseUser, retryCount + 1);
             }
             
             throw createError;
@@ -141,36 +142,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           // For timeout and other errors, implement retry logic
           if (retryCount < MAX_RETRIES) {
-            debugLog(`Retrying profile fetch due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+            debugLog(`Retrying background profile fetch due to error (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
             await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
-            return loadUserProfile(supabaseUser, retryCount + 1);
+            return loadUserProfileInBackground(supabaseUser, retryCount + 1);
           }
           
           throw error;
         }
       } else if (profile) {
-        debugLog('Profile loaded successfully');
+        debugLog('Profile loaded successfully in background');
         return { ...profile, supabaseUser };
       }
       
-      debugLog('No profile data returned');
+      debugLog('No profile data returned from background fetch');
       return null;
     } catch (error: any) {
-      debugLog('Error in loadUserProfile:', {
+      debugLog('Error in background profile loading:', {
         message: error.message,
         retryCount
       });
       
       // Retry logic for network/timeout errors
       if (retryCount < MAX_RETRIES && error.message?.includes('timeout')) {
-        debugLog(`Retrying profile load due to timeout (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
+        debugLog(`Retrying background profile load due to timeout (attempt ${retryCount + 2}/${MAX_RETRIES + 1})...`);
         await new Promise(resolve => setTimeout(resolve, PROFILE_RETRY_DELAY));
-        return loadUserProfile(supabaseUser, retryCount + 1);
+        return loadUserProfileInBackground(supabaseUser, retryCount + 1);
       }
       
       // After all retries failed, continue without profile but don't crash
-      debugLog('Profile loading failed after all retries, continuing without profile data');
-      console.warn('Profile loading failed after all retries:', error.message);
+      debugLog('Background profile loading failed after all retries, continuing without profile data');
+      console.warn('Background profile loading failed after all retries:', error.message);
       
       // Return a minimal user object to prevent app crash
       return {
@@ -193,42 +194,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Simplified authentication initialization
+  // Background authentication initialization - no loading state
   useEffect(() => {
     let mounted = true;
-    let initTimeout: NodeJS.Timeout;
 
-    const initializeAuth = async () => {
+    const initializeAuthInBackground = async () => {
       try {
-        debugLog('Starting authentication initialization...');
-        
-        // Set a reasonable timeout for the entire initialization
-        initTimeout = setTimeout(() => {
-          if (mounted) {
-            debugLog('Auth initialization timeout reached, continuing with session only');
-            setLoading(false);
-          }
-        }, STANDARD_TIMEOUT);
+        debugLog('Starting background authentication initialization...');
         
         // Get current session with shorter timeout
-        debugLog('Getting current session...');
+        debugLog('Getting current session in background...');
         const sessionQuery = supabase.auth.getSession();
         
         let sessionResult;
         try {
           sessionResult = await Promise.race([
             sessionQuery,
-            createTimeoutPromise(QUICK_TIMEOUT, 'Session fetch')
+            createTimeoutPromise(QUICK_TIMEOUT, 'Background session fetch')
           ]);
         } catch (sessionError: any) {
-          debugLog('Session fetch error:', sessionError.message);
+          debugLog('Background session fetch error:', sessionError.message);
           
           if (!mounted) return;
-          clearTimeout(initTimeout);
           
           if (sessionError.message?.includes('timeout')) {
-            debugLog('Session fetch timeout - continuing with no session');
-            setLoading(false);
+            debugLog('Background session fetch timeout - continuing with no session');
             setUser(null);
             setSession(null);
             return;
@@ -240,32 +230,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session: currentSession }, error } = sessionResult as any;
         
         if (!mounted) return;
-        clearTimeout(initTimeout);
         
-        debugLog('Session fetch result:', { 
+        debugLog('Background session fetch result:', { 
           hasSession: !!currentSession, 
           userEmail: currentSession?.user?.email,
           error: error?.message 
         });
         
         if (error) {
-          debugLog('Session fetch error details:', error.message);
-          setLoading(false);
+          debugLog('Background session fetch error details:', error.message);
           return;
         }
 
         setSession(currentSession);
         
         if (currentSession?.user) {
-          debugLog('Found existing session, loading profile...');
-          try {
-            const userProfile = await loadUserProfile(currentSession.user);
-            if (mounted) {
+          debugLog('Found existing session, loading profile in background...');
+          
+          // Load profile in background without blocking UI
+          loadUserProfileInBackground(currentSession.user).then(userProfile => {
+            if (mounted && userProfile) {
               setUser(userProfile);
-              debugLog('Profile loaded and user set:', !!userProfile);
+              debugLog('Background profile loaded and user set:', !!userProfile);
             }
-          } catch (profileError: any) {
-            debugLog('Failed to load profile during initialization:', profileError.message);
+          }).catch(profileError => {
+            debugLog('Failed to load profile in background during initialization:', profileError.message);
             if (mounted) {
               // Set a minimal user object instead of null to prevent app crash
               setUser({
@@ -283,35 +272,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 supabaseUser: currentSession.user
               });
             }
-          }
+          });
         } else {
-          debugLog('No existing session found');
+          debugLog('No existing session found in background');
           setUser(null);
         }
         
-        if (mounted) {
-          setLoading(false);
-          debugLog('Auth initialization completed');
-        }
+        debugLog('Background auth initialization completed');
       } catch (error: any) {
-        debugLog('Auth initialization error:', error.message);
+        debugLog('Background auth initialization error:', error.message);
         
         if (mounted) {
-          clearTimeout(initTimeout);
-          setLoading(false);
           setUser(null);
           setSession(null);
         }
       }
     };
 
-    initializeAuth();
+    initializeAuthInBackground();
 
     return () => {
       mounted = false;
-      if (initTimeout) {
-        clearTimeout(initTimeout);
-      }
     };
   }, []);
 
@@ -330,14 +311,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
 
         if (event === 'SIGNED_IN' && newSession?.user) {
-          debugLog('User signed in, loading profile...');
-          setLoading(true);
+          debugLog('User signed in, loading profile in background...');
           
-          try {
-            const userProfile = await loadUserProfile(newSession.user);
+          // Load profile in background without showing loading state
+          loadUserProfileInBackground(newSession.user).then(userProfile => {
             setUser(userProfile);
             debugLog('Profile loaded after sign in:', !!userProfile);
-          } catch (profileError: any) {
+          }).catch(profileError => {
             debugLog('Failed to load profile after sign in:', profileError.message);
             // Set minimal user object instead of null
             setUser({
@@ -354,24 +334,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               updated_at: new Date().toISOString(),
               supabaseUser: newSession.user
             });
-          } finally {
-            setLoading(false);
-          }
+          });
         } else if (event === 'SIGNED_OUT') {
           debugLog('User signed out');
           setUser(null);
-          setLoading(false);
         } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
           debugLog('Token refreshed for user:', newSession.user.email);
           // Don't reload profile on token refresh unless we don't have one
           if (!user) {
-            debugLog('No user profile, loading after token refresh...');
-            try {
-              const userProfile = await loadUserProfile(newSession.user);
+            debugLog('No user profile, loading after token refresh in background...');
+            loadUserProfileInBackground(newSession.user).then(userProfile => {
               setUser(userProfile);
-            } catch (profileError: any) {
+            }).catch(profileError => {
               debugLog('Failed to load profile after token refresh:', profileError.message);
-            }
+            });
           }
         }
       }
@@ -386,6 +362,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       debugLog('Starting sign in process for:', email);
+      
+      // Show loading only during active sign in
+      setLoading(true);
       
       const signInQuery = supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -416,12 +395,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       debugLog('Sign in failed:', error.message);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<void> => {
     try {
       debugLog('Starting sign up process for:', email);
+      
+      // Show loading only during active sign up
+      setLoading(true);
       
       const signUpQuery = supabase.auth.signUp({
         email: email.trim(),
@@ -458,6 +442,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       debugLog('Sign up failed:', error.message);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -486,7 +472,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear state immediately
       setUser(null);
       setSession(null);
-      setLoading(false);
       
       debugLog('Sign out completed');
       
@@ -496,7 +481,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Force clear state even on error
       setUser(null);
       setSession(null);
-      setLoading(false);
     }
   };
 
@@ -547,7 +531,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     session,
-    loading,
+    loading, // This will only be true during active sign in/up operations
     signIn,
     signUp,
     signOut,

@@ -11,7 +11,6 @@ const Login: React.FC = () => {
     password: ''
   });
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -25,7 +24,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (loading) return;
     
     const { email, password } = formData;
     
@@ -34,7 +33,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
     setError('');
 
     try {
@@ -59,12 +57,8 @@ const Login: React.FC = () => {
       }
       
       setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
-  const isFormDisabled = isSubmitting;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -102,7 +96,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                disabled={isFormDisabled}
+                disabled={loading}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your email"
               />
@@ -120,7 +114,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                disabled={isFormDisabled}
+                disabled={loading}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your password"
               />
@@ -130,10 +124,10 @@ const Login: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isFormDisabled}
+              disabled={loading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <div className="flex items-center">
                   <Loader2 className="animate-spin h-4 w-4 mr-2" />
                   Signing in...

@@ -10,7 +10,6 @@ import {
   X,
   CreditCard,
   ChevronDown,
-  Loader2,
   LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -72,17 +71,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Show loading spinner only briefly
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600 font-sans">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // REMOVED: No loading spinner - app loads immediately
+  // The background authentication will handle user state updates
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
