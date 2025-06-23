@@ -82,37 +82,37 @@ const Calculator: React.FC = () => {
   // Check if we're coming from dashboard with saved calculation data
   useEffect(() => {
     if (location.state?.calculationData && location.state?.startAtStep) {
-      // Ensure we preserve the enableInvestmentAnalysis and enableClosingCosts flags
+      // Create a new object to avoid reference issues
       const calculationData = {
-        ...location.state.calculationData,
-        enableInvestmentAnalysis: location.state.calculationData.enableInvestmentAnalysis ?? false,
-        enableClosingCosts: location.state.calculationData.enableClosingCosts ?? true
+        ...location.state.calculationData
       };
+      
+      // Process notes to extract section state
+      if (location.state.notes) {
+        const notes = location.state.notes;
+        
+        // Extract section states from notes if they exist
+        if (notes.enableInvestmentAnalysis !== undefined) {
+          calculationData.enableInvestmentAnalysis = notes.enableInvestmentAnalysis;
+        }
+        
+        if (notes.enableClosingCosts !== undefined) {
+          calculationData.enableClosingCosts = notes.enableClosingCosts;
+        }
+        
+        if (notes.showMarketingOnShare !== undefined) {
+          calculationData.showMarketingOnShare = notes.showMarketingOnShare;
+        }
+        
+        setCurrentNotes(notes);
+      }
       
       setMortgageData(calculationData);
       setCurrentStep(location.state.startAtStep);
       
-      // If coming from a saved calculation, set the ID and existing notes/comments
+      // If coming from a saved calculation, set the ID and existing comments
       if (location.state.calculationId) {
         setSavedCalculationId(location.state.calculationId);
-        
-        // Process notes to extract section state
-        if (location.state.notes) {
-          // Extract section state from notes
-          const notes = location.state.notes;
-          
-          // Update section state if present in notes
-          if (notes.enableInvestmentAnalysis !== undefined) {
-            calculationData.enableInvestmentAnalysis = notes.enableInvestmentAnalysis;
-          }
-          
-          if (notes.enableClosingCosts !== undefined) {
-            calculationData.enableClosingCosts = notes.enableClosingCosts;
-          }
-          
-          setCurrentNotes(notes);
-        }
-        
         setCurrentComments(location.state.comments || '');
       }
     }

@@ -51,9 +51,10 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   } | null>(null);
 
   // Calculate mortgage values
-  const loanAmount = loanCalculation ? loanCalculation.totalLoanAmount : (data.homePrice - data.downPayment);
   const baseLoanAmount = loanCalculation ? loanCalculation.baseLoanAmount : (data.homePrice - data.downPayment);
   const cmhcPremium = loanCalculation ? loanCalculation.cmhcPremium : 0;
+  const loanAmount = loanCalculation ? loanCalculation.totalLoanAmount : (data.homePrice - data.downPayment);
+  
   const monthlyRate = data.interestRate / 100 / 12;
   const monthlyPayment = calculateMonthlyPayment(loanAmount, data.interestRate, data.amortizationYears);
   const totalCost = monthlyPayment * data.amortizationYears * 12 + data.downPayment;
@@ -271,13 +272,23 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
         );
 
       case 'investment':
-        return (
+        return data.enableInvestmentAnalysis ? (
           <InvestmentAnalysisTab
             data={data}
             investmentMetrics={investmentMetrics}
             calculationId={savedCalculationId}
             currentNotes={currentNotes}
           />
+        ) : (
+          <div className="p-8 text-center">
+            <div className="bg-emerald-50 p-6 rounded-xl inline-block mx-auto">
+              <h3 className="text-lg font-semibold text-emerald-800 mb-2">Investment Analysis Disabled</h3>
+              <p className="text-emerald-700">
+                You have disabled the investment property analysis for this calculation. 
+                Return to the input form and enable investment analysis to see this section.
+              </p>
+            </div>
+          </div>
         );
 
       default:

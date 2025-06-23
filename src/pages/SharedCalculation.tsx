@@ -148,9 +148,10 @@ const SharedCalculation: React.FC = () => {
   const loanCalculation = calculateTotalLoanAmount(calculation.home_price, calculation.down_payment);
   
   // Calculate derived values for display
-  const loanAmount = loanCalculation.totalLoanAmount;
   const baseLoanAmount = loanCalculation.baseLoanAmount;
   const cmhcPremium = loanCalculation.cmhcPremium;
+  const loanAmount = loanCalculation.totalLoanAmount;
+  
   const monthlyRate = calculation.interest_rate / 100 / 12;
   const monthlyPayment = calculation.monthly_payment;
   const totalCost = monthlyPayment * calculation.amortization_years * 12 + calculation.down_payment;

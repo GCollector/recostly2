@@ -81,7 +81,7 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
 
   // Calculate the percentage of the loan that is CMHC premium
   const hasCMHC = cmhcPremium > 0;
-  const cmhcPercentage = hasCMHC ? ((cmhcPremium / loanAmount) * 100).toFixed(1) : '0';
+  const cmhcPercentage = hasCMHC ? ((cmhcPremium / (baseLoanAmount || loanAmount)) * 100).toFixed(1) : '0';
 
   return (
     <div className="space-y-8">
@@ -114,18 +114,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900 mb-2">
-                ${baseLoanAmount ? baseLoanAmount.toLocaleString() : loanAmount.toLocaleString()}
-              </div>
-              <div className="text-sm font-medium text-slate-600 mb-1">Base Loan Amount</div>
-              <div className="text-xs text-slate-500">
-                {100 - downPaymentPercent}% of home price
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900 mb-2">
                 ${data.downPayment.toLocaleString()}
               </div>
               <div className="text-sm font-medium text-slate-600 mb-1">Down Payment</div>
@@ -135,31 +123,17 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
             </div>
           </div>
 
-          {hasCMHC ? (
-            <div className="bg-amber-50 p-6 rounded-xl border border-amber-200 shadow-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-amber-700 mb-2">
-                  ${cmhcPremium.toLocaleString()}
-                </div>
-                <div className="text-sm font-medium text-amber-800 mb-1">CMHC Insurance</div>
-                <div className="text-xs text-amber-700">
-                  {cmhcPercentage}% of base loan
-                </div>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 mb-2">
+                ${Math.round(totalInterest).toLocaleString()}
+              </div>
+              <div className="text-sm font-medium text-slate-600 mb-1">Total Interest</div>
+              <div className="text-xs text-slate-500">
+                Over {data.amortizationYears} years
               </div>
             </div>
-          ) : (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-slate-900 mb-2">
-                  ${Math.round(totalInterest).toLocaleString()}
-                </div>
-                <div className="text-sm font-medium text-slate-600 mb-1">Total Interest</div>
-                <div className="text-xs text-slate-500">
-                  Over {data.amortizationYears} years
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
 
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div className="text-center">
@@ -169,6 +143,20 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
               <div className="text-sm font-medium text-slate-600 mb-1">Total Cost</div>
               <div className="text-xs text-slate-500">
                 Including all interest
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-6 rounded-xl border shadow-sm ${hasCMHC ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 mb-2">
+                ${loanAmount.toLocaleString()}
+              </div>
+              <div className="text-sm font-medium text-slate-600 mb-1">
+                {hasCMHC ? 'Total Loan Amount' : 'Loan Amount'}
+              </div>
+              <div className="text-xs text-slate-500">
+                {hasCMHC ? `Includes CMHC premium` : `${100 - downPaymentPercent}% of home price`}
               </div>
             </div>
           </div>
