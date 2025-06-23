@@ -48,7 +48,25 @@ const ClosingCostPresets: React.FC<ClosingCostPresetsProps> = ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPresets(data || []);
+      
+      // Transform database column names to camelCase for the UI
+      const transformedData = data?.map(preset => ({
+        id: preset.id,
+        name: preset.name,
+        tag: preset.tag,
+        landTransferTax: preset.landtransfertax,
+        additionalTax: preset.additionaltax,
+        legalFees: preset.legalfees,
+        titleInsurance: preset.titleinsurance,
+        homeInspection: preset.homeinspection,
+        appraisal: preset.appraisal,
+        surveyFee: preset.surveyfee,
+        firstTimeBuyerRebate: preset.firsttimebuyerrebate,
+        createdAt: preset.created_at,
+        updatedAt: preset.updated_at
+      })) || [];
+      
+      setPresets(transformedData);
     } catch (error) {
       console.error('Error fetching presets:', error);
     }
@@ -58,11 +76,25 @@ const ClosingCostPresets: React.FC<ClosingCostPresetsProps> = ({
     if (!user || !formData.name.trim()) return;
 
     try {
+      // Transform camelCase form data to database column names
+      const dbData = {
+        name: formData.name,
+        tag: formData.tag || null,
+        landtransfertax: formData.landTransferTax,
+        additionaltax: formData.additionalTax,
+        legalfees: formData.legalFees,
+        titleinsurance: formData.titleInsurance,
+        homeinspection: formData.homeInspection,
+        appraisal: formData.appraisal,
+        surveyfee: formData.surveyFee,
+        firsttimebuyerrebate: formData.firstTimeBuyerRebate
+      };
+
       if (editingId) {
         // Update existing preset
         const { error } = await supabase
           .from('closing_cost_preset')
-          .update(formData)
+          .update(dbData)
           .eq('id', editingId)
           .eq('user_id', user.id);
 
@@ -72,7 +104,7 @@ const ClosingCostPresets: React.FC<ClosingCostPresetsProps> = ({
         const { error } = await supabase
           .from('closing_cost_preset')
           .insert({
-            ...formData,
+            ...dbData,
             user_id: user.id
           });
 
@@ -108,7 +140,7 @@ const ClosingCostPresets: React.FC<ClosingCostPresetsProps> = ({
   const handleEdit = (preset: ClosingCostPreset) => {
     setFormData({
       name: preset.name,
-      tag: preset.tag,
+      tag: preset.tag || '',
       landTransferTax: preset.landTransferTax,
       additionalTax: preset.additionalTax,
       legalFees: preset.legalFees,
