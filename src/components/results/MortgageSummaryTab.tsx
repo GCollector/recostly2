@@ -123,6 +123,20 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
             </div>
           </div>
 
+          <div className={`p-6 rounded-xl border shadow-sm ${hasCMHC ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 mb-2">
+                ${loanAmount.toLocaleString()}
+              </div>
+              <div className="text-sm font-medium text-slate-600 mb-1">
+                {hasCMHC ? 'Total Loan Amount' : 'Loan Amount'}
+              </div>
+              <div className="text-xs text-slate-500">
+                {hasCMHC ? `Includes CMHC premium` : `${100 - downPaymentPercent}% of home price`}
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900 mb-2">
@@ -143,20 +157,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
               <div className="text-sm font-medium text-slate-600 mb-1">Total Cost</div>
               <div className="text-xs text-slate-500">
                 Including all interest
-              </div>
-            </div>
-          </div>
-
-          <div className={`p-6 rounded-xl border shadow-sm ${hasCMHC ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-slate-900 mb-2">
-                ${loanAmount.toLocaleString()}
-              </div>
-              <div className="text-sm font-medium text-slate-600 mb-1">
-                {hasCMHC ? 'Total Loan Amount' : 'Loan Amount'}
-              </div>
-              <div className="text-xs text-slate-500">
-                {hasCMHC ? `Includes CMHC premium` : `${100 - downPaymentPercent}% of home price`}
               </div>
             </div>
           </div>
@@ -295,15 +295,6 @@ const MortgageSummaryTab: React.FC<MortgageSummaryTabProps> = ({
               <Bar dataKey="interest" fill="#EF4444" name="Interest" />
             </BarChart>
           </ResponsiveContainer>
-          
-          {/* Interest percentage display */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-slate-600">
-              Interest represents <span className="font-semibold text-slate-900">
-                {Math.round((totalInterest / (totalInterest + (baseLoanAmount || loanAmount))) * 100)}%
-              </span> of your total payments
-            </p>
-          </div>
         </div>
       </div>
     </div>

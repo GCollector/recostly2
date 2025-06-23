@@ -48,6 +48,8 @@ const Dashboard: React.FC = () => {
           city: calc.city,
           isFirstTimeBuyer: calc.is_first_time_buyer,
           enableInvestmentAnalysis: false, // Default to false, can be enhanced later
+          enableClosingCosts: true, // Default to true
+          showMarketingOnShare: true, // Default to true
           monthlyRent: 2500, // Default values
           monthlyExpenses: {
             taxes: 400,
@@ -84,6 +86,21 @@ const Dashboard: React.FC = () => {
         alert('Failed to delete calculation. Please try again.');
       }
     }
+  };
+
+  // Helper function to check if calculation has actual notes content
+  const hasActualNotes = (notes: any) => {
+    if (!notes) return false;
+    
+    // Check if any section has actual note content
+    return ['mortgage', 'closing', 'amortization', 'investment'].some(section => {
+      return notes[section] && notes[section].trim().length > 0;
+    });
+  };
+
+  // Helper function to check if calculation has actual comments
+  const hasActualComments = (comments: string | null) => {
+    return comments && comments.trim().length > 0;
   };
 
   return (
@@ -195,13 +212,14 @@ const Dashboard: React.FC = () => {
                             First-Time Buyer
                           </span>
                         )}
-                        {/* Show if calculation has notes or comments */}
-                        {(calc.notes && Object.keys(calc.notes).length > 0) && (
+                        {/* Show if calculation has actual notes content */}
+                        {hasActualNotes(calc.notes) && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                             Has Notes
                           </span>
                         )}
-                        {calc.comments && (
+                        {/* Show if calculation has actual comments */}
+                        {hasActualComments(calc.comments) && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Has Comments
                           </span>
