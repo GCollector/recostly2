@@ -29,17 +29,17 @@ export const useAuth = () => {
   return context;
 };
 
-// Timeout constants
-const SIGN_IN_TIMEOUT = 10000; // 10 seconds
-const PROFILE_LOAD_TIMEOUT = 8000; // 8 seconds
-const SESSION_INIT_TIMEOUT = 10000; // 10 seconds
+// Timeout constants - reduced for better UX
+const SIGN_IN_TIMEOUT = 8000; // 8 seconds
+const PROFILE_LOAD_TIMEOUT = 6000; // 6 seconds
+const SESSION_INIT_TIMEOUT = 8000; // 8 seconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to create a timeout promise - using function declaration for hoisting
+  // Helper function to create a timeout promise
   function createTimeoutPromise(ms: number, operation: string): Promise<never> {
     return new Promise((_, reject) => {
       setTimeout(() => {
@@ -48,41 +48,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }
 
-  // Force sign out function
-  const forceSignOut = async (reason: string) => {
-    console.warn(`🚨 Force sign out triggered: ${reason}`);
-    
-    try {
-      // Clear state immediately
-      setUser(null);
-      setSession(null);
-      setLoading(false);
-      
-      // Try to sign out from Supabase (don't wait for response)
-      supabase.auth.signOut().catch(() => {
-        console.log('Supabase signOut failed during force logout, but continuing');
-      });
-      
-      console.log('✅ Force sign out completed');
-    } catch (error) {
-      console.error('Error during force sign out:', error);
-      // Ensure state is cleared even if there's an error
-      setUser(null);
-      setSession(null);
-      setLoading(false);
-    }
-  };
-
+  // Improved profile loading with better error handling
   const loadUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       console.log('📝 Loading profile for user:', supabaseUser.email);
 
-      // Race between profile loading and timeout
+      // First, try to get existing profile
       const profilePromise = supabase
         .from('profile')
         .select('*')
         .eq('id', supabaseUser.id)
-        .maybeSingle(); // Use maybeSingle instead of single to handle no rows gracefully
+        .maybeSingle(); // Use maybeSingle to handle no rows gracefully
 
       const timeoutPromise = createTimeoutPromise(PROFILE_LOAD_TIMEOUT, 'Profile loading');
 
@@ -93,8 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
-        
-        // Log the error but don't throw - return null instead
+        // Don't throw on profile errors - just log and continue
         console.warn('Profile fetch failed, user will remain signed in but without profile data');
         return null;
       }
@@ -114,7 +89,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         try {
-          // Race between profile creation and timeout
           const createPromise = supabase
             .from('profile')
             .insert(newProfile)
@@ -130,7 +104,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (createError) {
             console.error('❌ Error creating profile:', createError);
-            // Log the error but don't throw - return null instead
             console.warn('Profile creation failed, user will remain signed in but without profile data');
             return null;
           }
@@ -141,7 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (createError) {
           console.error('💥 Error creating profile:', createError);
-          // Log the error but don't throw - return null instead
           console.warn('Profile creation failed due to error, user will remain signed in but without profile data');
           return null;
         }
@@ -153,14 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('💥 Error in loadUserProfile:', error);
-      
-      // Don't force sign out on profile loading errors - just log and return null
       console.warn('Profile loading failed, user will remain signed in but without profile data');
       return null;
     }
   };
 
-  // Initialize authentication
+  // Initialize authentication with improved error handling
   useEffect(() => {
     let mounted = true;
 
@@ -168,7 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🚀 Initializing authentication...');
         
-        // Race between session fetch and timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = createTimeoutPromise(SESSION_INIT_TIMEOUT, 'Session initialization');
         
@@ -181,11 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error('❌ Error getting session:', error);
-          if (error.message?.includes('timeout')) {
-            await forceSignOut(`Session initialization timeout: ${error.message}`);
-          } else {
-            setLoading(false);
-          }
+          setLoading(false);
           return;
         }
 
@@ -201,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (profileError) {
             console.error('💥 Failed to load profile during initialization:', profileError);
             if (mounted) {
-              // Don't force sign out here, just clear the user state
+              // Don't clear session, just set user to null
               setUser(null);
             }
           }
@@ -216,13 +181,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
         if (mounted) {
-          if (error instanceof Error && error.message.includes('timeout')) {
-            await forceSignOut(`Auth initialization timeout: ${error.message}`);
-          } else {
-            setLoading(false);
-            setUser(null);
-            setSession(null);
-          }
+          setLoading(false);
+          setUser(null);
+          setSession(null);
         }
       }
     };
@@ -234,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Set up auth state listener
+  // Set up auth state listener with improved error handling
   useEffect(() => {
     console.log('👂 Setting up auth state listener...');
 
@@ -278,7 +239,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔐 Attempting sign in for:', email);
       
-      // Race between sign in and timeout
       const signInPromise = supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -293,12 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign in error:', error);
-        
-        // If it's a timeout, force sign out to clear any partial state
-        if (error.message?.includes('timeout')) {
-          await forceSignOut(`Sign in timeout: ${error.message}`);
-        }
-        
         throw error;
       }
 
@@ -315,7 +269,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('📝 Attempting sign up for:', email);
       
-      // Race between sign up and timeout
       const signUpPromise = supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -335,12 +288,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Sign up error:', error);
-        
-        // If it's a timeout, force sign out to clear any partial state
-        if (error.message?.includes('timeout')) {
-          await forceSignOut(`Sign up timeout: ${error.message}`);
-        }
-        
         throw error;
       }
 
@@ -357,7 +304,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('👋 Signing out...');
       
-      // Race between sign out and timeout
       const signOutPromise = supabase.auth.signOut();
       const timeoutPromise = createTimeoutPromise(5000, 'Sign out');
 
@@ -396,7 +342,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Race between profile update and timeout
       const updatePromise = supabase
         .from('profile')
         .update(updates)
