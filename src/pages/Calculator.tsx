@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator as CalculatorIcon, ArrowRight, ArrowLeft } from 'lucide-react';
 import MortgageInputForm from '../components/mortgage/MortgageInputForm';
 import MortgageResults from '../components/MortgageResults';
@@ -44,6 +44,11 @@ const Calculator: React.FC = () => {
       other: 100
     }
   });
+
+  // Scroll to top when step changes - this is the hack that works
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
 
   const handleInputChange = (field: keyof MortgageData, value: any) => {
     setMortgageData(prev => ({
