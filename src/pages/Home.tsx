@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calculator, TrendingUp, Shield, Star, Calendar, Eye, Share2, CreditCard } from 'lucide-react';
+import { Calculator, TrendingUp, Shield, Star, Calendar, Eye, Share2, CreditCard, ChevronRight } from 'lucide-react';
 import { Home as HomeIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCalculations } from '../contexts/CalculationContext';
@@ -52,25 +52,25 @@ const HomePage: React.FC = () => {
   // Show dashboard-style content for logged-in users
   if (user) {
     return (
-      <div className="space-y-12">
+      <div className="space-y-8 md:space-y-12">
         {/* Welcome Header */}
         <div className="text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold font-heading text-slate-900">
+          <h1 className="text-3xl md:text-6xl font-bold font-heading text-slate-900">
             Welcome back, <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{user.name}</span>!
           </h1>
-          <p className="text-xl font-sans text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl font-sans text-slate-600 max-w-2xl mx-auto">
             Your mortgage calculations and real estate analysis tools are ready to use.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/calculator"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-lg text-base md:text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               New Calculation
             </Link>
             <Link
               to="/dashboard"
-              className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-lg text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105"
+              className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-6 md:px-8 py-3 md:py-4 rounded-lg text-base md:text-lg font-medium font-sans transition-all duration-200 transform hover:scale-105"
             >
               View Dashboard
             </Link>
@@ -78,48 +78,48 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-sm">
-                <Calculator className="h-6 w-6 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-4 md:mr-6 shadow-sm">
+                <Calculator className="h-6 w-6 md:h-8 md:w-8 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold font-heading text-slate-900">{calculations.length}</div>
-                <div className="text-sm font-sans text-slate-600">Saved Calculations</div>
+                <div className="text-2xl md:text-3xl font-bold font-heading text-slate-900">{calculations.length}</div>
+                <div className="text-sm md:text-base font-sans text-slate-600">Saved Calculations</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 shadow-sm ${
+              <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center mr-4 md:mr-6 shadow-sm ${
                 user.tier === 'premium' ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 
                 user.tier === 'basic' ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-slate-500 to-slate-600'
               }`}>
-                <Shield className="h-6 w-6 text-white" />
+                <Shield className="h-6 w-6 md:h-8 md:w-8 text-white" />
               </div>
               <div>
-                <div className="text-lg font-bold font-heading text-slate-900 capitalize">{user.tier} Plan</div>
-                <div className="text-sm font-sans text-slate-600">Account Type</div>
+                <div className="text-lg md:text-xl font-bold font-heading text-slate-900 capitalize">{user.tier} Plan</div>
+                <div className="text-sm md:text-base font-sans text-slate-600">Account Type</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mr-4 shadow-sm">
-                <TrendingUp className="h-6 w-6 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mr-4 md:mr-6 shadow-sm">
+                <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold font-heading text-slate-900">
+                <div className="text-xl md:text-3xl font-bold font-heading text-slate-900">
                   {calculations.reduce((sum, calc) => sum + calc.home_price, 0).toLocaleString('en-CA', { 
                     style: 'currency', 
                     currency: 'CAD',
                     maximumFractionDigits: 0 
                   })}
                 </div>
-                <div className="text-sm font-sans text-slate-600">Total Property Value</div>
+                <div className="text-sm md:text-base font-sans text-slate-600">Total Property Value</div>
               </div>
             </div>
           </div>
@@ -127,14 +127,15 @@ const HomePage: React.FC = () => {
 
         {/* Recent Calculations */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-6 border-b border-slate-100">
+          <div className="p-6 md:p-8 border-b border-slate-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold font-heading text-slate-900">Recent Calculations</h2>
+              <h2 className="text-xl md:text-2xl font-semibold font-heading text-slate-900">Recent Calculations</h2>
               <Link
                 to="/dashboard"
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium font-sans transition-colors"
+                className="text-blue-600 hover:text-blue-700 text-sm md:text-base font-medium font-sans transition-colors flex items-center"
               >
                 View All
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
             </div>
           </div>
@@ -142,61 +143,96 @@ const HomePage: React.FC = () => {
           {calculations.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {calculations.slice(0, 3).map((calc) => (
-                <div key={calc.id} className="p-6 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4 mb-2">
-                        <button
-                          onClick={() => handleViewCalculation(calc)}
-                          className="text-lg font-medium font-heading text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
-                        >
-                          ${calc.home_price.toLocaleString()} Home
-                        </button>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium font-sans ${
-                          calc.city === 'toronto' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {calc.city === 'toronto' ? 'Toronto' : 'Vancouver'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm font-sans text-slate-600">
-                        <div>
-                          <span className="font-medium">Payment:</span> ${calc.monthly_payment.toLocaleString()}/{calc.payment_frequency}
+                <div key={calc.id} className="p-6 md:p-8 hover:bg-slate-50 transition-colors">
+                  <div className="space-y-4">
+                    {/* Header Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                          <button
+                            onClick={() => handleViewCalculation(calc)}
+                            className="text-lg md:text-xl font-semibold font-heading text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                          >
+                            ${calc.home_price.toLocaleString()} Home
+                          </button>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
+                            calc.city === 'toronto' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {calc.city === 'toronto' ? 'Toronto' : 'Vancouver'}
+                          </span>
                         </div>
-                        <div>
-                          <span className="font-medium">Rate:</span> {calc.interest_rate}%
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
+                        
+                        {/* Date */}
+                        <div className="flex items-center text-sm md:text-base text-slate-500 mb-4">
+                          <Calendar className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                           {new Date(calc.created_at).toLocaleDateString()}
                         </div>
                       </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewCalculation(calc)}
+                          className="p-3 md:p-4 text-slate-400 hover:text-blue-600 transition-colors rounded-xl hover:bg-blue-50"
+                          title="View Results"
+                        >
+                          <Eye className="h-5 w-5 md:h-6 md:w-6" />
+                        </button>
+                        <button
+                          onClick={() => handleShare(calc.id)}
+                          className="p-3 md:p-4 text-slate-400 hover:text-blue-600 transition-colors rounded-xl hover:bg-blue-50"
+                          title="Share"
+                        >
+                          <Share2 className="h-5 w-5 md:h-6 md:w-6" />
+                        </button>
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewCalculation(calc)}
-                        className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleShare(calc.id)}
-                        className="p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white"
-                        title="Share"
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </button>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                      <div className="space-y-2">
+                        <div className="text-sm md:text-base font-medium text-slate-700">Payment</div>
+                        <div className="text-lg md:text-xl font-bold text-slate-900">
+                          ${calc.monthly_payment.toLocaleString()}
+                        </div>
+                        <div className="text-xs md:text-sm text-slate-500 capitalize">
+                          {calc.payment_frequency}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm md:text-base font-medium text-slate-700">Down Payment</div>
+                        <div className="text-lg md:text-xl font-bold text-slate-900">
+                          ${calc.down_payment.toLocaleString()}
+                        </div>
+                        <div className="text-xs md:text-sm text-slate-500">
+                          {Math.round((calc.down_payment / calc.home_price) * 100)}%
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm md:text-base font-medium text-slate-700">Interest Rate</div>
+                        <div className="text-lg md:text-xl font-bold text-slate-900">
+                          {calc.interest_rate}%
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm md:text-base font-medium text-slate-700">Term</div>
+                        <div className="text-lg md:text-xl font-bold text-slate-900">
+                          {calc.amortization_years} years
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="p-12 text-center">
-              <Calculator className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium font-heading text-slate-900 mb-2">No calculations yet</h3>
-              <p className="font-sans text-slate-600 mb-6">
+            <div className="p-12 md:p-16 text-center">
+              <Calculator className="h-12 w-12 md:h-16 md:w-16 text-slate-400 mx-auto mb-6" />
+              <h3 className="text-lg md:text-xl font-medium font-heading text-slate-900 mb-3">No calculations yet</h3>
+              <p className="text-base md:text-lg font-sans text-slate-600 mb-8">
                 Start by creating your first mortgage calculation.
               </p>
               <Link
