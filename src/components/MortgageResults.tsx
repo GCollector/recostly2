@@ -61,25 +61,25 @@ const MortgageResults: React.FC<MortgageResultsProps> = ({
   const totalInterest = totalCost - data.homePrice;
   const downPaymentPercent = Math.round((data.downPayment / data.homePrice) * 100);
 
-  // Calculate closing costs
+  // Calculate closing costs with proper null checks
   const closingCosts = data.enableClosingCosts && data.closingCosts ? 
     {
-      landTransferTax: data.closingCosts.landTransferTax,
-      additionalTax: data.closingCosts.additionalTax,
-      legalFees: data.closingCosts.legalFees,
-      titleInsurance: data.closingCosts.titleInsurance,
-      homeInspection: data.closingCosts.homeInspection,
-      appraisal: data.closingCosts.appraisal,
-      surveyFee: data.closingCosts.surveyFee,
-      firstTimeBuyerRebate: data.closingCosts.firstTimeBuyerRebate,
-      total: data.closingCosts.landTransferTax + 
-             data.closingCosts.additionalTax + 
-             data.closingCosts.legalFees + 
-             data.closingCosts.titleInsurance + 
-             data.closingCosts.homeInspection + 
-             data.closingCosts.appraisal + 
-             data.closingCosts.surveyFee - 
-             data.closingCosts.firstTimeBuyerRebate
+      landTransferTax: data.closingCosts.landTransferTax ?? 0,
+      additionalTax: data.closingCosts.additionalTax ?? 0,
+      legalFees: data.closingCosts.legalFees ?? 0,
+      titleInsurance: data.closingCosts.titleInsurance ?? 0,
+      homeInspection: data.closingCosts.homeInspection ?? 0,
+      appraisal: data.closingCosts.appraisal ?? 0,
+      surveyFee: data.closingCosts.surveyFee ?? 0,
+      firstTimeBuyerRebate: data.closingCosts.firstTimeBuyerRebate ?? 0,
+      total: (data.closingCosts.landTransferTax ?? 0) + 
+             (data.closingCosts.additionalTax ?? 0) + 
+             (data.closingCosts.legalFees ?? 0) + 
+             (data.closingCosts.titleInsurance ?? 0) + 
+             (data.closingCosts.homeInspection ?? 0) + 
+             (data.closingCosts.appraisal ?? 0) + 
+             (data.closingCosts.surveyFee ?? 0) - 
+             (data.closingCosts.firstTimeBuyerRebate ?? 0)
     } : 
     calculateClosingCosts(data.homePrice, data.province, data.city, data.isFirstTimeBuyer);
 
